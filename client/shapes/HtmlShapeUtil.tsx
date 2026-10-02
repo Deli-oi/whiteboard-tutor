@@ -114,6 +114,7 @@ export class HtmlShapeUtil extends BaseBoxShapeUtil<HtmlShape> {
 					<iframe
 						ref={iframeRef}
 						className="html-shape-iframe"
+						title="Interactive visualization"
 						data-shape-id={shape.id}
 						// No allow-same-origin: the iframe gets its own opaque origin, so a
 						// script inside it can't reach this page's DOM, storage, or cookies

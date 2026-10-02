@@ -816,7 +816,9 @@ button.chat-context-select.active {
 	border: 0;
 	cursor: pointer;
 	background-color: var(--tl-color-muted-1);
-	color: var(--tl-color-text-2);
+	/* var(--tl-color-text-2) (#8c8c8c) fails contrast (3.57:1) against this
+	   button's background - axe-core, confirmed live. */
+	color: #b8b8b8;
 	padding: 4px 8px;
 	font-size: 10px;
 	font-weight: 500;
@@ -903,7 +905,9 @@ button.chat-context-select.active {
 	padding: 6px 8px;
 	margin: 0px 0px;
 	border-radius: 4px 0px 0px 0px;
-	color: var(--tl-color-text-2);
+	/* var(--tl-color-text-2) (#8c8c8c) fails contrast (3.57:1) against this
+	   background - axe-core, confirmed live. */
+	color: #b8b8b8;
 	max-height: 70px;
 	overflow-y: auto;
 	scrollbar-width: none;
@@ -947,7 +951,9 @@ button.chat-context-select.active {
 	padding: 8px 4px 8px 3px;
 	font-weight: 500;
 	height: 16px;
-	color: var(--tl-color-text-2);
+	/* var(--tl-color-text-2) (#8c8c8c) fails contrast (3.57:1) against the
+	   .chat-input form background it sits on - axe-core, confirmed live. */
+	color: #b8b8b8;
 	white-space: nowrap;
 	font-family: 'Inter', sans-serif;
 	max-width: 100%;

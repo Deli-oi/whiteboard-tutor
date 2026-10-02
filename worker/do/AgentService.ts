@@ -34,6 +34,22 @@ import { normalizeModelText } from './normalizeModelText'
  * visible "(missing)" placeholder) - this is purely for server-side
  * visibility into exactly which actions come back malformed and how.
  */
+/**
+ * Strips a stray leading `]`, `}`, or `,` from a `message` action's text.
+ * Observed live with the prefill-forced providers (`canForceResponseStart`
+ * below): the model occasionally emits one of these as the first character
+ * of its actual reply, a structural-JSON character leaking into what's
+ * meant to be prose - e.g. "]That is exactly right: we move the pointer...".
+ * The character has no legitimate reason to start a sentence, so stripping
+ * it is safe; this is display sanitization, not a parser fix; the JSON
+ * itself parsed successfully with this as literal string content.
+ */
+export function sanitizeMessageAction<T extends AgentAction | undefined>(action: T): T {
+	if (!action || action._type !== 'message' || typeof action.text !== 'string') return action
+	const cleaned = action.text.replace(/^[\]},\s]+/, '')
+	return cleaned === action.text ? action : { ...action, text: cleaned }
+}
+
 function warnIfActionInvalid(action: AgentAction): void {
 	const schema = getActionSchema(action._type)
 	if (!schema) return
@@ -202,7 +218,7 @@ export class AgentService {
 					// If the events list is ahead of the cursor, we know we've completed the current event
 					// We can complete the event and move the cursor forward
 					if (actions.length > cursor) {
-						const action = actions[cursor - 1] as AgentAction
+						const action = sanitizeMessageAction(actions[cursor - 1] as AgentAction)
 						if (action) {
 							warnIfActionInvalid(action)
 							yield {
@@ -217,7 +233,7 @@ export class AgentService {
 
 					// Now let's check the (potentially new) current event
 					// And let's yield it in its (potentially incomplete) state
-					const action = actions[cursor - 1] as AgentAction
+					const action = sanitizeMessageAction(actions[cursor - 1] as AgentAction)
 					if (action) {
 						// If we don't have an incomplete event yet, this is the start of a new one
 						if (!maybeIncompleteAction) {

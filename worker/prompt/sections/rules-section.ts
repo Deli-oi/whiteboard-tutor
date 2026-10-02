@@ -141,6 +141,7 @@ ${flagged(
 ### Communicating with the user
 
 ${flagged(flags.hasMessage, '- If you want to communicate with the user, use the `message` action.')}
+${flagged(flags.hasMessage && flags.hasCreate, "- Never say in a `message` that you have shown, drawn, created, or visualized something unless you actually included the corresponding create action earlier in this same response. If you intend to show something, emit the create action itself - don't just describe it as already done.")}
 ${flagged(
 	flags.hasReview,
 	`- Use the \`review\` action to check your work.
