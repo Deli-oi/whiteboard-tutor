@@ -72,16 +72,49 @@ function load(): BoardIndex {
 
 const initial = load()
 
+/**
+ * Every tab on this origin otherwise shares one `activeBoardId` via
+ * localStorage - switching boards in one tab remounts the editor in every
+ * other open tab watching it. A `?board=<id>` URL param lets a tab track its
+ * own board instead: if present and valid, it wins over the shared pointer
+ * for THIS tab's starting value, and `boardUrlOverride` below stays true so
+ * this tab's own board switches never get written back to the shared
+ * pointer. A tab with no param starts in the old shared-pointer behavior
+ * (so existing bookmarks/flows are unaffected) but switches into its own
+ * isolated `?board=` the first time it switches boards at all - see
+ * setActiveBoard.
+ */
+let boardUrlOverride = false
+function resolveInitialActiveBoardId(): string {
+	if (typeof window === 'undefined') return initial.activeBoardId
+	const fromUrl = new URLSearchParams(window.location.search).get('board')
+	if (fromUrl && initial.boards.some((b) => b.id === fromUrl)) {
+		boardUrlOverride = true
+		return fromUrl
+	}
+	return initial.activeBoardId
+}
+
+function setBoardUrlParam(id: string) {
+	if (typeof window === 'undefined') return
+	const url = new URL(window.location.href)
+	url.searchParams.set('board', id)
+	window.history.replaceState(null, '', url)
+}
+
 export const $boards = atom<Board[]>('boards', initial.boards)
 export const $folders = atom<Folder[]>('folders', initial.folders)
-export const $activeBoardId = atom<string>('activeBoardId', initial.activeBoardId)
+export const $activeBoardId = atom<string>('activeBoardId', resolveInitialActiveBoardId())
 
 if (typeof window !== 'undefined') {
 	react('persist boards', () => {
 		const value: BoardIndex = {
 			boards: $boards.get(),
 			folders: $folders.get(),
-			activeBoardId: $activeBoardId.get(),
+			// A tab tracking its own board via the URL never overwrites the
+			// shared "last active" pointer other tabs rely on - only read it
+			// back from whatever it already was.
+			activeBoardId: boardUrlOverride ? load().activeBoardId : $activeBoardId.get(),
 		}
 		try {
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
@@ -98,13 +131,18 @@ export function getActiveBoard(): Board {
 }
 
 export function setActiveBoard(id: string) {
-	if ($boards.get().some((b) => b.id === id)) $activeBoardId.set(id)
+	if (!$boards.get().some((b) => b.id === id)) return
+	$activeBoardId.set(id)
+	boardUrlOverride = true
+	setBoardUrlParam(id)
 }
 
 export function createBoard(name = 'Untitled board', folderId: string | null = null): Board {
 	const board = makeBoard(name, folderId)
 	$boards.update((list) => [...list, board])
 	$activeBoardId.set(board.id)
+	boardUrlOverride = true
+	setBoardUrlParam(board.id)
 	return board
 }
 
@@ -134,7 +172,10 @@ export function deleteBoard(id: string) {
 	if (!board) return
 	const remaining = boards.filter((b) => b.id !== id)
 	$boards.set(remaining)
-	if ($activeBoardId.get() === id) $activeBoardId.set(remaining[0].id)
+	if ($activeBoardId.get() === id) {
+		$activeBoardId.set(remaining[0].id)
+		if (boardUrlOverride) setBoardUrlParam(remaining[0].id)
+	}
 	clearBoardStorage(board.persistenceKey)
 }
 
