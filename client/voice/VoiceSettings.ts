@@ -1,35 +1,29 @@
 import { atom, Atom, react } from 'tldraw'
 
-export type SttEngine = 'browser' | 'openai'
+export type SttEngine = 'browser' | 'openai' | 'groq'
 
 /**
  * User-facing voice settings. Persisted to localStorage so they survive reloads.
  *
- * Defaults: the browser's own (free) speech recognition for ears, and OpenAI's
- * gpt-4o-mini-tts (about $0.015/min, needs OPENAI_API_KEY on the worker) for
- * the voice. There is no browser voice. OpenAI ears (about $0.003/min) are opt-in.
+ * Voice is input-only: speech goes in via `sttEngine`, replies are text-only in
+ * chat. There is no text-to-speech.
+ *
+ * Default: Groq's hosted whisper-large-v3-turbo (free tier, sub-second, needs
+ * GROQ_API_KEY on the worker). The browser's own free speech recognition and
+ * OpenAI ears (~$0.003/min, needs OPENAI_API_KEY) are also available.
  */
 export interface VoiceSettingsValues {
 	/** Use the lean, voice-first `tutor` agent mode (no screenshots). */
 	tutorMode: boolean
-	/** Speak `message` actions aloud. */
-	speak: boolean
 	/** Which speech-to-text engine to use. */
 	sttEngine: SttEngine
-	/** OpenAI voice id (marin, cedar, alloy, ...). */
-	openaiVoice: string
-	/** Playback rate. 1 is normal. */
-	rate: number
 }
 
 const STORAGE_KEY = 'whiteboard-tutor:voice-settings'
 
 const DEFAULTS: VoiceSettingsValues = {
 	tutorMode: true,
-	speak: true,
-	sttEngine: 'browser',
-	openaiVoice: 'marin',
-	rate: 1,
+	sttEngine: 'groq',
 }
 
 function load(): VoiceSettingsValues {
@@ -45,10 +39,7 @@ function load(): VoiceSettingsValues {
 function makeAtoms(values: VoiceSettingsValues) {
 	return {
 		tutorMode: atom('voice.tutorMode', values.tutorMode),
-		speak: atom('voice.speak', values.speak),
 		sttEngine: atom<SttEngine>('voice.sttEngine', values.sttEngine),
-		openaiVoice: atom('voice.openaiVoice', values.openaiVoice),
-		rate: atom('voice.rate', values.rate),
 	} satisfies { [K in keyof VoiceSettingsValues]: Atom<VoiceSettingsValues[K]> }
 }
 
@@ -59,10 +50,7 @@ export const voiceSettings = makeAtoms(load())
 export function getVoiceSettings(): VoiceSettingsValues {
 	return {
 		tutorMode: voiceSettings.tutorMode.get(),
-		speak: voiceSettings.speak.get(),
 		sttEngine: voiceSettings.sttEngine.get(),
-		openaiVoice: voiceSettings.openaiVoice.get(),
-		rate: voiceSettings.rate.get(),
 	}
 }
 

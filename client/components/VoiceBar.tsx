@@ -7,8 +7,6 @@ import { isBrowserSttSupported } from '../voice/stt'
 import { VoiceController } from '../voice/VoiceController'
 import { voiceSettings } from '../voice/VoiceSettings'
 
-const OPENAI_VOICES = ['marin', 'cedar', 'alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer', 'verse']
-
 /**
  * The voice controls that sit above the chat input: a big mic button, a
  * status line with the live transcript, and a settings drawer.
@@ -28,7 +26,7 @@ export function VoiceBar() {
 		// `?demo` replays a scripted lesson so you can try the experience with no API key.
 		let demoTimer: ReturnType<typeof setTimeout> | null = null
 		if (new URLSearchParams(window.location.search).has('demo')) {
-			demoTimer = setTimeout(() => void runDemoLesson(agent, c), 800)
+			demoTimer = setTimeout(() => void runDemoLesson(agent), 800)
 		}
 		return () => {
 			if (demoTimer) clearTimeout(demoTimer)
@@ -80,9 +78,7 @@ function VoiceBarInner({ controller }: { controller: VoiceController }) {
 			? 'Listening…'
 			: status === 'thinking'
 				? 'Thinking…'
-				: status === 'speaking'
-					? 'Speaking…'
-					: 'Voice chat on'
+				: 'Voice chat on'
 		: 'Start voice chat (or hold V to talk)'
 
 	return (
@@ -99,7 +95,7 @@ function VoiceBarInner({ controller }: { controller: VoiceController }) {
 				</button>
 				<div className="voice-status">
 					<div className="voice-status-label">{label}</div>
-					{sessionOn && (status === 'speaking' || status === 'thinking') && (
+					{sessionOn && status === 'thinking' && (
 						<button
 							type="button"
 							className="voice-interrupt"
@@ -120,18 +116,14 @@ function VoiceBarInner({ controller }: { controller: VoiceController }) {
 					⚙
 				</button>
 			</div>
-			{showSettings && <VoiceSettingsPanel controller={controller} />}
+			{showSettings && <VoiceSettingsPanel />}
 		</div>
 	)
 }
 
-function VoiceSettingsPanel({ controller }: { controller: VoiceController }) {
+function VoiceSettingsPanel() {
 	const tutorMode = useValue('voice.tutorMode', () => voiceSettings.tutorMode.get(), [])
-	const speak = useValue('voice.speak', () => voiceSettings.speak.get(), [])
 	const sttEngine = useValue('voice.sttEngine', () => voiceSettings.sttEngine.get(), [])
-	const openaiVoice = useValue('voice.openaiVoice', () => voiceSettings.openaiVoice.get(), [])
-	const rate = useValue('voice.rate', () => voiceSettings.rate.get(), [])
-	const sessionOn = useValue('voice.session', () => controller.$session.get(), [controller])
 
 	const sttSupported = isBrowserSttSupported()
 
@@ -145,45 +137,19 @@ function VoiceSettingsPanel({ controller }: { controller: VoiceController }) {
 				/>
 				Tutor mode (no screenshots, fewer tokens)
 			</label>
-			<label>
-				<input type="checkbox" checked={speak} onChange={(e) => voiceSettings.speak.set(e.target.checked)} />
-				Read replies aloud
-			</label>
 
 			<label className="voice-settings-row">
 				<span>Ears</span>
 				<select
 					value={sttEngine}
-					onChange={(e) => voiceSettings.sttEngine.set(e.target.value as 'browser' | 'openai')}
+					onChange={(e) => voiceSettings.sttEngine.set(e.target.value as 'browser' | 'openai' | 'groq')}
 				>
+					<option value="groq">Groq whisper-large-v3-turbo (free tier)</option>
 					<option value="browser" disabled={!sttSupported}>
 						Browser {sttSupported ? '(free)' : '(not supported here)'}
 					</option>
 					<option value="openai">OpenAI gpt-4o-mini-transcribe (~$0.003/min)</option>
 				</select>
-			</label>
-
-			<label className="voice-settings-row">
-				<span>Voice</span>
-				<select value={openaiVoice} onChange={(e) => voiceSettings.openaiVoice.set(e.target.value)}>
-					{OPENAI_VOICES.map((v) => (
-						<option key={v} value={v}>
-							{v} (OpenAI gpt-4o-mini-tts)
-						</option>
-					))}
-				</select>
-			</label>
-
-			<label className="voice-settings-row">
-				<span>Speed {rate.toFixed(2)}×</span>
-				<input
-					type="range"
-					min={0.7}
-					max={1.6}
-					step={0.05}
-					value={rate}
-					onChange={(e) => voiceSettings.rate.set(Number(e.target.value))}
-				/>
 			</label>
 
 			<label className="voice-settings-row">
@@ -196,14 +162,6 @@ function VoiceSettingsPanel({ controller }: { controller: VoiceController }) {
 					autoComplete="off"
 				/>
 			</label>
-
-			<button
-				type="button"
-				className="voice-test"
-				onClick={() => controller.say('Hi! I am your whiteboard tutor. Ask me to explain something and I will draw it.')}
-			>
-				Test voice
-			</button>
 		</div>
 	)
 }

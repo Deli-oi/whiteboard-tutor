@@ -1,25 +1,17 @@
 import { atom, Atom, JsonValue, react } from 'tldraw'
-import { ChatHistoryItem } from '../../shared/types/ChatHistoryItem'
 import type { TldrawAgent } from '../agent/TldrawAgent'
 import { createStt, SttEngineInstance } from './stt'
-import { prefetchTts, TtsQueue } from './tts'
 import { fetchLinksForPrompt } from './links'
-import { getVoiceSettings, voiceSettings } from './VoiceSettings'
+import { voiceSettings } from './VoiceSettings'
 
-export type VoiceStatus = 'idle' | 'listening' | 'thinking' | 'speaking'
+export type VoiceStatus = 'idle' | 'listening' | 'thinking'
 
 /**
- * Glue between the microphone, the agent and the speakers.
+ * Glue between the microphone and the agent.
  *
- * Listening: speech-to-text produces a final transcript, which is sent to the
- * agent exactly like a typed chat message.
- *
- * Speaking: the controller watches the agent's chat history. Every time a
- * `message` action *completes*, its text is queued for text-to-speech. Drawing
- * actions keep streaming onto the canvas while the sentence is being spoken,
- * which is what makes it feel like a tutor talking while they draw.
- *
- * Nothing here touches the model prompt, so voice adds zero LLM tokens.
+ * Voice is input-only: speech-to-text produces a final transcript, which is
+ * sent to the agent exactly like a typed chat message. Replies are text-only
+ * in chat - there is no text-to-speech.
  */
 export class VoiceController {
 	readonly $status: Atom<VoiceStatus>
@@ -28,25 +20,12 @@ export class VoiceController {
 
 	/**
 	 * Voice-chat session: one click starts it and the mic then stays live for
-	 * the whole conversation (pausing while the tutor speaks, so it doesn't
-	 * hear itself through the speakers) until you stop it yourself.
+	 * the whole conversation (reopening once the agent finishes a turn) until
+	 * you stop it yourself.
 	 */
 	readonly $session: Atom<boolean>
 
 	private stt: SttEngineInstance | null = null
-	private tts = new TtsQueue()
-
-	// Pacing: drawing actions wait until the most recent spoken sentence has started.
-	private sentencesQueued = 0
-	private sentencesStarted = 0
-
-	// Sentence streaming: how much of the current message action is already queued.
-	private msgSpokenChars = 0
-	private msgLastText = ''
-	private gateWaiters: (() => void)[] = []
-	/** Never hold the drawing longer than this if audio is slow or missing. */
-	private static GATE_TIMEOUT_MS = 8000
-	private spoken = new WeakSet<ChatHistoryItem>()
 	private disposers: (() => void)[] = []
 	private disposed = false
 
@@ -56,38 +35,16 @@ export class VoiceController {
 		this.$error = atom('voice.error', null)
 		this.$session = atom('voice.session', false)
 
-		// Don't read out history that was already on screen when the page loaded.
-		for (const item of agent.chat.getHistory()) this.spoken.add(item)
-
-		// Speaking happens in `gateAction` as sentences stream in, so the voice
-		// starts as soon as the first sentence exists instead of waiting for the
-		// model to finish it. History items are only tracked here for cancel logic.
-
-		// Pace the canvas to the voice.
-		agent.actionGate = (action) => this.gateAction(action)
+		// Keep the status atom in sync with the agent.
 		this.disposers.push(
-			() => {
-				if (agent.actionGate) agent.actionGate = null
-			},
-			this.tts.onStart(() => {
-				this.sentencesStarted++
-				this.releaseGate()
-			})
-		)
-
-		// Keep the status atom in sync with the agent and the TTS queue.
-		this.disposers.push(
-			this.tts.onChange(() => this.refreshStatus()),
-			this.tts.onError((message) => this.$error.set(message)),
 			react('voice: status from agent', () => {
-				agent.requests.isGenerating()
+				this.agent.requests.isGenerating()
 				this.refreshStatus()
 			})
 		)
 
 		// Session loop: whenever the session is on and everything has gone quiet,
-		// reopen the mic. The small delay keeps the tail of the tutor's audio out
-		// of the transcript.
+		// reopen the mic.
 		this.disposers.push(
 			react('voice: session loop', () => {
 				if (!this.$session.get() || this.$status.get() !== 'idle') return
@@ -103,114 +60,14 @@ export class VoiceController {
 				}, 400)
 			})
 		)
-
-		// Stop talking if the user cancels or starts a new request.
-		this.disposers.push(
-			react('voice: cancel speech on new prompt', () => {
-				const history = agent.chat.getHistory()
-				const last = history[history.length - 1]
-				if (last && last.type === 'prompt' && last.promptSource === 'user' && !this.spoken.has(last)) {
-					this.spoken.add(last)
-					this.tts.cancel()
-					this.resetGate()
-				}
-			})
-		)
-	}
-
-	private lastStatus: VoiceStatus = 'idle'
-
-	/**
-	 * Called before each streamed action is applied. Spoken sentences pass
-	 * straight through (and are counted). Everything else waits until the
-	 * latest sentence has begun playing, so the drawing lands during the
-	 * sentence that explains it.
-	 */
-	private async gateAction(action: { _type?: string; complete: boolean; text?: string }) {
-		if (this.disposed || !voiceSettings.speak.get()) return
-		if (action._type === 'message') {
-			this.speakStreamingMessage(action)
-			return
-		}
-		if (this.sentencesStarted >= this.sentencesQueued) return
-		await new Promise<void>((resolve) => {
-			const timer = setTimeout(() => {
-				this.gateWaiters = this.gateWaiters.filter((w) => w !== release)
-				resolve()
-			}, VoiceController.GATE_TIMEOUT_MS)
-			const release = () => {
-				clearTimeout(timer)
-				resolve()
-			}
-			this.gateWaiters.push(release)
-		})
-	}
-
-	/**
-	 * Speak a message action as it streams in: every finished sentence is sent
-	 * to text-to-speech immediately, so the voice starts within a couple of
-	 * seconds instead of after the whole paragraph is written.
-	 */
-	private speakStreamingMessage(action: { complete: boolean; text?: string }) {
-		const text = action.text ?? ''
-
-		// A fresh message (streaming restarted or a new action) resets the cursor.
-		if (!text.startsWith(this.msgLastText.slice(0, this.msgSpokenChars))) {
-			this.msgSpokenChars = 0
-		}
-		this.msgLastText = text
-
-		// Queue every completed sentence beyond what's already been queued.
-		const unspoken = text.slice(this.msgSpokenChars)
-		const boundary = /([.!?])(\s+|$)/g
-		let consumed = 0
-		let match: RegExpExecArray | null
-		while ((match = boundary.exec(unspoken)) !== null) {
-			const end = match.index + match[0].length
-			// Don't cut on abbreviations/decimals: require a few words of content.
-			if (end - consumed >= 12 || action.complete) {
-				this.enqueueSentence(unspoken.slice(consumed, end))
-				consumed = end
-			}
-		}
-
-		if (action.complete) {
-			this.enqueueSentence(unspoken.slice(consumed))
-			this.msgSpokenChars = 0
-			this.msgLastText = ''
-		} else {
-			this.msgSpokenChars += consumed
-		}
-	}
-
-	private enqueueSentence(fragment: string) {
-		const clean = stripMarkdown(fragment)
-		if (!clean) return
-		const settings = getVoiceSettings()
-		this.sentencesQueued++
-		this.tts.enqueue(clean, { voice: settings.openaiVoice, rate: settings.rate })
-	}
-
-	private releaseGate() {
-		const waiters = this.gateWaiters
-		this.gateWaiters = []
-		for (const w of waiters) w()
-	}
-
-	private resetGate() {
-		this.sentencesQueued = 0
-		this.sentencesStarted = 0
-		this.releaseGate()
 	}
 
 	private refreshStatus() {
 		if (this.disposed) return
 		let next: VoiceStatus = 'idle'
 		if (this.stt) next = 'listening'
-		else if (this.tts.isSpeaking()) next = 'speaking'
 		else if (this.agent.requests.isGenerating()) next = 'thinking'
 		if (this.$status.get() !== next) {
-			this.lastStatus = this.$status.get()
 			this.$status.set(next)
 		}
 	}
@@ -219,31 +76,12 @@ export class VoiceController {
 		return this.stt !== null
 	}
 
-	/** Openers spoken instantly while the model is still thinking. */
-	private static OPENERS = [
-		'Alright, let me draw this out.',
-		'Good question. Let me sketch it.',
-		'Okay, let us put this on the board.',
-		'Sure. Watch the board.',
-		'Let me show you.',
-	]
-	private nextOpener = Math.floor(Math.random() * VoiceController.OPENERS.length)
-
-	/** Start the microphone. Any speech in progress is cut off (barge-in). */
+	/** Start the microphone. Any request in progress is cut off (barge-in). */
 	async startListening() {
 		if (this.stt || this.disposed) return
 		this.$error.set(null)
-		this.tts.cancel()
-		this.resetGate()
 		this.$interim.set('')
 
-		// Warm up the opener audio so it can play the instant you stop talking.
-		if (voiceSettings.speak.get()) {
-			prefetchTts(
-				VoiceController.OPENERS[this.nextOpener],
-				voiceSettings.openaiVoice.get()
-			)?.catch(() => {})
-		}
 		const engine = voiceSettings.sttEngine.get()
 		const stt = createStt(engine, {
 			onInterim: (text) => this.$interim.set(text),
@@ -291,7 +129,7 @@ export class VoiceController {
 		void this.startListening()
 	}
 
-	/** End the session: stop the mic, the speech, and any running request. */
+	/** End the session: stop the mic and any running request. */
 	stopSession() {
 		this.$session.set(false)
 		this.stopEverything()
@@ -302,12 +140,10 @@ export class VoiceController {
 		else this.startSession()
 	}
 
-	/** Cut the tutor off mid-sentence and cancel the current request. */
+	/** Cancel the current request and stop listening. */
 	stopEverything() {
-		this.tts.cancel()
 		this.abortListening()
 		this.agent.cancel()
-		this.resetGate()
 	}
 
 	/** Send a transcript to the agent as if it had been typed. */
@@ -336,46 +172,12 @@ export class VoiceController {
 				data,
 			},
 		})
-
-		// Fill the model's thinking time with a short spoken acknowledgment.
-		// After the interrupt, so the new-prompt cancel doesn't wipe it.
-		if (voiceSettings.speak.get()) {
-			const opener = VoiceController.OPENERS[this.nextOpener]
-			this.nextOpener = (this.nextOpener + 1) % VoiceController.OPENERS.length
-			this.enqueueSentence(opener)
-		}
-	}
-
-	/** Speak an arbitrary line (used for the test button). */
-	say(text: string) {
-		const settings = getVoiceSettings()
-		this.tts.enqueue(text, {
-			voice: settings.openaiVoice,
-			rate: settings.rate,
-		})
 	}
 
 	dispose() {
 		this.disposed = true
 		this.abortListening()
-		this.tts.cancel()
-		this.releaseGate()
 		for (const d of this.disposers) d()
 		this.disposers = []
 	}
-}
-
-/** Text-to-speech reads punctuation literally, so strip the common markdown. */
-function stripMarkdown(text: string) {
-	return text
-		.replace(/```[\s\S]*?```/g, ' ')
-		.replace(/`([^`]*)`/g, '$1')
-		.replace(/\*\*([^*]*)\*\*/g, '$1')
-		.replace(/\*([^*]*)\*/g, '$1')
-		.replace(/^#+\s*/gm, '')
-		.replace(/^\s*[-*]\s+/gm, '')
-		.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-		.replace(/->/g, ' to ')
-		.replace(/\s+/g, ' ')
-		.trim()
 }

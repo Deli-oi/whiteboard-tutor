@@ -339,17 +339,11 @@ button.chat-context-select.active {
 	animation: voice-pulse 1.2s ease-in-out infinite;
 }
 
-.voice-mic--speaking {
-	background: var(--tl-color-primary);
-	border-color: var(--tl-color-primary-hover);
-	color: white;
-}
-
 .voice-mic--thinking {
 	opacity: 0.7;
 }
 
-.voice-mic--session:not(.voice-mic--listening):not(.voice-mic--speaking) {
+.voice-mic--session:not(.voice-mic--listening) {
 	border-color: var(--tl-color-primary);
 }
 
@@ -454,18 +448,6 @@ button.chat-context-select.active {
 	border: 1px solid var(--tl-color-low);
 	border-radius: 4px;
 	padding: 2px 4px;
-}
-
-.voice-test {
-	align-self: flex-start;
-	appearance: none;
-	border: 1px solid var(--tl-color-low);
-	background: var(--tl-color-muted-2);
-	color: var(--tl-color-text-1);
-	border-radius: 4px;
-	padding: 3px 8px;
-	font-size: 11px;
-	cursor: pointer;
 }
 
 .new-chat-button {

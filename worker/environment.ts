@@ -5,6 +5,12 @@ export interface Environment {
 	GOOGLE_API_KEY: string
 
 	/**
+	 * Optional. Powers the Groq Whisper-large-v3-turbo transcription engine
+	 * (free tier, sub-second, works in any browser). Get one at console.groq.com.
+	 */
+	GROQ_API_KEY?: string
+
+	/**
 	 * Optional. When set, every API route requires `Authorization: Bearer <token>`.
 	 * Set it before deploying publicly, otherwise anyone can spend your credits.
 	 * Users paste the same token into the settings drawer once.
