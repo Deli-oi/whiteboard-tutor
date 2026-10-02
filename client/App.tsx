@@ -18,6 +18,7 @@ import { ChatPanel } from './components/ChatPanel'
 import { ChatPanelFallback } from './components/ChatPanelFallback'
 import { CustomHelperButtons } from './components/CustomHelperButtons'
 import { AgentHighlightOverlayUtil } from './overlays/AgentHighlightOverlayUtil'
+import { reportError } from './sentry'
 import { HtmlShapeUtil } from './shapes/HtmlShapeUtil'
 import { TargetAreaTool } from './tools/TargetAreaTool'
 import { TargetShapeTool } from './tools/TargetShapeTool'
@@ -99,7 +100,7 @@ function App() {
 						<TldrawAgentAppProvider onMount={setApp} onUnmount={handleUnmount} />
 					</Tldraw>
 				</div>
-				<ErrorBoundary fallback={ChatPanelFallback}>
+				<ErrorBoundary fallback={ChatPanelFallback} onError={reportError}>
 					{app && (
 						<TldrawAgentAppContextProvider app={app}>
 							<ChatPanel />

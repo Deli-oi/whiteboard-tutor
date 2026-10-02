@@ -134,11 +134,10 @@ Done, from a 2026-10-02 full-project audit (3 parallel reviews of the backend/wo
 - **`mermaid`** and **`chart.js`**, vendored locally like KaTeX (`public/vendor/mermaid/`, `public/vendor/chartjs/`) — `createHtml` now points at them for diagram/chart-shaped requests instead of hand-drawn SVG, verified live.
 - **`@mozilla/readability` + `linkedom`** replaced `fetchLink.ts`'s regex-based HTML stripper with real reader-mode extraction.
 - Validation (Zod) at the DO request boundary and on every completed action; a cross-field refine on the comparison table schema; one bad action no longer kills every action after it in the same turn; IP-keyed rate limiting; `fetchLink`'s SSRF guard hardened against numeric IP literals and open redirects; dead dependencies removed; per-tab board URL isolation.
+- **`axe-core`** (plain engine, not `@axe-core/react` — that wrapper's own README says it doesn't support React 18+, and this app is on React 19), vendored and script-injected in dev mode (`client/devA11y.ts`). A live scan found 2 real violations (`landmark-one-main`, `page-has-heading-one`), fixed in `App.tsx` (wrapped in `<main>`, added a visually-hidden `<h1>`) and reverified live. A later scan surfaced 2 more (`color-contrast`, `select-name`) — not yet fixed.
+- **Sentry** (`@sentry/cloudflare` + `@sentry/browser`), optional via `SENTRY_DSN`/`VITE_SENTRY_DSN` — unset by default, same as every other optional key. Two things worth knowing if you touch this again: (1) `@sentry/cloudflare` requires the `nodejs_compat` compatibility flag (now set in `wrangler.toml`) — without it the dev server fails to even start, since its barrel export statically pulls in `node:async_hooks`/`node:diagnostics_channel` regardless of which named export you actually use; confirmed the unused parts (Postgres/Firestore/LangChain integrations etc.) do get tree-shaken out of the real `wrangler deploy` bundle, this only bites the dev-mode dep optimizer. (2) Adding it to `package.json` while the dev server was running hit Dropbox's file-locking (same class of issue as the `node_modules` NTFS-junction fragility documented below) during the dep-optimizer's atomic rename — fixed by moving Vite's `cacheDir` (`vite.config.ts`) outside the Dropbox-synced folder entirely, which also protects future dependency additions from the same race.
 
-Still open:
-- **`@axe-core/react`** (dev-mode accessibility scanning) and a live accessibility pass — next up.
-- **Sentry** (or similar) for production error tracking once this is actually deployed publicly — `[observability] enabled = true` in `wrangler.toml` gives Cloudflare's own basic tracing, not exception tracking.
-- Full details of the audit and what's covered: see project memory (`project_study_buddy_state.md`).
+That audit (2026-10-02) is now fully closed out — see project memory (`project_study_buddy_state.md`) for the write-up.
 
 ## Running this fork at $0 (verified against the live app, not just docs)
 

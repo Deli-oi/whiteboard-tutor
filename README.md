@@ -105,7 +105,11 @@ The API routes (`/stream`, `/transcribe`, `/transcribe-groq`, `/fetch`) spend yo
 - **`ACCESS_TOKEN`**: when set, every request must send it as a bearer token. Paste the same value into the settings drawer (gear icon, "Access token") in each browser you use. Pick something long and random.
 - **`ALLOWED_ORIGINS`**: comma-separated list of origins allowed to call the API. Defaults to the worker's own origin. Local dev on localhost is always allowed.
 
-There is no per-user rate limit yet, so the token is what stands between a leaked URL and your bill.
+There's also an IP-keyed rate limit (20 requests/60s), on by default, as a backstop beneath both of the above.
+
+### Optional: error tracking
+
+Set `SENTRY_DSN` (worker secret, see above) and `VITE_SENTRY_DSN` (in a `.env.local` file, read by Vite at build time — see `.env.example`) to send uncaught exceptions to [Sentry](https://sentry.io) (free tier). Leave both unset and nothing changes — no network calls, and `@sentry/browser` is fully tree-shaken out of the client bundle.
 
 ## Project layout
 

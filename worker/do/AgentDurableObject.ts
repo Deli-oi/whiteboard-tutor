@@ -1,3 +1,4 @@
+import { captureException, flush } from '@sentry/cloudflare'
 import { DurableObject } from 'cloudflare:workers'
 import { AutoRouter, error, IRequest } from 'itty-router'
 import { AgentPrompt } from '../../shared/types/AgentPrompt'
@@ -32,6 +33,7 @@ export class AgentDurableObject extends DurableObject<Environment> {
 	private readonly router = AutoRouter({
 		catch: (e) => {
 			console.error(e)
+			captureException(e)
 			return error(e)
 		},
 	})
@@ -82,6 +84,12 @@ export class AgentDurableObject extends DurableObject<Environment> {
 				await writer.close()
 			} catch (error: any) {
 				console.error('Stream error:', error)
+				captureException(error)
+				// This runs detached from the request that triggered it (the
+				// Response was already returned above) - instrumentDurableObjectWithSentry's
+				// own flush-on-return has likely already fired by now, so flush
+				// explicitly or the event may never leave the isolate.
+				this.ctx.waitUntil(flush(2000))
 
 				// Send error through the stream
 				const errorData = `data: ${JSON.stringify({ error: error.message })}\n\n`

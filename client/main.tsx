@@ -3,7 +3,9 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import { initDevAccessibilityCheck } from './devA11y'
 import './index.css'
+import { initSentry } from './sentry'
 
+initSentry()
 initDevAccessibilityCheck()
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(

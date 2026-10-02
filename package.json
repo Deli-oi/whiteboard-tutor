@@ -23,6 +23,8 @@
 		"@cloudflare/vite-plugin": "^1.29.1",
 		"@dagrejs/dagre": "^3.1.1",
 		"@mozilla/readability": "^0.6.0",
+		"@sentry/browser": "^11.4.0",
+		"@sentry/cloudflare": "^11.4.0",
 		"@tldraw/tlschema": "^5.4.2",
 		"ai": "^5.0.194",
 		"itty-router": "^5.0.18",

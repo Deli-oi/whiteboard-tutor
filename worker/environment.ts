@@ -29,4 +29,11 @@ export interface Environment {
 	 * and issues (60/hour without one) and allows private repos you can see.
 	 */
 	GITHUB_TOKEN?: string
+
+	/**
+	 * Optional. Sends uncaught worker/durable-object exceptions to Sentry.
+	 * Get a DSN at sentry.io (free tier). Unset by default - no cost, no
+	 * network calls, same as every other optional key here.
+	 */
+	SENTRY_DSN?: string
 }

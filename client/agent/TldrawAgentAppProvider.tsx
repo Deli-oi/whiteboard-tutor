@@ -1,5 +1,6 @@
 import { createContext, memo, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 import { useEditor, useToasts, useValue } from 'tldraw'
+import { reportError } from '../sentry'
 import { TldrawAgent } from './TldrawAgent'
 import { TldrawAgentApp } from './TldrawAgentApp'
 
@@ -70,6 +71,7 @@ export const TldrawAgentAppProvider = memo(function TldrawAgentAppProvider({
 				severity: 'error',
 			})
 			console.error(e)
+			reportError(e)
 		},
 		[toasts]
 	)
