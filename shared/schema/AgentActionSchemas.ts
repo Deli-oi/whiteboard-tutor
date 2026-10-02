@@ -225,6 +225,10 @@ export const CreateComparisonTableAction = z
 			})
 		),
 	})
+	.refine((action) => action.rows.every((row) => row.values.length === action.columns.length), {
+		message: 'Each row.values must have exactly one entry per column',
+		path: ['rows'],
+	})
 	.meta({
 		title: 'Create Comparison Table',
 		description:

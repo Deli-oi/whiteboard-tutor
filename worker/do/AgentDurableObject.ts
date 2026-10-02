@@ -1,6 +1,7 @@
 import { DurableObject } from 'cloudflare:workers'
 import { AutoRouter, error, IRequest } from 'itty-router'
 import { AgentPrompt } from '../../shared/types/AgentPrompt'
+import { AgentPromptSchema } from '../../shared/types/AgentPromptSchema'
 import { Environment } from '../environment'
 import { AgentService, AgentStreamEvent } from './AgentService'
 
@@ -50,6 +51,18 @@ export class AgentDurableObject extends DurableObject<Environment> {
 	 * @returns A Promise that resolves to a Response object containing the streamed changes.
 	 */
 	private async stream(request: Request): Promise<Response> {
+		let body: unknown
+		try {
+			body = await request.json()
+		} catch {
+			return new Response('Request body must be valid JSON', { status: 400 })
+		}
+		const parsed = AgentPromptSchema.safeParse(body)
+		if (!parsed.success) {
+			return new Response(`Malformed prompt: ${parsed.error.message}`, { status: 400 })
+		}
+		const prompt = parsed.data as unknown as AgentPrompt
+
 		const encoder = new TextEncoder()
 		const { readable, writable } = new TransformStream()
 		const writer = writable.getWriter()
@@ -58,8 +71,6 @@ export class AgentDurableObject extends DurableObject<Environment> {
 
 		;(async () => {
 			try {
-				const prompt = (await request.json()) as AgentPrompt
-
 				for await (const change of this.service.stream(prompt)) {
 					response.changes.push(change)
 					this.logIfFallback(change)

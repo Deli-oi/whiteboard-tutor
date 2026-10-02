@@ -14,7 +14,7 @@ import {
 	isValidModelName,
 } from '../../shared/models'
 import { DebugPart } from '../../shared/schema/PromptPartDefinitions'
-import { AgentAction } from '../../shared/types/AgentAction'
+import { AgentAction, getActionSchema } from '../../shared/types/AgentAction'
 import { AgentPrompt } from '../../shared/types/AgentPrompt'
 import { AgentUsage } from '../../shared/types/AgentUsage'
 import { Streaming } from '../../shared/types/Streaming'
@@ -24,6 +24,27 @@ import { buildSystemPrompt } from '../prompt/buildSystemPrompt'
 import { getModelName } from '../prompt/getModelName'
 import { closeAndParseJson } from './closeAndParseJson'
 import { normalizeModelText } from './normalizeModelText'
+
+/**
+ * Validates a completed action against its own Zod schema (which may include
+ * cross-field `.refine()` invariants the loose parse above can't catch, e.g.
+ * a comparison table row with the wrong number of values) and warns loudly
+ * if it fails. Doesn't block the action - a weak model's imperfect output
+ * still renders defensively on the client (see e.g. the comparison table's
+ * visible "(missing)" placeholder) - this is purely for server-side
+ * visibility into exactly which actions come back malformed and how.
+ */
+function warnIfActionInvalid(action: AgentAction): void {
+	const schema = getActionSchema(action._type)
+	if (!schema) return
+	const result = schema.safeParse(action)
+	if (!result.success) {
+		console.warn(
+			`[AgentService] Model produced an invalid "${action._type}" action:`,
+			result.error.issues
+		)
+	}
+}
 
 export class AgentService {
 	openai: OpenAIProvider
@@ -183,6 +204,7 @@ export class AgentService {
 					if (actions.length > cursor) {
 						const action = actions[cursor - 1] as AgentAction
 						if (action) {
+							warnIfActionInvalid(action)
 							yield {
 								...action,
 								complete: true,
@@ -215,6 +237,7 @@ export class AgentService {
 
 				// If we've finished receiving events, but there's still an incomplete event, we need to complete it
 				if (maybeIncompleteAction) {
+					warnIfActionInvalid(maybeIncompleteAction)
 					yield {
 						...maybeIncompleteAction,
 						complete: true,
