@@ -1,4 +1,5 @@
 import { atom, Atom, react } from 'tldraw'
+import { isBrowserSttSupported } from './stt'
 
 export type SttEngine = 'browser' | 'openai' | 'groq'
 
@@ -8,9 +9,13 @@ export type SttEngine = 'browser' | 'openai' | 'groq'
  * Voice is input-only: speech goes in via `sttEngine`, replies are text-only in
  * chat. There is no text-to-speech.
  *
- * Default: Groq's hosted whisper-large-v3-turbo (free tier, sub-second, needs
- * GROQ_API_KEY on the worker). The browser's own free speech recognition and
- * OpenAI ears (~$0.003/min, needs OPENAI_API_KEY) are also available.
+ * Default: the browser's own free speech recognition where it's supported
+ * (Chrome/Edge/Safari) - zero network round-trip, so it streams interim
+ * results as you talk, which matters given latency is this project's stated
+ * #1 priority. Falls back to Groq's hosted whisper-large-v3-turbo (free tier,
+ * still sub-second, needs GROQ_API_KEY) where the browser API isn't available
+ * (Firefox). OpenAI ears (~$0.003/min, needs OPENAI_API_KEY) are also
+ * available as a paid accuracy upgrade.
  */
 export interface VoiceSettingsValues {
 	/** Use the lean, voice-first `tutor` agent mode (no screenshots). */
@@ -21,12 +26,15 @@ export interface VoiceSettingsValues {
 
 const STORAGE_KEY = 'whiteboard-tutor:voice-settings'
 
-const DEFAULTS: VoiceSettingsValues = {
-	tutorMode: true,
-	sttEngine: 'groq',
+function defaults(): VoiceSettingsValues {
+	return {
+		tutorMode: true,
+		sttEngine: isBrowserSttSupported() ? 'browser' : 'groq',
+	}
 }
 
 function load(): VoiceSettingsValues {
+	const DEFAULTS = defaults()
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY)
 		if (!raw) return DEFAULTS
