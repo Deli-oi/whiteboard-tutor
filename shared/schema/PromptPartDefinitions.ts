@@ -59,6 +59,17 @@ export interface PeripheralShapesPart {
 	clusters: PeripheralShapeCluster[]
 }
 
+/**
+ * Pasted/dropped images that are selected or within the current request's bounds
+ * (e.g. a screenshot of a question, pasted onto the canvas and circled). Unlike
+ * `ScreenshotPart`, this is cheap to include in every mode (including tutor):
+ * it's empty - and costs nothing - unless an image shape is actually relevant.
+ */
+export interface ImageContextPart {
+	type: 'imageContext'
+	images: { shapeId: SimpleShapeId; dataUrl: string }[]
+}
+
 export interface ScreenshotPart {
 	type: 'screenshot'
 	screenshot: string
@@ -418,6 +429,25 @@ export const PeripheralShapesPartDefinition: PromptPartDefinition<PeripheralShap
 			"There are some groups of shapes in your peripheral vision, outside the your main view. You can't make out their details or content. If you want to see their content, you need to get closer. The groups are as follows",
 			JSON.stringify(clusters),
 		]
+	},
+}
+
+// Image context (pasted screenshots, selected or circled)
+export const ImageContextPartDefinition: PromptPartDefinition<ImageContextPart> = {
+	type: 'imageContext',
+	priority: -41, // alongside the screenshot
+	buildContent: ({ images }) => {
+		if (images.length === 0) return []
+
+		const content: string[] = [
+			images.length === 1
+				? 'The user has an image on the canvas that is selected or circled (shape id below). Read any text, questions, diagrams, or problems in it and use that as real content - do not say you cannot view images.'
+				: `The user has ${images.length} images on the canvas that are selected or circled. Read any text, questions, diagrams, or problems in each and use that as real content - do not say you cannot view images.`,
+		]
+		for (const { shapeId, dataUrl } of images) {
+			content.push(`Image (shape id: ${shapeId}):`, dataUrl)
+		}
+		return content
 	},
 }
 
