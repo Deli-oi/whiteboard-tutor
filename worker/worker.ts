@@ -3,6 +3,7 @@ import { WorkerEntrypoint } from 'cloudflare:workers'
 import { AutoRouter, cors, error, IRequest } from 'itty-router'
 import { checkAccess } from './auth'
 import { Environment } from './environment'
+import { rateLimit } from './rateLimit'
 import { fallbackLogs } from './routes/fallbackLogs'
 import { fetchLink } from './routes/fetchLink'
 import { stream } from './routes/stream'
@@ -16,7 +17,7 @@ const { preflight, corsify } = cors({
 })
 
 const router = AutoRouter<IRequest, [env: Environment, ctx: ExecutionContext]>({
-	before: [preflight, (request, env) => checkAccess(request, env) ?? undefined],
+	before: [preflight, (request, env) => checkAccess(request, env) ?? undefined, rateLimit],
 	finally: [corsify],
 	catch: (e) => {
 		console.error(e)

@@ -38,6 +38,7 @@ export class AgentDurableObject extends DurableObject<Environment> {
 		.post('/stream', (request) => this.stream(request))
 		.get('/fallback-logs', () => this.getFallbackLogs())
 		.get('/fallback-logs/:id', (request) => this.getFallbackLog(request))
+		.post('/check-rate-limit', () => this.checkRateLimit())
 
 	// `fetch` is the entry point for all requests to the Durable Object
 	override fetch(request: Request): Response | Promise<Response> {
@@ -140,5 +141,55 @@ export class AgentDurableObject extends DurableObject<Environment> {
 		return new Response(JSON.stringify(rows[0]), {
 			headers: { 'Content-Type': 'application/json' },
 		})
+	}
+
+	/**
+	 * Fixed-window rate limit (60s windows, 20 requests/window). This class is
+	 * reused for this purpose rather than adding a dedicated DO binding: the
+	 * worker derives this instance's id from the caller's IP
+	 * (`idFromName('ratelimit:' + ip)`), a completely separate instance from
+	 * that same IP's actual per-session conversation DO. Defense in depth
+	 * beyond ACCESS_TOKEN, which is optional and does nothing if left unset.
+	 */
+	private checkRateLimit(): Response {
+		const WINDOW_MS = 60_000
+		const MAX_PER_WINDOW = 20
+
+		this.ctx.storage.sql.exec(`
+			CREATE TABLE IF NOT EXISTS rate_limit (
+				window_start INTEGER NOT NULL,
+				count INTEGER NOT NULL
+			)
+		`)
+
+		const now = Date.now()
+		const windowStart = Math.floor(now / WINDOW_MS) * WINDOW_MS
+
+		const rows = [...this.ctx.storage.sql.exec('SELECT window_start, count FROM rate_limit LIMIT 1')] as {
+			window_start: number
+			count: number
+		}[]
+
+		let count: number
+		if (rows.length === 0) {
+			count = 1
+			this.ctx.storage.sql.exec(
+				'INSERT INTO rate_limit (window_start, count) VALUES (?, ?)',
+				windowStart,
+				count
+			)
+		} else if (rows[0].window_start !== windowStart) {
+			count = 1
+			this.ctx.storage.sql.exec(
+				'UPDATE rate_limit SET window_start = ?, count = ?',
+				windowStart,
+				count
+			)
+		} else {
+			count = rows[0].count + 1
+			this.ctx.storage.sql.exec('UPDATE rate_limit SET count = ?', count)
+		}
+
+		return Response.json({ allowed: count <= MAX_PER_WINDOW, count, limit: MAX_PER_WINDOW })
 	}
 }
