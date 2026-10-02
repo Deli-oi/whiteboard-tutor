@@ -1,14 +1,13 @@
 import type { TldrawAgent } from '../agent/TldrawAgent'
-import type { VoiceController } from '../voice/VoiceController'
 
 /**
  * Replays a scripted "load balancer" lesson through the real action pipeline.
  *
- * Open the app with `?demo` to see (and hear) the experience without any API
- * key. The actions are the same kinds a model emits: `message` (spoken) and
- * `create` (drawn). Only the source is different: a script instead of a model.
+ * Open the app with `?demo` to see the experience without any API key. The
+ * actions are the same kinds a model emits: `message` (chat text) and `create`
+ * (drawn). Only the source is different: a script instead of a model.
  */
-export async function runDemoLesson(agent: TldrawAgent, controller: VoiceController) {
+export async function runDemoLesson(agent: TldrawAgent) {
 	const { editor } = agent
 	const params = new URLSearchParams(window.location.search)
 	const delay = Number(params.get('delay') ?? 700)
@@ -116,5 +115,4 @@ export async function runDemoLesson(agent: TldrawAgent, controller: VoiceControl
 		editor.selectNone()
 		await new Promise((r) => setTimeout(r, delay))
 	}
-	void controller
 }
