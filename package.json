@@ -12,6 +12,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"test": "vitest run",
 		"deploy": "vite build && wrangler deploy --config dist/whiteboard_tutor/wrangler.json"
 	},
 	"dependencies": {
@@ -20,6 +21,7 @@
 		"@ai-sdk/groq": "^2.0.57",
 		"@ai-sdk/openai": "^2.0.106",
 		"@cloudflare/vite-plugin": "^1.29.1",
+		"@dagrejs/dagre": "^3.1.1",
 		"@tldraw/tlschema": "^5.4.2",
 		"ai": "^5.0.194",
 		"itty-router": "^5.0.18",
@@ -38,7 +40,8 @@
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^6.0.1",
 		"typescript": "^5.8.3",
-		"vite": "^8.0.16"
+		"vite": "^8.0.16",
+		"vitest": "^5.0.3"
 	},
 	"description": "Voice-driven whiteboard tutor built on the tldraw agent starter kit. Speak a question, hear the answer, watch it drawn.",
 	"repository": {
