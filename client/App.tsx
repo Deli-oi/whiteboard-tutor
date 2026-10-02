@@ -84,7 +84,8 @@ function App() {
 
 	return (
 		<TldrawUiToastsProvider>
-			<div className="tldraw-agent-container">
+			<main className="tldraw-agent-container">
+				<h1 className="sr-only">Whiteboard Tutor - voice and chat AI tutor with a drawing canvas</h1>
 				<div className="tldraw-canvas">
 					<Tldraw
 						key={activeBoardId}
@@ -105,7 +106,7 @@ function App() {
 						</TldrawAgentAppContextProvider>
 					)}
 				</ErrorBoundary>
-			</div>
+			</main>
 		</TldrawUiToastsProvider>
 	)
 }
