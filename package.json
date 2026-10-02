@@ -20,11 +20,8 @@
 		"@ai-sdk/groq": "^2.0.57",
 		"@ai-sdk/openai": "^2.0.106",
 		"@cloudflare/vite-plugin": "^1.29.1",
-		"@google/generative-ai": "^0.24.1",
 		"@tldraw/tlschema": "^5.4.2",
-		"@worker-tools/json-stream": "^0.1.0-pre.12",
 		"ai": "^5.0.194",
-		"best-effort-json-parser": "^1.1.3",
 		"itty-router": "^5.0.18",
 		"katex": "^0.19.0",
 		"react": "^19.2.1",
@@ -46,12 +43,12 @@
 	"description": "Voice-driven whiteboard tutor built on the tldraw agent starter kit. Speak a question, hear the answer, watch it drawn.",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/harjothkhara/whiteboard-tutor.git"
+		"url": "https://github.com/Deli-oi/whiteboard-tutor.git"
 	},
 	"bugs": {
-		"url": "https://github.com/harjothkhara/whiteboard-tutor/issues"
+		"url": "https://github.com/Deli-oi/whiteboard-tutor/issues"
 	},
-	"homepage": "https://github.com/harjothkhara/whiteboard-tutor#readme",
+	"homepage": "https://github.com/Deli-oi/whiteboard-tutor#readme",
 	"keywords": [
 		"tldraw",
 		"whiteboard",
@@ -59,8 +56,8 @@
 		"tutor",
 		"ai",
 		"claude",
-		"openai",
-		"text-to-speech",
+		"gemini",
+		"groq",
 		"speech-recognition",
 		"cloudflare-workers"
 	],

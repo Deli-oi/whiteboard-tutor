@@ -15,16 +15,16 @@ async function readAudio(request: IRequest): Promise<File | Response> {
 	return audio
 }
 
-/**
- * Speech-to-text proxy: OpenAI.
- *
- * Optional upgrade over the browser's built-in Web Speech API (for Firefox, or
- * better accuracy): forwards a short audio clip to OpenAI's cheapest
- * transcription model (`gpt-4o-mini-transcribe`, roughly $0.003 per minute).
- */
-export async function transcribe(request: IRequest, env: Environment) {
-	if (!env.OPENAI_API_KEY) {
-		return new Response('OPENAI_API_KEY is not set on the worker', { status: 503 })
+interface TranscriptionProvider {
+	apiKey: string | undefined
+	missingKeyMessage: string
+	url: string
+	model: string
+}
+
+async function proxyTranscription(request: IRequest, provider: TranscriptionProvider) {
+	if (!provider.apiKey) {
+		return new Response(provider.missingKeyMessage, { status: 503 })
 	}
 
 	const audio = await readAudio(request)
@@ -32,12 +32,12 @@ export async function transcribe(request: IRequest, env: Environment) {
 
 	const form = new FormData()
 	form.append('file', audio, audio.name || 'clip.webm')
-	form.append('model', 'gpt-4o-mini-transcribe')
+	form.append('model', provider.model)
 	form.append('response_format', 'json')
 
-	const upstream = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+	const upstream = await fetch(provider.url, {
 		method: 'POST',
-		headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}` },
+		headers: { Authorization: `Bearer ${provider.apiKey}` },
 		body: form,
 	})
 
@@ -51,6 +51,22 @@ export async function transcribe(request: IRequest, env: Environment) {
 }
 
 /**
+ * Speech-to-text proxy: OpenAI.
+ *
+ * Optional upgrade over the browser's built-in Web Speech API (for Firefox, or
+ * better accuracy): forwards a short audio clip to OpenAI's cheapest
+ * transcription model (`gpt-4o-mini-transcribe`, roughly $0.003 per minute).
+ */
+export async function transcribe(request: IRequest, env: Environment) {
+	return proxyTranscription(request, {
+		apiKey: env.OPENAI_API_KEY,
+		missingKeyMessage: 'OPENAI_API_KEY is not set on the worker',
+		url: 'https://api.openai.com/v1/audio/transcriptions',
+		model: 'gpt-4o-mini-transcribe',
+	})
+}
+
+/**
  * Speech-to-text proxy: Groq.
  *
  * Forwards a short audio clip to Groq's hosted whisper-large-v3-turbo. Free up
@@ -58,29 +74,10 @@ export async function transcribe(request: IRequest, env: Environment) {
  * second for push-to-talk-length clips. The default engine for this project.
  */
 export async function transcribeGroq(request: IRequest, env: Environment) {
-	if (!env.GROQ_API_KEY) {
-		return new Response('GROQ_API_KEY is not set on the worker', { status: 503 })
-	}
-
-	const audio = await readAudio(request)
-	if (audio instanceof Response) return audio
-
-	const form = new FormData()
-	form.append('file', audio, audio.name || 'clip.webm')
-	form.append('model', 'whisper-large-v3-turbo')
-	form.append('response_format', 'json')
-
-	const upstream = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-		method: 'POST',
-		headers: { Authorization: `Bearer ${env.GROQ_API_KEY}` },
-		body: form,
+	return proxyTranscription(request, {
+		apiKey: env.GROQ_API_KEY,
+		missingKeyMessage: 'GROQ_API_KEY is not set on the worker',
+		url: 'https://api.groq.com/openai/v1/audio/transcriptions',
+		model: 'whisper-large-v3-turbo',
 	})
-
-	if (!upstream.ok) {
-		const message = await upstream.text()
-		return new Response(`Transcription failed: ${message}`, { status: upstream.status })
-	}
-
-	const result = (await upstream.json()) as { text?: string }
-	return Response.json({ text: result.text ?? '' })
 }

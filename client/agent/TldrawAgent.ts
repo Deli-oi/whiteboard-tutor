@@ -275,7 +275,7 @@ export class TldrawAgent {
 		const modeDefinition = this.mode.getCurrentModeDefinition()
 		if (!modeDefinition.active) {
 			throw new Error(
-				`Fairy is not in an active mode so can't act right now. Current mode: ${modeDefinition.type}`
+				`Agent is not in an active mode so can't act right now. Current mode: ${modeDefinition.type}`
 			)
 		}
 
