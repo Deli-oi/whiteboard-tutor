@@ -1,15 +1,27 @@
 # Copy this file to .dev.vars and paste your keys. wrangler reads it in local dev.
 # For production set the same names as secrets: npx wrangler secret put OPENAI_API_KEY
 
-# Required: the tutor's voice (gpt-4o-mini-tts). Also unlocks the gpt-5.6-* models
-# and the optional OpenAI speech recognition.
+# Running at $0: you need GROQ_API_KEY (ears) + GOOGLE_API_KEY (brain) and nothing
+# else. OPENAI_API_KEY and ANTHROPIC_API_KEY below are paid upgrades, not required.
+
+# Required for the default STT engine (Groq whisper-large-v3-turbo, free tier).
+# Get one at console.groq.com. Without it, switch Ears to Browser or OpenAI.
+GROQ_API_KEY=
+
+# Required for the default brain model (gemini-3.1-flash-lite, free tier, no card
+# needed). Get one at aistudio.google.com/apikey. Groq's own free tier can't run
+# this app's full prompt (its 8,000 tokens/minute cap is below this app's ~11.5k
+# token minimum request) — see ARCHITECTURE.md for how that was confirmed.
+GOOGLE_API_KEY=
+
+# Optional paid upgrade: OpenAI speech recognition (~$0.003/min) as an Ears
+# alternative, and unlocks the gpt-5.6-* models. Not needed for the default
+# $0 setup. There is no text-to-speech in this app - replies are text-only.
 OPENAI_API_KEY=
 
-# The default model is claude-sonnet-5, so you want this one too.
+# Optional paid upgrade: switch the model dropdown to claude-opus-5/sonnet-5/haiku-4-5.
+# Your claude.ai subscription does NOT cover this — it's a separate, billed API key.
 ANTHROPIC_API_KEY=
-
-# Only if you want to use Gemini.
-GOOGLE_API_KEY=
 
 # Optional, recommended before deploying publicly. When set, every API call must
 # carry this token; paste the same value into the settings drawer in the app.

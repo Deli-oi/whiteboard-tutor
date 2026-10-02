@@ -39,3 +39,4 @@ tldraw note: runs free on localhost (dev mode). Production deploy needs a tldraw
 
 ## Working style
 Casual and direct. Recommend one option instead of listing five. Tell me when something is a bad idea.
+Commit more often. Don't let a whole session of fixes/features pile up uncommitted - make a commit after each discrete, working change (one bug fix, one new tool, one refactor), not one giant commit at the end. Small commits make it possible to find when something broke and to roll back just the bad part.
