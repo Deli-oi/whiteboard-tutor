@@ -39,21 +39,71 @@ export async function fetchLink(request: IRequest, env: Environment) {
 	}
 }
 
-function isPrivateHost(host: string) {
-	const h = host.toLowerCase()
-	return (
+/**
+ * Blocks internal/private hosts, including numeric-IP forms that a plain
+ * dotted-quad regex check misses (decimal/hex literals both resolve to a
+ * real IP - `http://2130706433/` is `http://127.0.0.1/`) and the IPv6
+ * private/link-local ranges beyond the literal `::1`.
+ */
+export function isPrivateHost(host: string): boolean {
+	const h = host.toLowerCase().replace(/^\[|\]$/g, '')
+
+	if (
 		h === 'localhost' ||
 		h.endsWith('.localhost') ||
 		h.endsWith('.local') ||
-		h.endsWith('.internal') ||
-		/^127\./.test(h) ||
-		/^10\./.test(h) ||
-		/^192\.168\./.test(h) ||
-		/^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
-		/^169\.254\./.test(h) ||
-		h === '0.0.0.0' ||
-		h === '::1' ||
-		h.startsWith('[')
+		h.endsWith('.internal')
+	) {
+		return true
+	}
+
+	if (h.includes(':')) return isPrivateIPv6(h)
+
+	const asIPv4 = parseIPv4Literal(h)
+	if (asIPv4) return isPrivateIPv4(asIPv4)
+
+	return false
+}
+
+/** Parses dotted-quad, bare-decimal, and hex IPv4 literals into 4 octets. */
+function parseIPv4Literal(host: string): [number, number, number, number] | null {
+	// Bare decimal (e.g. "2130706433") or bare hex ("0x7f000001") - a single
+	// 32-bit integer encoding the whole address.
+	if (/^\d+$/.test(host) || /^0x[0-9a-f]+$/.test(host)) {
+		const n = Number(host)
+		if (!Number.isFinite(n) || n < 0 || n > 0xffffffff) return null
+		return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]
+	}
+
+	const parts = host.split('.')
+	if (parts.length !== 4) return null
+	const octets: number[] = []
+	for (const part of parts) {
+		if (!/^(0x[0-9a-f]+|\d+)$/.test(part)) return null
+		const n = Number(part)
+		if (!Number.isFinite(n) || n < 0 || n > 255) return null
+		octets.push(n)
+	}
+	return octets as [number, number, number, number]
+}
+
+function isPrivateIPv4([a, b]: [number, number, number, number]): boolean {
+	return (
+		a === 127 ||
+		a === 10 ||
+		a === 0 ||
+		(a === 192 && b === 168) ||
+		(a === 172 && b >= 16 && b <= 31) ||
+		(a === 169 && b === 254) // link-local, includes the cloud metadata endpoint
+	)
+}
+
+function isPrivateIPv6(host: string): boolean {
+	return (
+		host === '::1' || // loopback
+		host === '::' || // unspecified
+		/^fe[89ab][0-9a-f]:/.test(host) || // link-local, fe80::/10
+		/^f[cd][0-9a-f]{2}:/.test(host) // unique local, fc00::/7
 	)
 }
 
@@ -160,11 +210,37 @@ async function readGitHub(ref: GitHubRef, env: Environment) {
 	}
 }
 
+const MAX_REDIRECTS = 5
+
+/**
+ * Follows redirects manually, re-checking `isPrivateHost` on every hop - a
+ * public URL can redirect to an internal address or the cloud metadata
+ * endpoint, and auto-following (`redirect: 'follow'`) would fetch it with
+ * this worker's own network access before any check ran again.
+ */
+async function fetchFollowingRedirects(url: URL): Promise<Response> {
+	let current = url
+	for (let i = 0; i <= MAX_REDIRECTS; i++) {
+		const res = await fetch(current.toString(), {
+			headers: { 'User-Agent': 'whiteboard-tutor', Accept: 'text/html,text/plain,application/json' },
+			redirect: 'manual',
+		})
+		if (res.status < 300 || res.status >= 400 || !res.headers.get('Location')) return res
+
+		const next = new URL(res.headers.get('Location')!, current)
+		if (next.protocol !== 'https:' && next.protocol !== 'http:') {
+			throw new Error('Redirected to a non-http(s) URL')
+		}
+		if (isPrivateHost(next.hostname)) {
+			throw new Error('Redirected to a disallowed host')
+		}
+		current = next
+	}
+	throw new Error('Too many redirects')
+}
+
 async function readPage(url: URL) {
-	const res = await fetch(url.toString(), {
-		headers: { 'User-Agent': 'whiteboard-tutor', Accept: 'text/html,text/plain,application/json' },
-		redirect: 'follow',
-	})
+	const res = await fetchFollowingRedirects(url)
 	if (!res.ok) throw new Error(`HTTP ${res.status} fetching the page`)
 	const type = res.headers.get('content-type') ?? ''
 	const body = await res.text()
