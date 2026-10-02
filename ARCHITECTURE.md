@@ -128,10 +128,17 @@ Confirmed live and reproducible, not theoretical: asked the default free model f
 
 Added this session: `katex` (npm package, build-time math rendering — see above; vendored static files already existed), `@ai-sdk/groq`. The original plan's `@modelcontextprotocol/sdk` and `@typesafe-ai/sdk` were never added (see "NOT BUILT" sections above).
 
-Still recommended, not yet done (from a 2026-10-02 self-audit, see memory for the full findings):
-- **`dagre`** (or `d3-dag`/`elkjs`) to replace `graphLayout.ts`'s hand-rolled layering — it's the same class of layered-DAG-layout problem Mermaid itself uses `dagre` internally to solve, and a mature library would not have shipped either of the two layout bugs found above.
-- **`mermaid`** and **`chart.js`** (or **Observable Plot**), vendored locally like KaTeX, for `createHtml`'s free-form fallback — so the model can emit simple diagram/chart syntax or config instead of hand-drawing raw SVG, the same reasoning that motivated the Stepper library for step-through UIs.
-- **`vitest`** for a real test suite — there currently is none (CI only runs typecheck + build). The algorithm/layout functions in `client/tools/` are pure and were verified this session with throwaway `npx tsx` scripts that got deleted after use; those should have been permanent `*.test.ts` files instead.
+Done, from a 2026-10-02 full-project audit (3 parallel reviews of the backend/worker, frontend/voice, and engineering-hygiene layers, plus a self-audit of the tools built that session):
+- **`dagre`** now backs `graphLayout.ts` in place of the hand-rolled layering that shipped both bugs above.
+- **`vitest`** is wired in (`npm run test`, also in CI) with permanent tests for the algorithms and graph layout.
+- **`mermaid`** and **`chart.js`**, vendored locally like KaTeX (`public/vendor/mermaid/`, `public/vendor/chartjs/`) — `createHtml` now points at them for diagram/chart-shaped requests instead of hand-drawn SVG, verified live.
+- **`@mozilla/readability` + `linkedom`** replaced `fetchLink.ts`'s regex-based HTML stripper with real reader-mode extraction.
+- Validation (Zod) at the DO request boundary and on every completed action; a cross-field refine on the comparison table schema; one bad action no longer kills every action after it in the same turn; IP-keyed rate limiting; `fetchLink`'s SSRF guard hardened against numeric IP literals and open redirects; dead dependencies removed; per-tab board URL isolation.
+
+Still open:
+- **`@axe-core/react`** (dev-mode accessibility scanning) and a live accessibility pass — next up.
+- **Sentry** (or similar) for production error tracking once this is actually deployed publicly — `[observability] enabled = true` in `wrangler.toml` gives Cloudflare's own basic tracing, not exception tracking.
+- Full details of the audit and what's covered: see project memory (`project_study_buddy_state.md`).
 
 ## Running this fork at $0 (verified against the live app, not just docs)
 
