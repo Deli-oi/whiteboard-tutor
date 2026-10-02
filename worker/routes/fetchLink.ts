@@ -1,4 +1,6 @@
+import { Readability } from '@mozilla/readability'
 import { IRequest } from 'itty-router'
+import { parseHTML } from 'linkedom'
 import { Environment } from '../environment'
 
 /**
@@ -244,16 +246,44 @@ async function readPage(url: URL) {
 	if (!res.ok) throw new Error(`HTTP ${res.status} fetching the page`)
 	const type = res.headers.get('content-type') ?? ''
 	const body = await res.text()
-	const text = type.includes('html') ? htmlToText(body) : body
-	const titleMatch = body.match(/<title[^>]*>([^<]*)<\/title>/i)
+
+	if (!type.includes('html')) {
+		return { source: url.toString(), title: undefined, text: clip(body, MAX_TEXT_CHARS) }
+	}
+
+	const extracted = extractReadableText(body)
 	return {
 		source: url.toString(),
-		title: titleMatch ? titleMatch[1].trim() : undefined,
-		text: clip(text, MAX_TEXT_CHARS),
+		title: extracted.title,
+		text: clip(extracted.text, MAX_TEXT_CHARS),
 	}
 }
 
-function htmlToText(html: string) {
+/**
+ * Real reader-mode extraction (the same Readability engine behind Firefox's
+ * Reader View, running against a linkedom DOM - both work fine in Workers,
+ * no native DOM required) instead of a hand-rolled regex stripper, which
+ * mangles plenty of real pages (malformed HTML, nested comments, <template>
+ * content). Falls back to a plain tag strip if Readability can't find an
+ * article - common for non-article pages like a homepage or search results.
+ */
+export function extractReadableText(html: string): { title?: string; text: string } {
+	try {
+		const { document } = parseHTML(html)
+		const titleFromDoc = document.title || undefined
+		const article = new Readability(document as any, { charThreshold: 200 }).parse()
+		if (article?.textContent && article.textContent.trim().length > 0) {
+			return { title: article.title ?? titleFromDoc, text: article.textContent.trim() }
+		}
+		if (titleFromDoc) return { title: titleFromDoc, text: stripHtmlTags(html) }
+	} catch (e) {
+		console.warn('[fetchLink] Readability failed, falling back to a plain tag strip:', e)
+	}
+	const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i)
+	return { title: titleMatch ? titleMatch[1].trim() : undefined, text: stripHtmlTags(html) }
+}
+
+function stripHtmlTags(html: string) {
 	return html
 		.replace(/<script[\s\S]*?<\/script>/gi, ' ')
 		.replace(/<style[\s\S]*?<\/style>/gi, ' ')
