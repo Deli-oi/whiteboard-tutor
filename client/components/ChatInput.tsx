@@ -95,6 +95,7 @@ export function ChatInput({
 								<BrainIcon /> {modelName}
 							</div>
 							<select
+								aria-label="AI model"
 								value={modelName}
 								onChange={(e) => agent.modelName.setModelName(e.target.value as AgentModelName)}
 							>

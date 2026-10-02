@@ -273,7 +273,9 @@ button.chat-context-select {
 	appearance: none;
 	border: 1px solid var(--tl-color-low);
 	background: var(--tl-color-muted-2);
-	color: var(--tl-color-text-2);
+	/* var(--tl-color-text-2) (#8c8c8c) fails contrast (3.06:1) against this
+	   button's background - axe-core, confirmed live. */
+	color: #b8b8b8;
 	border-radius: 4px;
 	padding: 2px 8px;
 	font-size: 11px;
@@ -636,6 +638,9 @@ button.chat-context-select.active {
 	align-items: center;
 	gap: 2px;
 	margin-left: -6px;
+	/* Inherited var(--tl-color-text-2) (#8c8c8c) fails contrast (3.57:1)
+	   against .chat-input form's background - axe-core, confirmed live. */
+	color: #b8b8b8;
 }
 
 .chat-context-select {
