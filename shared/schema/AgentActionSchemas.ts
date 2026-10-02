@@ -144,6 +144,15 @@ export const CreateHtmlAction = z
 				'  render: function (step, index, total) { /* update your own DOM elements to reflect `step` here */ },\n' +
 				'});\n' +
 				'`render` is called automatically for the current step whenever Previous/Next is clicked and once immediately on mount - `steps` must be complete and in order before calling `Stepper.mount`, including a final step describing the end result. This generalizes to any algorithm on any input (sorting, recursion, two-pointer, DP table fill, tree/string traversal, etc.) - the only thing that changes per topic is what real code you run and what `render` draws, never the stepping mechanism itself.\n\n' +
+				'For a diagram that is NOT one of the Create Concept Map / Create Flowchart tools\' cases (e.g. a sequence diagram, state diagram, class diagram, Gantt chart, ER diagram, or any flowchart/graph where drawing it yourself in SVG would be slow and error-prone), use Mermaid instead of hand-drawing it - it is vendored locally, not a CDN:\n' +
+				'<script src="/vendor/mermaid/mermaid.min.js"></script>\n' +
+				'<div class="mermaid">\n' +
+				'sequenceDiagram\n' +
+				'  Alice->>Bob: Hello Bob, how are you?\n' +
+				'  Bob-->>Alice: I am good thanks!\n' +
+				'</div>\n' +
+				'<script>mermaid.initialize({ startOnLoad: true });</script>\n' +
+				'Write real Mermaid syntax for the actual diagram requested (flowchart TD/LR, sequenceDiagram, classDiagram, stateDiagram-v2, erDiagram, gantt, etc.) inside the `.mermaid` div - `startOnLoad: true` finds and renders every such div automatically, no further code needed. Do not hand-draw with SVG/canvas anything Mermaid already has a diagram type for.\n\n' +
 				'Any mathematical formula, equation, or notation (fractions, exponents, square roots, Greek letters, summations, subscripts, etc.) MUST be rendered with KaTeX, never approximated as plain text like "sqrt(x)" or "epsilon" or "x^2". KaTeX is vendored locally, not a CDN - include exactly:\n' +
 				'<link rel="stylesheet" href="/vendor/katex/katex.min.css">\n' +
 				'<script src="/vendor/katex/katex.min.js"></script>\n' +
