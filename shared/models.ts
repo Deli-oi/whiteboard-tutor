@@ -1,5 +1,5 @@
 export type AgentModelName = keyof typeof AGENT_MODEL_DEFINITIONS
-export type AgentModelProvider = 'openai' | 'anthropic' | 'google'
+export type AgentModelProvider = 'openai' | 'anthropic' | 'google' | 'groq'
 
 /** Adaptive-thinking mode passed to the Anthropic provider. */
 export type AnthropicThinking = 'adaptive' | 'disabled'
@@ -60,10 +60,16 @@ export interface OpenAIModelDefinition extends BaseAgentModelDefinition {
 	reasoningEffort: OpenAIReasoningEffort
 }
 
+/** Groq's hosted open-weight models, served through an OpenAI-compatible API. Free tier. */
+export interface GroqModelDefinition extends BaseAgentModelDefinition {
+	provider: 'groq'
+}
+
 export type AgentModelDefinition =
 	| AnthropicModelDefinition
 	| GoogleModelDefinition
 	| OpenAIModelDefinition
+	| GroqModelDefinition
 
 export const AGENT_MODEL_DEFINITIONS = {
 	// Anthropic models
@@ -109,6 +115,21 @@ export const AGENT_MODEL_DEFINITIONS = {
 		thinkingLevel: 'low',
 	},
 
+	// Google's free tier is per-model, per-day (resets midnight Pacific), and
+	// gemini-3.8-flash (the newest/most in-demand) gets a tiny free quota - 20
+	// requests/day, confirmed via a live quota-exceeded error. flash-lite is a
+	// separate quota pool and typically gets a more generous free allowance, so
+	// it's the default. Switch back to gemini-3.8-flash for tougher requests
+	// once its quota resets, or if flash-lite's quality isn't enough.
+	'gemini-3.1-flash-lite': {
+		name: 'gemini-3.1-flash-lite',
+		id: 'gemini-3.1-flash-lite',
+		provider: 'google',
+		supportsPrefill: false,
+		supportsTemperature: false,
+		thinkingLevel: 'low',
+	},
+
 	// OpenAI models
 	'gpt-5.6-sol': {
 		name: 'gpt-5.6-sol',
@@ -136,9 +157,28 @@ export const AGENT_MODEL_DEFINITIONS = {
 		supportsTemperature: false,
 		reasoningEffort: 'max',
 	},
+
+	// Groq models (free tier, OpenAI-compatible)
+	'openai/gpt-oss-120b': {
+		name: 'openai/gpt-oss-120b',
+		id: 'openai/gpt-oss-120b',
+		provider: 'groq',
+		// No pricing entry: intended to run within Groq's free tier, so the
+		// on-screen cost meter shows tokens only rather than a possibly-wrong $ estimate.
+		supportsPrefill: false,
+		supportsTemperature: true,
+	},
 } as const
 
-export const DEFAULT_MODEL_NAME: AgentModelName = 'claude-opus-5'
+// Groq's free tier caps every model at 8,000 tokens/minute, and this agent's
+// system prompt + schema alone runs ~11.5k tokens even in tutor mode — a hard
+// structural mismatch, not something model choice or reasoning effort can fix.
+// Google's Gemini free tier has no such ceiling for a prompt this size, and the
+// google provider is already fully wired below, so it's the default for $0 use.
+// Within Google: gemini-3.1-flash-lite, not gemini-3.8-flash, since the newest
+// flagship model's free tier is a tiny 20-requests/day quota (see above) while
+// the lite model is a separate, less-contended pool.
+export const DEFAULT_MODEL_NAME: AgentModelName = 'gemini-3.1-flash-lite'
 
 /**
  * Check if a string is a valid AgentModelName.

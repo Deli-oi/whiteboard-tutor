@@ -19,7 +19,12 @@ export function normalizeModelText(raw: string): string {
 	}
 	text = text.replace(/\s*`{1,3}\s*$/, '')
 
-	if (text.startsWith('{') || text.startsWith('[')) return text
+	// "[ACTION]: {...}" also starts with "[", same as a genuine bare JSON array,
+	// but it's the prose-fallback marker format below, not an array - exclude it
+	// specifically rather than trying to positively define what a "real" array
+	// looks like.
+	const isActionMarker = /^\[\s*ACTION\s*\]\s*:/i.test(text)
+	if (text.startsWith('{') || (text.startsWith('[') && !isActionMarker)) return text
 
 	// Prose fallback.
 	const items: string[] = []
