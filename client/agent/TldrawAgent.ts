@@ -669,6 +669,13 @@ export class TldrawAgent {
 								history: 'ignore',
 							}
 						)
+					} catch (actionError) {
+						// One bad action (malformed JSON, a bug in one action util) used
+						// to propagate out of this whole for-await loop, silently
+						// dropping every action still queued in this response. Report
+						// it and move on to the next action instead.
+						console.error(`Action "${action._type}" failed, skipping it:`, actionError)
+						this.onError(actionError)
 					} finally {
 						this.setIsActingOnEditor(false)
 					}
