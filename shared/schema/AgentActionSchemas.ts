@@ -153,6 +153,16 @@ export const CreateHtmlAction = z
 				'</div>\n' +
 				'<script>mermaid.initialize({ startOnLoad: true });</script>\n' +
 				'Write real Mermaid syntax for the actual diagram requested (flowchart TD/LR, sequenceDiagram, classDiagram, stateDiagram-v2, erDiagram, gantt, etc.) inside the `.mermaid` div - `startOnLoad: true` finds and renders every such div automatically, no further code needed. Do not hand-draw with SVG/canvas anything Mermaid already has a diagram type for.\n\n' +
+				'For a numeric chart (bar, line, pie, scatter, radar, etc.), use Chart.js instead of hand-drawing axes/bars/points in raw SVG or canvas - it is vendored locally, not a CDN:\n' +
+				'<canvas id="chart"></canvas>\n' +
+				'<script src="/vendor/chartjs/chart.umd.min.js"></script>\n' +
+				'<script>\n' +
+				'new Chart(document.getElementById("chart"), {\n' +
+				'  type: "bar",\n' +
+				'  data: { labels: ["Alice", "Bob", "Carol"], datasets: [{ label: "Score", data: [85, 92, 78] }] },\n' +
+				'});\n' +
+				'</script>\n' +
+				'Use the real computed/requested numbers in `data`, never placeholder values. Do not hand-draw a chart Chart.js already has a type for.\n\n' +
 				'Any mathematical formula, equation, or notation (fractions, exponents, square roots, Greek letters, summations, subscripts, etc.) MUST be rendered with KaTeX, never approximated as plain text like "sqrt(x)" or "epsilon" or "x^2". KaTeX is vendored locally, not a CDN - include exactly:\n' +
 				'<link rel="stylesheet" href="/vendor/katex/katex.min.css">\n' +
 				'<script src="/vendor/katex/katex.min.js"></script>\n' +
