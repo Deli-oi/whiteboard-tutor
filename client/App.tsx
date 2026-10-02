@@ -18,6 +18,7 @@ import { ChatPanel } from './components/ChatPanel'
 import { ChatPanelFallback } from './components/ChatPanelFallback'
 import { CustomHelperButtons } from './components/CustomHelperButtons'
 import { AgentHighlightOverlayUtil } from './overlays/AgentHighlightOverlayUtil'
+import { HtmlShapeUtil } from './shapes/HtmlShapeUtil'
 import { TargetAreaTool } from './tools/TargetAreaTool'
 import { TargetShapeTool } from './tools/TargetShapeTool'
 
@@ -27,6 +28,7 @@ DefaultSizeStyle.setDefaultValue('s')
 // Custom tools for picking context items
 const tools = [TargetShapeTool, TargetAreaTool]
 const overlayUtils = [AgentHighlightOverlayUtil]
+const shapeUtils = [HtmlShapeUtil]
 const overrides: TLUiOverrides = {
 	tools: (editor, tools) => {
 		return {
@@ -71,6 +73,12 @@ function App() {
 						<CustomHelperButtons />
 					</TldrawAgentAppContextProvider>
 				),
+			// Every visual here is HTML content (see HtmlShapeUtil), not native
+			// shapes with color/fill/dash styling - so this panel has nothing to
+			// control. Worse than useless: it docks at a fixed point in the top
+			// right of the canvas viewport and silently swallows clicks on any
+			// html shape placed underneath it (e.g. interactive stepper buttons).
+			StylePanel: null,
 		}
 	}, [app])
 
@@ -82,6 +90,7 @@ function App() {
 						key={activeBoardId}
 						persistenceKey={persistenceKey}
 						tools={tools}
+						shapeUtils={shapeUtils}
 						overlayUtils={overlayUtils}
 						overrides={overrides}
 						components={components}

@@ -8,6 +8,14 @@ import { ClearActionUtil } from '../actions/ClearActionUtil'
 import { CountryInfoActionUtil } from '../actions/CountryInfoActionUtil'
 import { CountShapesActionUtil } from '../actions/CountShapesActionUtil'
 import { CreateActionUtil } from '../actions/CreateActionUtil'
+import { CreateAlgorithmWalkthroughActionUtil } from '../actions/CreateAlgorithmWalkthroughActionUtil'
+import { CreateAnnotatedDiagramActionUtil } from '../actions/CreateAnnotatedDiagramActionUtil'
+import { CreateArrayWalkthroughActionUtil } from '../actions/CreateArrayWalkthroughActionUtil'
+import { CreateComparisonTableActionUtil } from '../actions/CreateComparisonTableActionUtil'
+import { CreateConceptMapActionUtil } from '../actions/CreateConceptMapActionUtil'
+import { CreateFlowchartActionUtil } from '../actions/CreateFlowchartActionUtil'
+import { CreateHtmlActionUtil } from '../actions/CreateHtmlActionUtil'
+import { CreateTimelineActionUtil } from '../actions/CreateTimelineActionUtil'
 import { DeleteActionUtil } from '../actions/DeleteActionUtil'
 import { DistributeActionUtil } from '../actions/DistributeActionUtil'
 import { LabelActionUtil } from '../actions/LabelActionUtil'
@@ -33,6 +41,7 @@ import { ChatHistoryPartUtil } from '../parts/ChatHistoryPartUtil'
 import { ContextItemsPartUtil } from '../parts/ContextItemsPartUtil'
 import { DataPartUtil } from '../parts/DataPartUtil'
 import { DebugPartUtil } from '../parts/DebugPartUtil'
+import { ImageContextPartUtil } from '../parts/ImageContextPartUtil'
 import { MessagesPartUtil } from '../parts/MessagesPartUtil'
 import { ModelNamePartUtil } from '../parts/ModelNamePartUtil'
 import { ModePartUtil } from '../parts/ModePartUtil'
@@ -107,6 +116,7 @@ export const AGENT_MODE_DEFINITIONS = [
 
 			// Viewport
 			ScreenshotPartUtil.type,
+			ImageContextPartUtil.type,
 			UserViewportBoundsPartUtil.type,
 			AgentViewportBoundsPartUtil.type,
 
@@ -143,6 +153,14 @@ export const AGENT_MODE_DEFINITIONS = [
 
 			// Individual shapes
 			CreateActionUtil.type,
+			CreateHtmlActionUtil.type,
+			CreateConceptMapActionUtil.type,
+			CreateTimelineActionUtil.type,
+			CreateComparisonTableActionUtil.type,
+			CreateFlowchartActionUtil.type,
+			CreateAnnotatedDiagramActionUtil.type,
+			CreateAlgorithmWalkthroughActionUtil.type,
+			CreateArrayWalkthroughActionUtil.type,
 			DeleteActionUtil.type,
 			UpdateActionUtil.type,
 			LabelActionUtil.type,
@@ -174,11 +192,13 @@ export const AGENT_MODE_DEFINITIONS = [
 		/**
 		 * Tutor mode: the voice-first, token-lean mode used by the whiteboard tutor.
 		 *
-		 * Compared to `working` it drops the screenshot (the single most expensive
-		 * prompt part, an image on every request), the user action history and the
-		 * time part, and it removes actions a tutor never needs. The agent still
-		 * sees every shape in the viewport as compact text (`blurryShapes`), so it
-		 * knows what is on the board without looking at pixels.
+		 * Compared to `working` it drops the full-viewport screenshot (the single
+		 * most expensive prompt part, an image on every request), the user action
+		 * history and the time part, and it removes actions a tutor never needs.
+		 * The agent still sees every shape in the viewport as compact text
+		 * (`blurryShapes`), so it knows what is on the board without looking at
+		 * pixels - except pasted images, which stay unreadable as text, so
+		 * `ImageContextPartUtil` sends just those (free when none are relevant).
 		 */
 		type: 'tutor',
 		active: true,
@@ -192,7 +212,9 @@ export const AGENT_MODE_DEFINITIONS = [
 			DataPartUtil.type,
 			ContextItemsPartUtil.type,
 
-			// Viewport (no screenshot)
+			// Viewport (no full screenshot, but images on the canvas are still
+			// readable if selected/circled - see ImageContextPartUtil)
+			ImageContextPartUtil.type,
 			UserViewportBoundsPartUtil.type,
 			AgentViewportBoundsPartUtil.type,
 
@@ -216,6 +238,14 @@ export const AGENT_MODE_DEFINITIONS = [
 
 			// Individual shapes
 			CreateActionUtil.type,
+			CreateHtmlActionUtil.type,
+			CreateConceptMapActionUtil.type,
+			CreateTimelineActionUtil.type,
+			CreateComparisonTableActionUtil.type,
+			CreateFlowchartActionUtil.type,
+			CreateAnnotatedDiagramActionUtil.type,
+			CreateAlgorithmWalkthroughActionUtil.type,
+			CreateArrayWalkthroughActionUtil.type,
 			DeleteActionUtil.type,
 			UpdateActionUtil.type,
 			LabelActionUtil.type,

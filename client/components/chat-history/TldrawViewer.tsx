@@ -12,6 +12,9 @@ import {
 	TldrawUiContextProvider,
 	TLShape,
 } from 'tldraw'
+import { HtmlShapeUtil } from '../../shapes/HtmlShapeUtil'
+
+const shapeUtils = [...defaultShapeUtils, HtmlShapeUtil]
 
 export function TldrawViewer({
 	shapes,
@@ -68,7 +71,7 @@ export function TldrawViewer({
 					autoFocus={false}
 					components={components ?? {}}
 					onMount={setEditor}
-					shapeUtils={defaultShapeUtils}
+					shapeUtils={shapeUtils}
 					bindingUtils={defaultBindingUtils}
 					tools={tools}
 					options={defaultOptions}

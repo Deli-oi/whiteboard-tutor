@@ -3,6 +3,8 @@
  *
  * - `BrowserStt` uses the Web Speech API (Chrome, Edge, Safari). Free, streams
  *   interim text while you talk. Not available in Firefox.
+ * - `GroqStt` records a clip with MediaRecorder and posts it to the worker's
+ *   `/transcribe-groq` route (whisper-large-v3-turbo, free tier). The default.
  * - `OpenAiStt` records a clip with MediaRecorder and posts it to the worker's
  *   `/transcribe` route (gpt-4o-mini-transcribe, about $0.003 per minute).
  */
@@ -126,11 +128,14 @@ export class BrowserStt implements SttEngineInstance {
 	}
 }
 
-export class OpenAiStt implements SttEngineInstance {
+/** Records a clip with MediaRecorder and posts it to a worker transcription route. */
+abstract class RecordedClipStt implements SttEngineInstance {
 	private recorder: MediaRecorder | null = null
 	private stream: MediaStream | null = null
 	private chunks: Blob[] = []
 	private aborted = false
+
+	protected abstract readonly endpoint: string
 
 	constructor(private callbacks: SttCallbacks) {}
 
@@ -167,7 +172,7 @@ export class OpenAiStt implements SttEngineInstance {
 			try {
 				const form = new FormData()
 				form.append('audio', blob, 'clip.webm')
-				const res = await apiFetch('/transcribe', { method: 'POST', body: form })
+				const res = await apiFetch(this.endpoint, { method: 'POST', body: form })
 				if (!res.ok) throw new Error(await res.text())
 				const { text } = (await res.json()) as { text: string }
 				if (text?.trim()) this.callbacks.onFinal(text.trim())
@@ -192,6 +197,16 @@ export class OpenAiStt implements SttEngineInstance {
 	}
 }
 
-export function createStt(engine: 'browser' | 'openai', callbacks: SttCallbacks): SttEngineInstance {
-	return engine === 'openai' ? new OpenAiStt(callbacks) : new BrowserStt(callbacks)
+export class OpenAiStt extends RecordedClipStt {
+	protected readonly endpoint = '/transcribe'
+}
+
+export class GroqStt extends RecordedClipStt {
+	protected readonly endpoint = '/transcribe-groq'
+}
+
+export function createStt(engine: 'browser' | 'openai' | 'groq', callbacks: SttCallbacks): SttEngineInstance {
+	if (engine === 'openai') return new OpenAiStt(callbacks)
+	if (engine === 'groq') return new GroqStt(callbacks)
+	return new BrowserStt(callbacks)
 }
