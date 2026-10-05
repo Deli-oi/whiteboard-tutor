@@ -15,6 +15,7 @@
  * in the pivot) - this is the whole point of the reuse-first plan.
  */
 import { createStt, isBrowserSttSupported, SttEngineInstance } from '../../client/voice/stt'
+import type { Selection } from './generate'
 
 interface Match {
 	el: Element
@@ -47,6 +48,14 @@ let activeRect: DOMRect | null = null
 // recreation.
 let draggedPosition: { top: number; left: number } | null = null
 let panelDragCleanup: (() => void) | null = null
+
+/**
+ * Tears down the hold-V-to-iterate listeners a generated-visualization popup
+ * installs (see showGeneratedVisualization) - set only while that kind of
+ * popup is open, called everywhere panelDragCleanup is, so it never outlives
+ * the popup it belongs to.
+ */
+let panelVoiceCleanup: (() => void) | null = null
 
 /** Makes `el` draggable by mousedown-drag on `handle` (defaults to `el` itself). */
 function makeDraggable(el: HTMLElement, handle: HTMLElement = el): () => void {
@@ -144,6 +153,8 @@ function closeEverything() {
 	exitSelectMode()
 	panelDragCleanup?.()
 	panelDragCleanup = null
+	panelVoiceCleanup?.()
+	panelVoiceCleanup = null
 	draggedPosition = null
 	panelEl?.remove()
 	panelEl = null
@@ -331,79 +342,82 @@ function startListening(rect: DOMRect, matches: Match[]) {
 
 interface GeneratedAction {
 	_type: string
-	w?: number
-	h?: number
+	html: string
 }
 
 interface GenerateRelayResponse {
 	ok: boolean
-	status: number
-	body: string
+	action?: GeneratedAction
+	error?: string
 }
 
 /**
- * Phase 4.5: relayed through background.js instead of fetched directly -
- * the circled page is now usually NOT the dev server, so a direct
- * content-script fetch to it would be cross-origin and at the mercy of
- * whatever CSP the visited page sets. The background service worker's
- * fetch is governed by host_permissions instead and always reaches the
- * local worker regardless of what page you're circling something on.
+ * Phase 5: relayed through background.js rather than called directly - the
+ * API key lives in chrome.storage.local, and a visited page's own JS context
+ * (where this content script runs) has no business touching it. The
+ * background script does the actual model call now, with no worker/
+ * localhost dependency at all.
  */
 async function generateVisualization(rect: DOMRect, matches: Match[], transcript: string) {
 	const best = matches[0]
+	const selection: Selection = {
+		tag: best.el.tagName.toLowerCase(),
+		id: best.el.id || undefined,
+		classes: best.el.classList.length ? Array.from(best.el.classList) : undefined,
+		preview: (best.el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 300),
+	}
 	showPanel(rect, `${matchSummary(matches)}\n\n✅ Heard: "${transcript}"\n\n⚙️ Generating…`)
 
 	try {
 		const relay = (await chrome.runtime.sendMessage({
 			type: 'generate',
-			payload: {
-				transcript,
-				selection: {
-					tag: best.el.tagName.toLowerCase(),
-					id: best.el.id || undefined,
-					classes: best.el.classList.length ? Array.from(best.el.classList) : undefined,
-					preview: (best.el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 300),
-				},
-			},
+			payload: { transcript, selection },
 		})) as GenerateRelayResponse
-		if (!relay.ok) {
-			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${relay.body}`)
+		if (!relay.ok || !relay.action) {
+			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${relay.error ?? 'unknown error'}`)
 			return
 		}
-		const { action, renderUrl } = JSON.parse(relay.body) as { action: GeneratedAction; renderUrl?: string }
-		if (action._type !== 'createHtml' || !renderUrl) {
-			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${action._type}`)
+		if (relay.action._type !== 'createHtml') {
+			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${relay.action._type}`)
 			return
 		}
-		showGeneratedVisualization(rect, action, renderUrl)
+		showGeneratedVisualization(rect, relay.action, selection)
 	} catch (e) {
 		showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`)
 	}
 }
 
 /**
- * Renders the result in a sandboxed iframe near the selection - same
- * security model as the main app's HtmlShapeUtil.tsx (allow-scripts, no
- * allow-same-origin, so generated JS can't reach this page's DOM/storage/
- * cookies). This is still just a floating preview; Phase 5 is what actually
- * splices it into the real file.
- *
- * Loads `renderUrl` (a real worker-hosted URL - worker/routes/
- * renderFragment.ts) via `src`, not `action.html` via `srcdoc`: confirmed
+ * Renders the result in render.html - a page bundled inside the extension
+ * and declared under manifest.json's `sandbox.pages` (see render.ts for why:
+ * it's the documented Chrome pattern for running untrusted/dynamic HTML with
+ * inline scripts allowed). Loaded via `chrome.runtime.getURL(...)` as a real
+ * `chrome-extension://` document, not `action.html` via `srcdoc`: confirmed
  * live that a srcdoc/data: iframe inherits the EMBEDDING page's CSP, which
  * silently blocks all script execution (inline or external) on a strict-CSP
  * site like GitHub - the HTML still rendered, nothing ever ran. A real,
  * separate-origin document gets its own CSP instead, independent of
- * whatever page it's circled on.
+ * whatever page it's circled on, and chrome-extension:// loads aren't
+ * subject to mixed-content blocking either (confirmed broken case: Gmail,
+ * an HTTPS page, silently dropping an http:// iframe source).
+ *
+ * The HTML payload itself can't go through chrome.storage - a sandboxed
+ * page has no access to chrome.* APIs at all (that's the point: it's the
+ * boundary around code the extension doesn't trust). It's handed over via
+ * postMessage once the iframe has loaded instead.
  */
 const DRAG_HANDLE_HEIGHT = 22
+const PANEL_W = 440
+const PANEL_H = 340
+const MIC_SIZE = 20
 
-function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAction, renderUrl: string) {
+function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAction, selection: Selection) {
 	panelDragCleanup?.()
+	panelVoiceCleanup?.()
 	panelEl?.remove()
 
-	const w = action.w ?? 400
-	const h = (action.h ?? 300) + DRAG_HANDLE_HEIGHT
+	const w = PANEL_W
+	const h = PANEL_H + DRAG_HANDLE_HEIGHT
 	const container = document.createElement('div')
 	Object.assign(container.style, {
 		position: 'fixed',
@@ -457,17 +471,199 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
 	closeBtn.addEventListener('click', () => {
 		panelDragCleanup?.()
 		panelDragCleanup = null
+		panelVoiceCleanup?.()
+		panelVoiceCleanup = null
 		container.remove()
 	})
 	header.appendChild(closeBtn)
 
 	const iframe = document.createElement('iframe')
-	iframe.setAttribute('sandbox', 'allow-scripts')
-	iframe.src = renderUrl
 	Object.assign(iframe.style, { width: '100%', flex: '1 1 auto', border: '0', display: 'block' })
+	let currentHtml = action.html
+	iframe.addEventListener('load', () => {
+		iframe.contentWindow?.postMessage({ html: currentHtml }, '*')
+	})
+	/**
+	 * Every render - initial and every hold-V iteration - navigates the iframe
+	 * to a fresh copy of render.html rather than reusing the same live
+	 * document via another postMessage. Whether render.ts's listener survives
+	 * the FIRST document.open()/write() it does to inject model HTML is
+	 * spec-ambiguous (document.open() is documented to clear a document's own
+	 * event listeners in some cases) - confirmed broken in practice: a second
+	 * postMessage sent to an already-rendered iframe silently went nowhere,
+	 * `currentHtml` updated but nothing redrew. A fresh navigation sidesteps
+	 * the question entirely by re-running render.ts's script from scratch
+	 * every time, exactly like the first render that's already proven to work.
+	 */
+	function loadVisualization() {
+		iframe.src = chrome.runtime.getURL('render.html') + '?t=' + Date.now()
+	}
+	loadVisualization()
+
+	// Bottom-left mic badge: grey while idle, red while hold-V capture is
+	// active. Lets you say "make the bars blue" or "actually, plot it as a
+	// line" without re-circling the element - the whole point being fast
+	// iteration/clarification on a result you're already looking at.
+	const micBadge = document.createElement('div')
+	micBadge.textContent = '🎤'
+	Object.assign(micBadge.style, {
+		position: 'absolute',
+		left: '6px',
+		bottom: '6px',
+		width: MIC_SIZE + 'px',
+		height: MIC_SIZE + 'px',
+		borderRadius: '50%',
+		background: '#8a8a8a',
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		fontSize: '10px',
+		lineHeight: '1',
+		boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+		pointerEvents: 'none',
+		zIndex: '1',
+		transition: 'background-color 0.1s',
+	})
+
+	// Shown over the iframe while an iteration request is in flight - the
+	// round trip is a real model call (not instant), and with no status panel
+	// on this path (unlike the initial generation), there was otherwise no
+	// sign anything was happening between releasing V and the result landing.
+	const generatingLabel = document.createElement('div')
+	generatingLabel.textContent = 'Generating…'
+	Object.assign(generatingLabel.style, {
+		position: 'absolute',
+		top: '50%',
+		left: '50%',
+		transform: 'translate(-50%, -50%)',
+		padding: '6px 14px',
+		borderRadius: '6px',
+		background: 'rgba(0,0,0,0.55)',
+		color: 'white',
+		fontFamily: 'system-ui, sans-serif',
+		fontSize: '12px',
+		pointerEvents: 'none',
+		zIndex: '1',
+		display: 'none',
+	})
+
+	let iterateStt: SttEngineInstance | null = null
+
+	async function iterateVisualization(transcript: string) {
+		generatingLabel.style.display = 'block'
+		try {
+			const relay = (await chrome.runtime.sendMessage({
+				type: 'generate',
+				payload: { transcript, selection, previousHtml: currentHtml },
+			})) as GenerateRelayResponse
+			if (!relay.ok || !relay.action || relay.action._type !== 'createHtml') {
+				console.error('[iterate] generation failed:', relay.error ?? relay.action?._type)
+				return
+			}
+			currentHtml = relay.action.html
+			loadVisualization()
+		} catch (e) {
+			// A failed iteration just leaves the existing visualization showing -
+			// there's no status panel for this path, so this is logged rather
+			// than surfaced, but logged so a failure is at least diagnosable.
+			console.error('[iterate] request failed:', e)
+		} finally {
+			generatingLabel.style.display = 'none'
+		}
+	}
+
+	function startIterateCapture() {
+		if (iterateStt) return
+		micBadge.style.background = '#ef4444'
+		const engine = isBrowserSttSupported() ? 'browser' : 'groq'
+		let interimText = ''
+		let gotFinal = false
+		iterateStt = createStt(engine, {
+			onInterim(text) {
+				interimText = text
+			},
+			onFinal(text) {
+				gotFinal = true
+				void iterateVisualization(text)
+			},
+			onError(message) {
+				console.error('[iterate]', message)
+				micBadge.style.background = '#d97706'
+				setTimeout(() => {
+					micBadge.style.background = '#8a8a8a'
+				}, 600)
+			},
+			onEnd() {
+				iterateStt = null
+				micBadge.style.background = '#8a8a8a'
+				// Releasing V calls stop() immediately, which can race the Web
+				// Speech API's own finalization - if nothing was ever marked
+				// final, fall back to whatever interim text it had so far rather
+				// than silently dropping the request (confirmed cause of "nothing
+				// happens" when V is released right after speaking).
+				if (!gotFinal && interimText.trim()) void iterateVisualization(interimText.trim())
+			},
+		})
+		void iterateStt.start()
+	}
+	function stopIterateCapture() {
+		iterateStt?.stop()
+	}
+
+	/**
+	 * Hold-V on the TOP page only fires while this document itself has focus.
+	 * Clicking anything inside the generated visualization (a chart, a
+	 * button) moves focus into the iframe's own document - keydown events
+	 * are scoped to whichever document currently has focus and never bubble
+	 * across that boundary, so this listener alone silently stops working
+	 * the moment the user interacts with the visualization at all (confirmed
+	 * bug report: "only works if you don't click anything in between").
+	 * render.ts captures V inside the iframe itself and forwards it here via
+	 * postMessage, so both paths funnel into the same start/stop functions.
+	 */
+	function onIterateKeyDown(e: KeyboardEvent) {
+		if (e.key.toLowerCase() !== 'v' || iterateStt) return
+		// Checked live via :hover (not a mouseenter/mouseleave-tracked flag):
+		// the popup usually appears right under the cursor, so mouseenter would
+		// never fire unless the mouse moved afterward - :hover reflects the
+		// cursor's actual current position regardless of how it got there.
+		if (!container.matches(':hover')) return
+		// Guard against hijacking a "v" typed into some unrelated input/textarea
+		// the cursor happens to be resting over (e.g. a text field elsewhere on
+		// the page, behind/below this popup).
+		const active = document.activeElement
+		const isTyping =
+			active instanceof HTMLInputElement ||
+			active instanceof HTMLTextAreaElement ||
+			(active instanceof HTMLElement && active.isContentEditable)
+		if (isTyping) return
+		e.preventDefault()
+		startIterateCapture()
+	}
+	function onIterateKeyUp(e: KeyboardEvent) {
+		if (e.key.toLowerCase() !== 'v') return
+		stopIterateCapture()
+	}
+	function onIframeKeyMessage(e: MessageEvent) {
+		if (e.source !== iframe.contentWindow) return
+		if (e.data?.type === 'iterate-key-down') startIterateCapture()
+		else if (e.data?.type === 'iterate-key-up') stopIterateCapture()
+	}
+	document.addEventListener('keydown', onIterateKeyDown)
+	document.addEventListener('keyup', onIterateKeyUp)
+	window.addEventListener('message', onIframeKeyMessage)
+	panelVoiceCleanup = () => {
+		document.removeEventListener('keydown', onIterateKeyDown)
+		document.removeEventListener('keyup', onIterateKeyUp)
+		window.removeEventListener('message', onIframeKeyMessage)
+		iterateStt?.abort()
+		iterateStt = null
+	}
 
 	container.appendChild(header)
 	container.appendChild(iframe)
+	container.appendChild(micBadge)
+	container.appendChild(generatingLabel)
 	document.documentElement.appendChild(container)
 	panelEl = container
 	panelDragCleanup = makeDraggable(container, header)
