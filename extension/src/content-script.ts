@@ -38,6 +38,54 @@ let startY = 0
 let activeMatches: Match[] | null = null
 let activeRect: DOMRect | null = null
 
+// Both the status panel and the generated-visualization box get removed and
+// recreated on every update (new interim text, generating -> done, etc.),
+// so drag state has to live outside those elements or it resets every time
+// the user is mid-drag. draggedPosition persists across one interaction
+// (cleared on closeEverything); panelDragCleanup detaches the previous
+// element's document-level mouse listeners so they don't pile up with each
+// recreation.
+let draggedPosition: { top: number; left: number } | null = null
+let panelDragCleanup: (() => void) | null = null
+
+/** Makes `el` draggable by mousedown-drag on `handle` (defaults to `el` itself). */
+function makeDraggable(el: HTMLElement, handle: HTMLElement = el): () => void {
+	let dragging = false
+	let offsetX = 0
+	let offsetY = 0
+
+	const onMouseDown = (e: MouseEvent) => {
+		dragging = true
+		const rect = el.getBoundingClientRect()
+		offsetX = e.clientX - rect.left
+		offsetY = e.clientY - rect.top
+		e.preventDefault()
+	}
+	const onMouseMove = (e: MouseEvent) => {
+		if (!dragging) return
+		const left = Math.min(Math.max(0, e.clientX - offsetX), window.innerWidth - el.offsetWidth)
+		const top = Math.min(Math.max(0, e.clientY - offsetY), window.innerHeight - el.offsetHeight)
+		el.style.left = left + 'px'
+		el.style.top = top + 'px'
+		el.style.right = ''
+		el.style.bottom = ''
+		draggedPosition = { top, left }
+	}
+	const onMouseUp = () => {
+		dragging = false
+	}
+
+	handle.style.cursor = 'move'
+	handle.addEventListener('mousedown', onMouseDown)
+	document.addEventListener('mousemove', onMouseMove)
+	document.addEventListener('mouseup', onMouseUp)
+
+	return () => {
+		document.removeEventListener('mousemove', onMouseMove)
+		document.removeEventListener('mouseup', onMouseUp)
+	}
+}
+
 function enterSelectMode() {
 	closeEverything()
 	mode = 'selecting'
@@ -94,6 +142,9 @@ function closeEverything() {
 	stt?.abort()
 	stt = null
 	exitSelectMode()
+	panelDragCleanup?.()
+	panelDragCleanup = null
+	draggedPosition = null
 	panelEl?.remove()
 	panelEl = null
 	activeMatches = null
@@ -338,11 +389,14 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
  * cookies). This is still just a floating preview; Phase 5 is what actually
  * splices it into the real file.
  */
+const DRAG_HANDLE_HEIGHT = 22
+
 function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAction) {
+	panelDragCleanup?.()
 	panelEl?.remove()
 
 	const w = action.w ?? 400
-	const h = action.h ?? 300
+	const h = (action.h ?? 300) + DRAG_HANDLE_HEIGHT
 	const container = document.createElement('div')
 	Object.assign(container.style, {
 		position: 'fixed',
@@ -353,37 +407,63 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
 		borderRadius: '8px',
 		boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
 		overflow: 'hidden',
+		display: 'flex',
+		flexDirection: 'column',
 	})
-	container.style.top = Math.max(8, Math.min(selectionRect.bottom + 8, window.innerHeight - h - 8)) + 'px'
-	container.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - w - 8) + 'px'
+	if (draggedPosition) {
+		container.style.top = draggedPosition.top + 'px'
+		container.style.left = draggedPosition.left + 'px'
+	} else {
+		container.style.top = Math.max(8, Math.min(selectionRect.bottom + 8, window.innerHeight - h - 8)) + 'px'
+		container.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - w - 8) + 'px'
+	}
+
+	// Drag handle - the iframe is its own browsing context, so a mousedown
+	// inside it never reaches a drag listener on the container. This small
+	// header bar is the only part of a generated-visualization popup that
+	// can actually be grabbed.
+	const header = document.createElement('div')
+	Object.assign(header.style, {
+		height: DRAG_HANDLE_HEIGHT + 'px',
+		flex: '0 0 auto',
+		background: '#1a1a1a',
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'flex-end',
+		padding: '0 4px',
+		boxSizing: 'border-box',
+	})
 
 	const closeBtn = document.createElement('button')
 	closeBtn.textContent = '✕'
 	Object.assign(closeBtn.style, {
-		position: 'absolute',
-		top: '4px',
-		right: '4px',
-		zIndex: '1',
 		border: 'none',
-		background: 'rgba(0,0,0,0.6)',
+		background: 'transparent',
 		color: 'white',
 		borderRadius: '4px',
-		width: '22px',
-		height: '22px',
+		width: '18px',
+		height: '18px',
 		cursor: 'pointer',
-		fontSize: '12px',
+		fontSize: '11px',
+		lineHeight: '1',
 	})
-	closeBtn.addEventListener('click', () => container.remove())
+	closeBtn.addEventListener('click', () => {
+		panelDragCleanup?.()
+		panelDragCleanup = null
+		container.remove()
+	})
+	header.appendChild(closeBtn)
 
 	const iframe = document.createElement('iframe')
 	iframe.setAttribute('sandbox', 'allow-scripts')
 	iframe.srcdoc = action.html ?? ''
-	Object.assign(iframe.style, { width: '100%', height: '100%', border: '0', display: 'block' })
+	Object.assign(iframe.style, { width: '100%', flex: '1 1 auto', border: '0', display: 'block' })
 
+	container.appendChild(header)
 	container.appendChild(iframe)
-	container.appendChild(closeBtn)
 	document.documentElement.appendChild(container)
 	panelEl = container
+	panelDragCleanup = makeDraggable(container, header)
 }
 
 /**
@@ -395,6 +475,7 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
  * to scroll at all. Always keep the latest line in view.
  */
 function showPanel(selectionRect: DOMRect, text: string) {
+	panelDragCleanup?.()
 	panelEl?.remove()
 	const panel = document.createElement('div')
 	Object.assign(panel.style, {
@@ -413,25 +494,32 @@ function showPanel(selectionRect: DOMRect, text: string) {
 		overflowY: 'auto',
 	})
 
-	const margin = 8
-	const spaceBelow = window.innerHeight - selectionRect.bottom - margin
-	const spaceAbove = selectionRect.top - margin
-	// Prefer below the selection; switch above only if there's meaningfully
-	// more room there (e.g. the selection is near the bottom of the page).
-	const placeAbove = spaceBelow < 120 && spaceAbove > spaceBelow
-
-	panel.style.maxHeight = Math.max(100, (placeAbove ? spaceAbove : spaceBelow) - margin) + 'px'
-	if (placeAbove) {
-		panel.style.bottom = window.innerHeight - selectionRect.top + margin + 'px'
+	if (draggedPosition) {
+		panel.style.top = draggedPosition.top + 'px'
+		panel.style.left = draggedPosition.left + 'px'
+		panel.style.maxHeight = Math.max(100, window.innerHeight - draggedPosition.top - 8) + 'px'
 	} else {
-		panel.style.top = selectionRect.bottom + margin + 'px'
+		const margin = 8
+		const spaceBelow = window.innerHeight - selectionRect.bottom - margin
+		const spaceAbove = selectionRect.top - margin
+		// Prefer below the selection; switch above only if there's meaningfully
+		// more room there (e.g. the selection is near the bottom of the page).
+		const placeAbove = spaceBelow < 120 && spaceAbove > spaceBelow
+
+		panel.style.maxHeight = Math.max(100, (placeAbove ? spaceAbove : spaceBelow) - margin) + 'px'
+		if (placeAbove) {
+			panel.style.bottom = window.innerHeight - selectionRect.top + margin + 'px'
+		} else {
+			panel.style.top = selectionRect.bottom + margin + 'px'
+		}
+		panel.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - 440) + 'px'
 	}
-	panel.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - 440) + 'px'
 
 	panel.textContent = text
 	document.documentElement.appendChild(panel)
 	panelEl = panel
 	panel.scrollTop = panel.scrollHeight
+	panelDragCleanup = makeDraggable(panel)
 }
 
 chrome.runtime.onMessage.addListener((message) => {
