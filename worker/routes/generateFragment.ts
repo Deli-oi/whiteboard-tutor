@@ -14,6 +14,7 @@ import {
 import { closeAndParseJson } from '../do/closeAndParseJson'
 import { normalizeModelText } from '../do/normalizeModelText'
 import { buildExtensionSystemPrompt } from '../prompt/buildExtensionPrompt'
+import { absolutizeVendorPaths } from './absolutizeVendorPaths'
 
 const GenerateFragmentRequestSchema = z.object({
 	transcript: z.string().min(1),
@@ -95,7 +96,12 @@ export async function generateFragment(request: IRequest, env: Environment) {
 				})
 			}
 
-			return Response.json({ action: validated.data })
+			const data = validated.data
+			if (data._type === 'createHtml') {
+				data.html = absolutizeVendorPaths(data.html, new URL(request.url).origin)
+			}
+
+			return Response.json({ action: data })
 		} catch (error) {
 			lastError = error
 			if (isQuotaExceededError(error)) break
