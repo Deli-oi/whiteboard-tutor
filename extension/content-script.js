@@ -403,13 +403,24 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       fontSize: "12px",
       lineHeight: "1.5",
       boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-      whiteSpace: "pre-wrap"
+      whiteSpace: "pre-wrap",
+      overflowY: "auto"
     });
-    panel.style.top = Math.min(selectionRect.bottom + 8, window.innerHeight - 200) + "px";
-    panel.style.left = Math.min(selectionRect.left, window.innerWidth - 440) + "px";
+    const margin = 8;
+    const spaceBelow = window.innerHeight - selectionRect.bottom - margin;
+    const spaceAbove = selectionRect.top - margin;
+    const placeAbove = spaceBelow < 120 && spaceAbove > spaceBelow;
+    panel.style.maxHeight = Math.max(100, (placeAbove ? spaceAbove : spaceBelow) - margin) + "px";
+    if (placeAbove) {
+      panel.style.bottom = window.innerHeight - selectionRect.top + margin + "px";
+    } else {
+      panel.style.top = selectionRect.bottom + margin + "px";
+    }
+    panel.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - 440) + "px";
     panel.textContent = text;
     document.documentElement.appendChild(panel);
     panelEl = panel;
+    panel.scrollTop = panel.scrollHeight;
   }
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.type !== "toggle-overlay") return;

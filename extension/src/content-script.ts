@@ -223,6 +223,14 @@ function startListening(rect: DOMRect, matches: Match[]) {
 	void stt.start()
 }
 
+/**
+ * Content grows while listening (the live transcript line is appended at
+ * the end), so this has to size itself to whatever room is actually
+ * available - a fixed guess at the panel's height either clips the live
+ * line off the bottom of the viewport (unreachable, since a `position:
+ * fixed` element isn't affected by page scroll) or leaves it with no way
+ * to scroll at all. Always keep the latest line in view.
+ */
 function showPanel(selectionRect: DOMRect, text: string) {
 	panelEl?.remove()
 	const panel = document.createElement('div')
@@ -239,12 +247,28 @@ function showPanel(selectionRect: DOMRect, text: string) {
 		lineHeight: '1.5',
 		boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
 		whiteSpace: 'pre-wrap',
+		overflowY: 'auto',
 	})
-	panel.style.top = Math.min(selectionRect.bottom + 8, window.innerHeight - 200) + 'px'
-	panel.style.left = Math.min(selectionRect.left, window.innerWidth - 440) + 'px'
+
+	const margin = 8
+	const spaceBelow = window.innerHeight - selectionRect.bottom - margin
+	const spaceAbove = selectionRect.top - margin
+	// Prefer below the selection; switch above only if there's meaningfully
+	// more room there (e.g. the selection is near the bottom of the page).
+	const placeAbove = spaceBelow < 120 && spaceAbove > spaceBelow
+
+	panel.style.maxHeight = Math.max(100, (placeAbove ? spaceAbove : spaceBelow) - margin) + 'px'
+	if (placeAbove) {
+		panel.style.bottom = window.innerHeight - selectionRect.top + margin + 'px'
+	} else {
+		panel.style.top = selectionRect.bottom + margin + 'px'
+	}
+	panel.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - 440) + 'px'
+
 	panel.textContent = text
 	document.documentElement.appendChild(panel)
 	panelEl = panel
+	panel.scrollTop = panel.scrollHeight
 }
 
 chrome.runtime.onMessage.addListener((message) => {
