@@ -1,7 +1,15 @@
 /**
- * Phase 3 of the extension pivot: box-select (from Phase 2) now flows into
- * voice capture. Select a region, speak what you want, see the transcript
- * tied to that selection. Still no LLM call or file edit - that's Phase 4/5.
+ * Phase 4.5 of the extension pivot: runs on any webpage now, not just the
+ * local dev server. Two modes, auto-detected per selection, no manual
+ * toggle - see the plan (ancient-rolling-hellman.md) for the full reasoning:
+ *
+ * - Tagged selection (the Phase 1 plugin's data-src-start/end attributes
+ *   are present - i.e. this is a page served by a dev server we control):
+ *   persistent-edit mode. Phase 5 is what actually writes to disk; for now
+ *   this still just previews, same as the untagged case.
+ * - Untagged selection (any other webpage): ephemeral-preview mode. Same
+ *   generation call, but there's nowhere to write to, so it only ever
+ *   floats a dismissable preview.
  *
  * Reuses client/voice/stt.ts as-is (confirmed zero tldraw coupling earlier
  * in the pivot) - this is the whole point of the reuse-first plan.
@@ -12,8 +20,9 @@ interface Match {
 	el: Element
 	coverage: number
 	area: number
-	start: number
-	end: number
+	/** Present only for a tagged (dev-server) match - absent means ephemeral-preview mode. */
+	start?: number
+	end?: number
 }
 
 type Mode = 'idle' | 'selecting' | 'listening'
@@ -145,7 +154,7 @@ function onMouseUp() {
 	}
 	const matches = findMatches(rect)
 	if (matches.length === 0) {
-		showPanel(rect, 'No tagged elements in that box.\n(Only elements served by the Phase 1 source-tagging dev plugin are selectable.)')
+		showPanel(rect, 'Nothing selectable in that box - try circling some text or a visible element.')
 		mode = 'idle'
 		return
 	}
@@ -154,8 +163,20 @@ function onMouseUp() {
 	startListening(rect, matches)
 }
 
-/** Every source-tagged element the selection box overlaps, best match first. */
+/**
+ * Every element the selection box overlaps, best match first. Tries the
+ * precise tagged path first (exact rect-intersection against the Phase 1
+ * plugin's attributes); only falls back to the untagged heuristic when the
+ * page has no tagging at all, so a dev-server page always gets the precise
+ * path even if the circled element itself is a child of a tagged ancestor.
+ */
 function findMatches(selectionRect: DOMRect): Match[] {
+	const tagged = findTaggedMatches(selectionRect)
+	if (tagged.length > 0) return tagged
+	return findUntaggedMatches(selectionRect)
+}
+
+function findTaggedMatches(selectionRect: DOMRect): Match[] {
 	const candidates = document.querySelectorAll('[data-src-start][data-src-end]')
 	const results: Match[] = []
 	for (const el of candidates) {
@@ -179,6 +200,37 @@ function findMatches(selectionRect: DOMRect): Match[] {
 	return results
 }
 
+/**
+ * Ephemeral-preview fallback for pages with no source-tagging at all (i.e.
+ * almost every real website). Rect-intersection against every element on
+ * the page doesn't scale to a real site's DOM size, so this samples a grid
+ * of points inside the box with `elementsFromPoint` instead - a constant
+ * number of point-queries regardless of how big the page's DOM is, same
+ * standard technique devtools-style element pickers use. By the time this
+ * runs, exitSelectMode() has already removed the overlay/badge/box, so the
+ * samples land on real page content, never our own UI.
+ */
+function findUntaggedMatches(selectionRect: DOMRect): Match[] {
+	const SAMPLES_PER_AXIS = 5
+	const counts = new Map<Element, number>()
+	for (let i = 0; i < SAMPLES_PER_AXIS; i++) {
+		for (let j = 0; j < SAMPLES_PER_AXIS; j++) {
+			const x = selectionRect.left + (selectionRect.width * (i + 0.5)) / SAMPLES_PER_AXIS
+			const y = selectionRect.top + (selectionRect.height * (j + 0.5)) / SAMPLES_PER_AXIS
+			const el = document.elementsFromPoint(x, y)[0]
+			if (el) counts.set(el, (counts.get(el) ?? 0) + 1)
+		}
+	}
+	const total = SAMPLES_PER_AXIS * SAMPLES_PER_AXIS
+	const results: Match[] = []
+	for (const [el, count] of counts) {
+		const r = el.getBoundingClientRect()
+		results.push({ el, coverage: count / total, area: Math.max(1, r.width * r.height) })
+	}
+	results.sort((a, b) => b.coverage - a.coverage || a.area - b.area)
+	return results
+}
+
 function describe(el: Element): string {
 	const tag = el.tagName.toLowerCase()
 	const id = el.id ? '#' + el.id : ''
@@ -189,9 +241,12 @@ function describe(el: Element): string {
 function matchSummary(matches: Match[]): string {
 	const best = matches[0]
 	const preview = (best.el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 80)
+	const tagged = best.start !== undefined && best.end !== undefined
 	return (
 		`Selected: ${describe(best.el)}\n` +
-		`source range: [${best.start}, ${best.end})\n` +
+		(tagged
+			? `source range: [${best.start}, ${best.end}) - editable\n`
+			: `(preview only - not a source-tagged page)\n`) +
 		`content: "${preview}${preview.length === 80 ? '…' : ''}"` +
 		(matches.length > 1 ? `\n(${matches.length - 1} other candidate(s) also in the box)` : '')
 	)
@@ -230,20 +285,28 @@ interface GeneratedAction {
 	h?: number
 }
 
+interface GenerateRelayResponse {
+	ok: boolean
+	status: number
+	body: string
+}
+
 /**
- * Phase 4: send the circled element's context + transcript to the new lean
- * worker route and render whatever comes back. Scoped to createHtml for now
- * - see worker/routes/generateFragment.ts for why.
+ * Phase 4.5: relayed through background.js instead of fetched directly -
+ * the circled page is now usually NOT the dev server, so a direct
+ * content-script fetch to it would be cross-origin and at the mercy of
+ * whatever CSP the visited page sets. The background service worker's
+ * fetch is governed by host_permissions instead and always reaches the
+ * local worker regardless of what page you're circling something on.
  */
 async function generateVisualization(rect: DOMRect, matches: Match[], transcript: string) {
 	const best = matches[0]
 	showPanel(rect, `${matchSummary(matches)}\n\n✅ Heard: "${transcript}"\n\n⚙️ Generating…`)
 
 	try {
-		const res = await fetch(`${location.origin}/extension/generate`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
+		const relay = (await chrome.runtime.sendMessage({
+			type: 'generate',
+			payload: {
 				transcript,
 				selection: {
 					tag: best.el.tagName.toLowerCase(),
@@ -251,13 +314,13 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 					classes: best.el.classList.length ? Array.from(best.el.classList) : undefined,
 					preview: (best.el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 300),
 				},
-			}),
-		})
-		if (!res.ok) {
-			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${await res.text()}`)
+			},
+		})) as GenerateRelayResponse
+		if (!relay.ok) {
+			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${relay.body}`)
 			return
 		}
-		const { action } = (await res.json()) as { action: GeneratedAction }
+		const { action } = JSON.parse(relay.body) as { action: GeneratedAction }
 		if (action._type !== 'createHtml' || !action.html) {
 			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${action._type}`)
 			return

@@ -312,7 +312,7 @@
     }
     const matches = findMatches(rect);
     if (matches.length === 0) {
-      showPanel(rect, "No tagged elements in that box.\n(Only elements served by the Phase 1 source-tagging dev plugin are selectable.)");
+      showPanel(rect, "Nothing selectable in that box - try circling some text or a visible element.");
       mode = "idle";
       return;
     }
@@ -321,6 +321,11 @@
     startListening(rect, matches);
   }
   function findMatches(selectionRect) {
+    const tagged = findTaggedMatches(selectionRect);
+    if (tagged.length > 0) return tagged;
+    return findUntaggedMatches(selectionRect);
+  }
+  function findTaggedMatches(selectionRect) {
     const candidates = document.querySelectorAll("[data-src-start][data-src-end]");
     const results = [];
     for (const el of candidates) {
@@ -341,6 +346,26 @@
     results.sort((a, b) => b.coverage - a.coverage || a.area - b.area);
     return results;
   }
+  function findUntaggedMatches(selectionRect) {
+    const SAMPLES_PER_AXIS = 5;
+    const counts = /* @__PURE__ */ new Map();
+    for (let i = 0; i < SAMPLES_PER_AXIS; i++) {
+      for (let j = 0; j < SAMPLES_PER_AXIS; j++) {
+        const x = selectionRect.left + selectionRect.width * (i + 0.5) / SAMPLES_PER_AXIS;
+        const y = selectionRect.top + selectionRect.height * (j + 0.5) / SAMPLES_PER_AXIS;
+        const el = document.elementsFromPoint(x, y)[0];
+        if (el) counts.set(el, (counts.get(el) ?? 0) + 1);
+      }
+    }
+    const total = SAMPLES_PER_AXIS * SAMPLES_PER_AXIS;
+    const results = [];
+    for (const [el, count] of counts) {
+      const r = el.getBoundingClientRect();
+      results.push({ el, coverage: count / total, area: Math.max(1, r.width * r.height) });
+    }
+    results.sort((a, b) => b.coverage - a.coverage || a.area - b.area);
+    return results;
+  }
   function describe(el) {
     const tag = el.tagName.toLowerCase();
     const id = el.id ? "#" + el.id : "";
@@ -350,9 +375,11 @@
   function matchSummary(matches) {
     const best = matches[0];
     const preview = (best.el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+    const tagged = best.start !== void 0 && best.end !== void 0;
     return `Selected: ${describe(best.el)}
-source range: [${best.start}, ${best.end})
-content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length > 1 ? `
+` + (tagged ? `source range: [${best.start}, ${best.end}) - editable
+` : `(preview only - not a source-tagged page)
+`) + `content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length > 1 ? `
 (${matches.length - 1} other candidate(s) also in the box)` : "");
   }
   function startListening(rect, matches) {
@@ -392,10 +419,9 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
 
 \u2699\uFE0F Generating\u2026`);
     try {
-      const res = await fetch(`${location.origin}/extension/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const relay = await chrome.runtime.sendMessage({
+        type: "generate",
+        payload: {
           transcript,
           selection: {
             tag: best.el.tagName.toLowerCase(),
@@ -403,15 +429,15 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
             classes: best.el.classList.length ? Array.from(best.el.classList) : void 0,
             preview: (best.el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 300)
           }
-        })
+        }
       });
-      if (!res.ok) {
+      if (!relay.ok) {
         showPanel(rect, `${matchSummary(matches)}
 
-\u26A0\uFE0F Generation failed: ${await res.text()}`);
+\u26A0\uFE0F Generation failed: ${relay.body}`);
         return;
       }
-      const { action } = await res.json();
+      const { action } = JSON.parse(relay.body);
       if (action._type !== "createHtml" || !action.html) {
         showPanel(rect, `${matchSummary(matches)}
 
