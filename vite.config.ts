@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { sourceTagPlugin } from './scripts/vite-source-tag-plugin'
 import { zodLocalePlugin } from './scripts/vite-zod-locale-plugin.js'
 
 // https://vitejs.dev/config/
@@ -19,6 +20,7 @@ export default defineConfig(() => {
 			zodLocalePlugin(fileURLToPath(new URL('./scripts/zod-locales-shim.js', import.meta.url))),
 			cloudflare(),
 			react(),
+			sourceTagPlugin(),
 		],
 	}
 })
