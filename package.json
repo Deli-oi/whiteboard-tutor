@@ -13,7 +13,10 @@
 		"preview": "vite preview",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run",
-		"deploy": "vite build && wrangler deploy --config dist/whiteboard_tutor/wrangler.json"
+		"deploy": "vite build && wrangler deploy --config dist/whiteboard_tutor/wrangler.json",
+		"typecheck:extension": "tsc --noEmit -p extension/tsconfig.json",
+		"build:extension": "node extension/build.mjs",
+		"watch:extension": "node extension/build.mjs --watch"
 	},
 	"dependencies": {
 		"@ai-sdk/anthropic": "^2.0.80",
@@ -40,10 +43,12 @@
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^5.20260915.1",
+		"@types/chrome": "^0.3.4",
 		"@types/node": "^22.0.0",
 		"@types/react": "^19.2.7",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^6.0.1",
+		"esbuild": "^0.28.1",
 		"typescript": "^5.8.3",
 		"vite": "^8.0.16",
 		"vitest": "^5.0.3"
