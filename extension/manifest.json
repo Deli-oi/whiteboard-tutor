@@ -2,7 +2,7 @@
 	"manifest_version": 3,
 	"name": "Study Buddy — Visual Edit (dev)",
 	"version": "0.1.0",
-	"description": "Phase 3: circle part of a page you're running locally, then speak what you want. No generation or file edit yet.",
+	"description": "Phase 4: circle part of a page you're running locally, speak what you want, see a real generated visualization. No file edit yet.",
 	"permissions": ["activeTab", "scripting"],
 	"host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
 	"background": {

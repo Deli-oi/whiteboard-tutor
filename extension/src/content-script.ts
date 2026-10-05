@@ -210,7 +210,7 @@ function startListening(rect: DOMRect, matches: Match[]) {
 			showPanel(rect, `${matchSummary(matches)}\n\n🎤 Listening… "${interim}"`)
 		},
 		onFinal(text) {
-			showPanel(rect, `${matchSummary(matches)}\n\n✅ Heard: "${text}"\n\n(Phase 4 will turn this into a visualization.)`)
+			void generateVisualization(rect, matches, text)
 		},
 		onError(message) {
 			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${message}`)
@@ -221,6 +221,106 @@ function startListening(rect: DOMRect, matches: Match[]) {
 		},
 	})
 	void stt.start()
+}
+
+interface GeneratedAction {
+	_type: string
+	html?: string
+	w?: number
+	h?: number
+}
+
+/**
+ * Phase 4: send the circled element's context + transcript to the new lean
+ * worker route and render whatever comes back. Scoped to createHtml for now
+ * - see worker/routes/generateFragment.ts for why.
+ */
+async function generateVisualization(rect: DOMRect, matches: Match[], transcript: string) {
+	const best = matches[0]
+	showPanel(rect, `${matchSummary(matches)}\n\n✅ Heard: "${transcript}"\n\n⚙️ Generating…`)
+
+	try {
+		const res = await fetch(`${location.origin}/extension/generate`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				transcript,
+				selection: {
+					tag: best.el.tagName.toLowerCase(),
+					id: best.el.id || undefined,
+					classes: best.el.classList.length ? Array.from(best.el.classList) : undefined,
+					preview: (best.el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 300),
+				},
+			}),
+		})
+		if (!res.ok) {
+			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${await res.text()}`)
+			return
+		}
+		const { action } = (await res.json()) as { action: GeneratedAction }
+		if (action._type !== 'createHtml' || !action.html) {
+			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${action._type}`)
+			return
+		}
+		showGeneratedVisualization(rect, action)
+	} catch (e) {
+		showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`)
+	}
+}
+
+/**
+ * Renders the result in a sandboxed iframe near the selection - same
+ * security model as the main app's HtmlShapeUtil.tsx (allow-scripts, no
+ * allow-same-origin, so generated JS can't reach this page's DOM/storage/
+ * cookies). This is still just a floating preview; Phase 5 is what actually
+ * splices it into the real file.
+ */
+function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAction) {
+	panelEl?.remove()
+
+	const w = action.w ?? 400
+	const h = action.h ?? 300
+	const container = document.createElement('div')
+	Object.assign(container.style, {
+		position: 'fixed',
+		zIndex: '2147483647',
+		width: w + 'px',
+		height: h + 'px',
+		background: 'white',
+		borderRadius: '8px',
+		boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+		overflow: 'hidden',
+	})
+	container.style.top = Math.max(8, Math.min(selectionRect.bottom + 8, window.innerHeight - h - 8)) + 'px'
+	container.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - w - 8) + 'px'
+
+	const closeBtn = document.createElement('button')
+	closeBtn.textContent = '✕'
+	Object.assign(closeBtn.style, {
+		position: 'absolute',
+		top: '4px',
+		right: '4px',
+		zIndex: '1',
+		border: 'none',
+		background: 'rgba(0,0,0,0.6)',
+		color: 'white',
+		borderRadius: '4px',
+		width: '22px',
+		height: '22px',
+		cursor: 'pointer',
+		fontSize: '12px',
+	})
+	closeBtn.addEventListener('click', () => container.remove())
+
+	const iframe = document.createElement('iframe')
+	iframe.setAttribute('sandbox', 'allow-scripts')
+	iframe.srcdoc = action.html ?? ''
+	Object.assign(iframe.style, { width: '100%', height: '100%', border: '0', display: 'block' })
+
+	container.appendChild(iframe)
+	container.appendChild(closeBtn)
+	document.documentElement.appendChild(container)
+	panelEl = container
 }
 
 /**

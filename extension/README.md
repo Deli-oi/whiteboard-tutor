@@ -1,62 +1,58 @@
-# Study Buddy — Visual Edit (extension, Phase 3)
+# Study Buddy — Visual Edit (extension, Phase 4)
 
-Phase 3 of the extension pivot (plan: `ancient-rolling-hellman.md`). Box-
-select (Phase 2, confirmed working) now flows straight into voice capture.
-Still no LLM call or file edit - that's Phase 4/5. The goal here is just:
-does circle → speak → transcript feel fast and reliable, tied to the right
-selection?
+Phase 4 of the extension pivot (plan: `ancient-rolling-hellman.md`). Circle
+→ speak now actually generates something and shows it to you, floating
+near the selection in a sandboxed iframe (same security model as the main
+app: `sandbox="allow-scripts"`, no `allow-same-origin`). **Still no file
+edit** - that's Phase 5, where this gets spliced into the real source
+file instead of floating on top of it.
+
+Scoped to the `createHtml` action only for now (the fallback tool, whose
+own system-prompt guidance already covers charts/Mermaid diagrams/KaTeX
+math/Stepper step-throughs generically). Wiring up the other 6 dedicated
+render-template tools (comparison table, concept map, etc.) is a
+straightforward follow-up, deliberately deferred to keep this checkpoint
+small - see `worker/routes/generateFragment.ts`'s own comment.
 
 ## Build it
 
 ```
-npm run build:extension        # one-shot build
-npm run watch:extension        # rebuilds on save while you iterate
-npm run typecheck:extension    # separate tsconfig (DOM + chrome types, no tldraw)
+npm run build:extension
+npm run watch:extension     # while iterating
 ```
 
-`extension/src/content-script.ts` is the real source - it imports
-`client/voice/stt.ts` and `api.ts` directly (confirmed zero tldraw coupling
-during the pivot's planning phase), bundled by esbuild into
-`extension/content-script.js`, which the manifest loads as a classic
-script. **`content-script.js` is generated - edit the `.ts` source and
-rebuild, don't hand-edit the output.** `background.js` has no imports and
-stays hand-written, unbundled.
+New this phase: `worker/routes/generateFragment.ts` (a lean, non-streaming
+`POST /extension/generate` - no Durable Object, no conversation state,
+one request in, one action out) and `worker/prompt/buildExtensionPrompt.ts`
+(a standalone system prompt, reusing `createHtml`'s existing schema
+verbatim rather than the full tldraw-canvas agent's prompt machinery).
 
 ## Load it
 
-Same as Phase 2:
+Same as before - `npm run dev`, build the extension, reload it at
+`chrome://extensions`, refresh the test page.
 
-1. `npm run dev` in the project root.
-2. `npm run build:extension` (or `watch:extension` if you're iterating).
-3. `chrome://extensions` → Developer mode → Load unpacked → this `extension/`
-   folder. (Already loaded from Phase 2? Click the refresh icon on the
-   extension's card after rebuilding, since Chrome doesn't auto-reload
-   unpacked extensions.)
-4. Open `http://localhost:5173/extension-poc/test-page.html`, **refresh the
-   tab**.
-5. **Ctrl+Shift+E** (Cmd+Shift+E on Mac), drag a box around something, then
-   **just start talking** - it starts listening automatically the moment a
-   selection resolves. The panel shows live interim text as you speak
-   (Chrome's built-in speech recognition), then the final transcript once
-   you pause.
-6. First time, Chrome will prompt for microphone permission on
-   `localhost:5173` - allow it.
-7. Esc while listening cancels the capture but keeps the selection info on
-   screen; Esc again (or the shortcut) closes everything.
+**Ctrl+Shift+E**, drag a box, speak a request - e.g. "turn this into a bar
+chart" or "add a diagram explaining this." A few seconds later a real
+rendered visualization should appear near your selection. Click the ✕ to
+dismiss it.
 
 ## What to check
 
-- Does it actually start listening right after you finish dragging the box,
-  with no extra click?
-- How does the capture latency/accuracy feel - is it fast enough that this
-  doesn't feel like a chore? (This project's stated #1 priority.)
-- Say something with a pause in the middle - does it wait for you to
-  actually finish, not cut you off early?
-- Try it on a couple of different circled elements in a row to make sure
-  state resets cleanly between attempts.
+- Does the generated visualization actually match what you asked for and
+  use the real content you circled (not generic placeholder data)?
+- How long does generation actually take, end to end? (Verified from the
+  command line during development: ~7-8s for a Mermaid diagram or a
+  Chart.js chart on the default model.)
+- Try a request that doesn't obviously map to a chart/diagram/table - does
+  it degrade sensibly, or does it feel like it's reaching for the wrong
+  tool? (Expected, for now - scoped to createHtml only this phase.)
+- Try two or three circles in a row without reloading the page, to check
+  state resets cleanly between generations.
 
-Uses the browser's built-in speech recognition (same `BrowserStt` engine
-the main app uses when available) - no network call, no dependency on the
-worker for this phase. Groq/OpenAI fallback code path exists (same
-`createStt` abstraction) but isn't exercised yet since Chrome always has
-browser STT.
+## Known limitation, not a bug
+
+If you ask for something a dedicated tool (comparison table, concept map,
+etc.) would do better, you'll still get a `createHtml` answer - there's
+only one tool wired up right now. That's the planned scope for this phase,
+not a miss.

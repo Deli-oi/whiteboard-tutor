@@ -8,6 +8,7 @@ import { Environment } from './environment'
 import { rateLimit } from './rateLimit'
 import { fallbackLogs } from './routes/fallbackLogs'
 import { fetchLink } from './routes/fetchLink'
+import { generateFragment } from './routes/generateFragment'
 import { stream } from './routes/stream'
 import { transcribe, transcribeGroq } from './routes/transcribe'
 
@@ -36,6 +37,7 @@ const router = AutoRouter<IRequest, [env: Environment, ctx: ExecutionContext]>({
 	.post('/transcribe', transcribe)
 	.post('/transcribe-groq', transcribeGroq)
 	.post('/fetch', fetchLink)
+	.post('/extension/generate', generateFragment)
 	.get('/fallback-logs', fallbackLogs)
 	.get('/fallback-logs/:id', fallbackLogs)
 

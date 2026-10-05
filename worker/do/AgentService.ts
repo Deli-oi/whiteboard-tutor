@@ -356,7 +356,7 @@ export type AgentStreamEvent = Streaming<AgentAction> | { usage: AgentUsage }
  * worth showing the user (the AI SDK's APICallError.message is usually already
  * the upstream provider's own error text, e.g. a Groq rate-limit explanation).
  */
-function toErrorWithMessage(error: unknown): Error {
+export function toErrorWithMessage(error: unknown): Error {
 	if (error instanceof Error) return error
 	if (typeof error === 'string') return new Error(error)
 	return new Error('The model request failed. Try again, or switch models.')
@@ -370,7 +370,7 @@ const RETRYABLE_STATUS_CODES = new Set([500, 502, 503, 504])
  * reset in the few seconds a retry loop can afford. Only a transient 429 with
  * no quota language in it is worth retrying.
  */
-function isQuotaExceededError(error: unknown): boolean {
+export function isQuotaExceededError(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error)
 	return /quota|RESOURCE_EXHAUSTED|exceeded your current/i.test(message)
 }
@@ -381,7 +381,7 @@ function isQuotaExceededError(error: unknown): boolean {
  * model id or a malformed request. The AI SDK's own `error.isRetryable` can't
  * be trusted here - @ai-sdk/google never sets it.
  */
-function isRetryableApiError(error: unknown): boolean {
+export function isRetryableApiError(error: unknown): boolean {
 	if (isQuotaExceededError(error)) return false
 	const statusCode = (error as { statusCode?: unknown } | undefined)?.statusCode
 	if (typeof statusCode === 'number' && (statusCode === 429 || RETRYABLE_STATUS_CODES.has(statusCode)))
@@ -396,7 +396,7 @@ type StreamTextProviderOptions = NonNullable<Parameters<typeof streamText>[0]['p
  * Map a model definition's reasoning preferences to AI SDK provider options.
  * Only the matching provider's options are set; the SDK ignores the rest.
  */
-function getProviderOptions(
+export function getProviderOptions(
 	definition: AgentModelDefinition,
 	lowEffort = false
 ): StreamTextProviderOptions {

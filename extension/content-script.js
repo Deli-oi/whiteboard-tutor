@@ -370,11 +370,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
 \u{1F3A4} Listening\u2026 "${interim}"`);
       },
       onFinal(text) {
-        showPanel(rect, `${matchSummary(matches)}
-
-\u2705 Heard: "${text}"
-
-(Phase 4 will turn this into a visualization.)`);
+        void generateVisualization(rect, matches, text);
       },
       onError(message) {
         showPanel(rect, `${matchSummary(matches)}
@@ -387,6 +383,90 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       }
     });
     void stt.start();
+  }
+  async function generateVisualization(rect, matches, transcript) {
+    const best = matches[0];
+    showPanel(rect, `${matchSummary(matches)}
+
+\u2705 Heard: "${transcript}"
+
+\u2699\uFE0F Generating\u2026`);
+    try {
+      const res = await fetch(`${location.origin}/extension/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcript,
+          selection: {
+            tag: best.el.tagName.toLowerCase(),
+            id: best.el.id || void 0,
+            classes: best.el.classList.length ? Array.from(best.el.classList) : void 0,
+            preview: (best.el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 300)
+          }
+        })
+      });
+      if (!res.ok) {
+        showPanel(rect, `${matchSummary(matches)}
+
+\u26A0\uFE0F Generation failed: ${await res.text()}`);
+        return;
+      }
+      const { action } = await res.json();
+      if (action._type !== "createHtml" || !action.html) {
+        showPanel(rect, `${matchSummary(matches)}
+
+\u26A0\uFE0F Got an unexpected action type: ${action._type}`);
+        return;
+      }
+      showGeneratedVisualization(rect, action);
+    } catch (e) {
+      showPanel(rect, `${matchSummary(matches)}
+
+\u26A0\uFE0F ${e instanceof Error ? e.message : "Generation failed"}`);
+    }
+  }
+  function showGeneratedVisualization(selectionRect, action) {
+    panelEl?.remove();
+    const w = action.w ?? 400;
+    const h = action.h ?? 300;
+    const container = document.createElement("div");
+    Object.assign(container.style, {
+      position: "fixed",
+      zIndex: "2147483647",
+      width: w + "px",
+      height: h + "px",
+      background: "white",
+      borderRadius: "8px",
+      boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+      overflow: "hidden"
+    });
+    container.style.top = Math.max(8, Math.min(selectionRect.bottom + 8, window.innerHeight - h - 8)) + "px";
+    container.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - w - 8) + "px";
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "\u2715";
+    Object.assign(closeBtn.style, {
+      position: "absolute",
+      top: "4px",
+      right: "4px",
+      zIndex: "1",
+      border: "none",
+      background: "rgba(0,0,0,0.6)",
+      color: "white",
+      borderRadius: "4px",
+      width: "22px",
+      height: "22px",
+      cursor: "pointer",
+      fontSize: "12px"
+    });
+    closeBtn.addEventListener("click", () => container.remove());
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("sandbox", "allow-scripts");
+    iframe.srcdoc = action.html ?? "";
+    Object.assign(iframe.style, { width: "100%", height: "100%", border: "0", display: "block" });
+    container.appendChild(iframe);
+    container.appendChild(closeBtn);
+    document.documentElement.appendChild(container);
+    panelEl = container;
   }
   function showPanel(selectionRect, text) {
     panelEl?.remove();
