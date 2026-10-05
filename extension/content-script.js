@@ -475,14 +475,14 @@
 \u26A0\uFE0F Generation failed: ${relay.body}`);
         return;
       }
-      const { action } = JSON.parse(relay.body);
-      if (action._type !== "createHtml" || !action.html) {
+      const { action, renderUrl } = JSON.parse(relay.body);
+      if (action._type !== "createHtml" || !renderUrl) {
         showPanel(rect, `${matchSummary(matches)}
 
 \u26A0\uFE0F Got an unexpected action type: ${action._type}`);
         return;
       }
-      showGeneratedVisualization(rect, action);
+      showGeneratedVisualization(rect, action, renderUrl);
     } catch (e) {
       showPanel(rect, `${matchSummary(matches)}
 
@@ -490,7 +490,7 @@
     }
   }
   var DRAG_HANDLE_HEIGHT = 22;
-  function showGeneratedVisualization(selectionRect, action) {
+  function showGeneratedVisualization(selectionRect, action, renderUrl) {
     panelDragCleanup?.();
     panelEl?.remove();
     const w = action.w ?? 400;
@@ -547,7 +547,7 @@
     header.appendChild(closeBtn);
     const iframe = document.createElement("iframe");
     iframe.setAttribute("sandbox", "allow-scripts");
-    iframe.srcdoc = action.html ?? "";
+    iframe.src = renderUrl;
     Object.assign(iframe.style, { width: "100%", flex: "1 1 auto", border: "0", display: "block" });
     container.appendChild(header);
     container.appendChild(iframe);

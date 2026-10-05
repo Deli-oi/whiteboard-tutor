@@ -331,7 +331,6 @@ function startListening(rect: DOMRect, matches: Match[]) {
 
 interface GeneratedAction {
 	_type: string
-	html?: string
 	w?: number
 	h?: number
 }
@@ -371,12 +370,12 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${relay.body}`)
 			return
 		}
-		const { action } = JSON.parse(relay.body) as { action: GeneratedAction }
-		if (action._type !== 'createHtml' || !action.html) {
+		const { action, renderUrl } = JSON.parse(relay.body) as { action: GeneratedAction; renderUrl?: string }
+		if (action._type !== 'createHtml' || !renderUrl) {
 			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${action._type}`)
 			return
 		}
-		showGeneratedVisualization(rect, action)
+		showGeneratedVisualization(rect, action, renderUrl)
 	} catch (e) {
 		showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`)
 	}
@@ -388,10 +387,18 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
  * allow-same-origin, so generated JS can't reach this page's DOM/storage/
  * cookies). This is still just a floating preview; Phase 5 is what actually
  * splices it into the real file.
+ *
+ * Loads `renderUrl` (a real worker-hosted URL - worker/routes/
+ * renderFragment.ts) via `src`, not `action.html` via `srcdoc`: confirmed
+ * live that a srcdoc/data: iframe inherits the EMBEDDING page's CSP, which
+ * silently blocks all script execution (inline or external) on a strict-CSP
+ * site like GitHub - the HTML still rendered, nothing ever ran. A real,
+ * separate-origin document gets its own CSP instead, independent of
+ * whatever page it's circled on.
  */
 const DRAG_HANDLE_HEIGHT = 22
 
-function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAction) {
+function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAction, renderUrl: string) {
 	panelDragCleanup?.()
 	panelEl?.remove()
 
@@ -456,7 +463,7 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
 
 	const iframe = document.createElement('iframe')
 	iframe.setAttribute('sandbox', 'allow-scripts')
-	iframe.srcdoc = action.html ?? ''
+	iframe.src = renderUrl
 	Object.assign(iframe.style, { width: '100%', flex: '1 1 auto', border: '0', display: 'block' })
 
 	container.appendChild(header)

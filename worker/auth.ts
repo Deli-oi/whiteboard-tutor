@@ -34,7 +34,18 @@ export function checkAccess(request: IRequest, env: Environment): Response | nul
 		if (!ok) return new Response('Origin not allowed', { status: 403 })
 	}
 
-	if (env.ACCESS_TOKEN) {
+	// /extension/render/:id is loaded via a plain <iframe src> navigation (on
+	// purpose - that's what gives it its own origin, independent of whatever
+	// CSP the embedding page sets, which a srcdoc/data: iframe can't escape).
+	// A browser navigation can't attach a custom Authorization header the way
+	// fetch/XHR can, so the bearer-token gate below is structurally
+	// impossible to satisfy for it. It relies on its own protection instead:
+	// the id is an unguessable crypto.randomUUID() serving content that
+	// expires within minutes (see worker/routes/fragmentCache.ts) - the same
+	// security posture as an unlisted link, appropriate since this route
+	// only ever re-serves a visualization this same instance just generated,
+	// never anything sensitive or billable on its own.
+	if (env.ACCESS_TOKEN && !url.pathname.startsWith('/extension/render/')) {
 		const header = request.headers.get('Authorization') ?? ''
 		const token = header.startsWith('Bearer ') ? header.slice(7).trim() : ''
 		if (!token || !timingSafeEqual(token, env.ACCESS_TOKEN)) {

@@ -14,6 +14,7 @@ import {
 import { closeAndParseJson } from '../do/closeAndParseJson'
 import { normalizeModelText } from '../do/normalizeModelText'
 import { buildExtensionSystemPrompt } from '../prompt/buildExtensionPrompt'
+import { storeFragment } from './fragmentCache'
 import { inlineVendorAssets } from './inlineVendorAssets'
 
 const GenerateFragmentRequestSchema = z.object({
@@ -97,11 +98,18 @@ export async function generateFragment(request: IRequest, env: Environment) {
 			}
 
 			const data = validated.data
+			let renderUrl: string | undefined
 			if (data._type === 'createHtml') {
-				data.html = await inlineVendorAssets(data.html, new URL(request.url).origin)
+				const origin = new URL(request.url).origin
+				data.html = await inlineVendorAssets(data.html, origin)
+				// Served from its own URL rather than inlined via srcdoc, so it
+				// gets its own CSP instead of inheriting the embedding page's
+				// (which silently blocks all script execution on strict-CSP
+				// sites - see renderFragment.ts).
+				renderUrl = `${origin}/extension/render/${storeFragment(data.html)}`
 			}
 
-			return Response.json({ action: data })
+			return Response.json({ action: data, renderUrl })
 		} catch (error) {
 			lastError = error
 			if (isQuotaExceededError(error)) break
