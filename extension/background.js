@@ -15,8 +15,8 @@
     }
   };
   var __export = (target, all) => {
-    for (var name17 in all)
-      __defProp(target, name17, { get: all[name17], enumerable: true });
+    for (var name19 in all)
+      __defProp(target, name19, { get: all[name19], enumerable: true });
   };
   var __copyProps = (to, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
@@ -44,8 +44,8 @@
       var __getOwnPropNames2 = Object.getOwnPropertyNames;
       var __hasOwnProp2 = Object.prototype.hasOwnProperty;
       var __export3 = (target, all) => {
-        for (var name17 in all)
-          __defProp3(target, name17, { get: all[name17], enumerable: true });
+        for (var name19 in all)
+          __defProp3(target, name19, { get: all[name19], enumerable: true });
       };
       var __copyProps2 = (to, from, except, desc) => {
         if (from && typeof from === "object" || typeof from === "function") {
@@ -79,8 +79,8 @@
       var __getOwnPropNames2 = Object.getOwnPropertyNames;
       var __hasOwnProp2 = Object.prototype.hasOwnProperty;
       var __export3 = (target, all) => {
-        for (var name17 in all)
-          __defProp3(target, name17, { get: all[name17], enumerable: true });
+        for (var name19 in all)
+          __defProp3(target, name19, { get: all[name19], enumerable: true });
       };
       var __copyProps2 = (to, from, except, desc) => {
         if (from && typeof from === "object" || typeof from === "function") {
@@ -1746,12 +1746,12 @@ ${value}`, dataLines++;
     });
     return clone(a, def);
   }
-  function partial(Class2, schema, mask, name17 = "partial") {
+  function partial(Class2, schema, mask, name19 = "partial") {
     const currDef = schema._zod.def;
     const checks = currDef.checks;
     const hasChecks = checks && checks.length > 0;
     if (hasChecks) {
-      throw new Error(`.${name17}() cannot be used on object schemas containing refinements`);
+      throw new Error(`.${name19}() cannot be used on object schemas containing refinements`);
     }
     const selected = mask ? new Set(maskedKeys(schema, mask)) : void 0;
     const newShape = {};
@@ -1789,8 +1789,8 @@ ${value}`, dataLines++;
   }
   function prefixIssues(path, issues) {
     return issues.map((iss) => {
-      var _a20;
-      (_a20 = iss).path ?? (_a20.path = []);
+      var _a25;
+      (_a25 = iss).path ?? (_a25.path = []);
       iss.path.unshift(path);
       return iss;
     });
@@ -1799,17 +1799,17 @@ ${value}`, dataLines++;
     return typeof message === "string" ? message : message?.message;
   }
   function attachSchema(issues, start, inst) {
-    var _a20;
+    var _a25;
     for (let i = start; i < issues.length; i++) {
-      (_a20 = issues[i]).schema ?? (_a20.schema = inst);
+      (_a25 = issues[i]).schema ?? (_a25.schema = inst);
     }
   }
   function finalizeIssue(iss, ctx, config2) {
-    var _a20;
+    var _a25;
     const traits = iss.inst?._zod?.traits;
     if (traits?.has("$ZodType")) {
       if (traits.has("$ZodCheck"))
-        (_a20 = iss).schema ?? (_a20.schema = iss.inst);
+        (_a25 = iss).schema ?? (_a25.schema = iss.inst);
       else
         iss.schema = iss.inst;
     }
@@ -2079,7 +2079,7 @@ ${value}`, dataLines++;
     return new Definition();
   }
   // @__NO_SIDE_EFFECTS__
-  function $constructor(name17, initializer3, proto, params) {
+  function $constructor(name19, initializer3, proto, params) {
     const zodProto = {};
     function Internals(def) {
       this.def = def;
@@ -2097,10 +2097,10 @@ ${value}`, dataLines++;
         } finally {
           _zodDesc.value = void 0;
         }
-      } else if (inst._zod.traits.has(name17)) {
+      } else if (inst._zod.traits.has(name19)) {
         return;
       }
-      inst._zod.traits.add(name17);
+      inst._zod.traits.add(name19);
       initializer3(inst, def);
       if (initialized) {
         const own2 = Object.getPrototypeOf(inst);
@@ -2126,7 +2126,7 @@ ${value}`, dataLines++;
     const Parent = params?.Parent ?? Object;
     class Definition extends Parent {
     }
-    Object.defineProperty(Definition, "name", { value: name17 });
+    Object.defineProperty(Definition, "name", { value: name19 });
     function _(def) {
       const inst = params?.Parent ? newError(Definition) : this;
       init(inst, def);
@@ -2147,10 +2147,10 @@ ${value}`, dataLines++;
       value: (inst) => {
         if (params?.Parent && inst instanceof params.Parent)
           return true;
-        return inst?._zod?.traits?.has(name17);
+        return inst?._zod?.traits?.has(name19);
       }
     });
-    Object.defineProperty(_, "name", { value: name17 });
+    Object.defineProperty(_, "name", { value: name19 });
     return _;
   }
   var $brand = /* @__PURE__ */ Symbol("zod_brand");
@@ -2160,8 +2160,8 @@ ${value}`, dataLines++;
     }
   };
   var $ZodEncodeError = class extends Error {
-    constructor(name17) {
-      super(`Encountered unidirectional transform during encode: ${name17}`);
+    constructor(name19) {
+      super(`Encountered unidirectional transform during encode: ${name19}`);
       this.name = "ZodEncodeError";
     }
   };
@@ -2290,7 +2290,7 @@ ${value}`, dataLines++;
   function treeifyError(error62, mapper = (issue2) => issue2.message) {
     const result = { errors: [] };
     const processError = (error63, path = []) => {
-      var _a20;
+      var _a25;
       for (const issue2 of error63.issues) {
         if (issue2.code === "invalid_union" && issue2.errors.length) {
           issue2.errors.map((issues) => processError({ issues }, [...path, ...issue2.path]));
@@ -2322,7 +2322,7 @@ ${value}`, dataLines++;
               curr = curr.properties[el];
             } else {
               curr.items ?? (curr.items = []);
-              (_a20 = curr.items)[el] ?? (_a20[el] = { errors: [] });
+              (_a25 = curr.items)[el] ?? (_a25[el] = { errors: [] });
               curr = curr.items[el];
             }
             if (terminal) {
@@ -2441,11 +2441,11 @@ ${value}`, dataLines++;
   var COMPILE_INVALID = /* @__PURE__ */ Symbol.for("zod.compile.invalid");
   var COMPILE_FALLBACK = /* @__PURE__ */ Symbol.for("zod.compile.fallback");
   var validate = ((schema, value, _ctx) => {
-    const validator2 = schema._zod.bag.validator;
-    if (validator2 !== void 0) {
-      if (validator2(value) !== COMPILE_INVALID)
+    const validator3 = schema._zod.bag.validator;
+    if (validator3 !== void 0) {
+      if (validator3(value) !== COMPILE_INVALID)
         return true;
-      if (validator2.definite === true && _ctx === void 0)
+      if (validator3.definite === true && _ctx === void 0)
         return false;
     }
     return validateFallback(schema, value, _ctx);
@@ -2699,10 +2699,10 @@ ${value}`, dataLines++;
 
   // node_modules/zod/v4/core/checks.js
   var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
-    var _a20;
+    var _a25;
     inst._zod ?? (inst._zod = {});
     inst._zod.def = def;
-    (_a20 = inst._zod).onattach ?? (_a20.onattach = []);
+    (_a25 = inst._zod).onattach ?? (_a25.onattach = []);
   });
   var _whenHasSize = (payload) => {
     const val = payload.value;
@@ -2875,9 +2875,9 @@ ${value}`, dataLines++;
     };
   });
   var $ZodCheckMaxSize = /* @__PURE__ */ $constructor("$ZodCheckMaxSize", (inst, def) => {
-    var _a20;
+    var _a25;
     $ZodCheck.init(inst, def);
-    (_a20 = inst._zod.def).when ?? (_a20.when = _whenHasSize);
+    (_a25 = inst._zod.def).when ?? (_a25.when = _whenHasSize);
     inst._zod.check = (payload) => {
       const input2 = payload.value;
       const size = input2.size;
@@ -2895,9 +2895,9 @@ ${value}`, dataLines++;
     };
   });
   var $ZodCheckMinSize = /* @__PURE__ */ $constructor("$ZodCheckMinSize", (inst, def) => {
-    var _a20;
+    var _a25;
     $ZodCheck.init(inst, def);
-    (_a20 = inst._zod.def).when ?? (_a20.when = _whenHasSize);
+    (_a25 = inst._zod.def).when ?? (_a25.when = _whenHasSize);
     inst._zod.check = (payload) => {
       const input2 = payload.value;
       const size = input2.size;
@@ -2915,9 +2915,9 @@ ${value}`, dataLines++;
     };
   });
   var $ZodCheckSizeEquals = /* @__PURE__ */ $constructor("$ZodCheckSizeEquals", (inst, def) => {
-    var _a20;
+    var _a25;
     $ZodCheck.init(inst, def);
-    (_a20 = inst._zod.def).when ?? (_a20.when = _whenHasSize);
+    (_a25 = inst._zod.def).when ?? (_a25.when = _whenHasSize);
     inst._zod.check = (payload) => {
       const input2 = payload.value;
       const size = input2.size;
@@ -2936,9 +2936,9 @@ ${value}`, dataLines++;
     };
   });
   var $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (inst, def) => {
-    var _a20;
+    var _a25;
     $ZodCheck.init(inst, def);
-    (_a20 = inst._zod.def).when ?? (_a20.when = _whenHasLength);
+    (_a25 = inst._zod.def).when ?? (_a25.when = _whenHasLength);
     inst._zod.check = (payload) => {
       const input2 = payload.value;
       const units = input2.length;
@@ -2958,9 +2958,9 @@ ${value}`, dataLines++;
     };
   });
   var $ZodCheckMinLength = /* @__PURE__ */ $constructor("$ZodCheckMinLength", (inst, def) => {
-    var _a20;
+    var _a25;
     $ZodCheck.init(inst, def);
-    (_a20 = inst._zod.def).when ?? (_a20.when = _whenHasLength);
+    (_a25 = inst._zod.def).when ?? (_a25.when = _whenHasLength);
     inst._zod.check = (payload) => {
       const input2 = payload.value;
       const units = input2.length;
@@ -2980,9 +2980,9 @@ ${value}`, dataLines++;
     };
   });
   var $ZodCheckLengthEquals = /* @__PURE__ */ $constructor("$ZodCheckLengthEquals", (inst, def) => {
-    var _a20;
+    var _a25;
     $ZodCheck.init(inst, def);
-    (_a20 = inst._zod.def).when ?? (_a20.when = _whenHasLength);
+    (_a25 = inst._zod.def).when ?? (_a25.when = _whenHasLength);
     inst._zod.check = (payload) => {
       const input2 = payload.value;
       const units = input2.length;
@@ -3003,10 +3003,10 @@ ${value}`, dataLines++;
     };
   });
   var $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringFormat", (inst, def) => {
-    var _a20, _b17;
+    var _a25, _b19;
     $ZodCheck.init(inst, def);
     if (def.pattern)
-      (_a20 = inst._zod).check ?? (_a20.check = (payload) => {
+      (_a25 = inst._zod).check ?? (_a25.check = (payload) => {
         def.pattern.lastIndex = 0;
         if (def.pattern.test(payload.value))
           return;
@@ -3021,7 +3021,7 @@ ${value}`, dataLines++;
         });
       });
     else
-      (_b17 = inst._zod).check ?? (_b17.check = () => {
+      (_b19 = inst._zod).check ?? (_b19.check = () => {
       });
   });
   var $ZodCheckRegex = /* @__PURE__ */ $constructor("$ZodCheckRegex", (inst, def) => {
@@ -3223,7 +3223,7 @@ ${content.join("\n")}
 
   // node_modules/zod/v4/core/schemas.js
   var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
-    var _a20;
+    var _a25;
     inst ?? (inst = {});
     inst._zod.def = def;
     inst._zod.bag = inst._zod.bag || {};
@@ -3236,7 +3236,7 @@ ${content.join("\n")}
       }
     }
     if (checks.length === 0) {
-      (_a20 = inst._zod).deferred ?? (_a20.deferred = []);
+      (_a25 = inst._zod).deferred ?? (_a25.deferred = []);
       inst._zod.deferred?.push(() => {
         inst._zod.run = inst._zod.parse;
       });
@@ -5816,8 +5816,8 @@ ${content.join("\n")}
       return empty;
     },
     guard(inst) {
-      var _a20;
-      (_a20 = inst._zod).deferred ?? (_a20.deferred = []);
+      var _a25;
+      (_a25 = inst._zod).deferred ?? (_a25.deferred = []);
       inst._zod.deferred.push(() => {
         const base = inst._zod.parse;
         const wrapped = (payload, ctx) => {
@@ -5831,12 +5831,12 @@ ${content.join("\n")}
       });
     },
     attach(inst) {
-      var _a20;
+      var _a25;
       let isRecursiveInst;
       let rechecked = false;
       let lastCtx;
       let lastBucket;
-      (_a20 = inst._zod).deferred ?? (_a20.deferred = []);
+      (_a25 = inst._zod).deferred ?? (_a25.deferred = []);
       inst._zod.deferred.push(() => {
         const base = inst._zod.parse;
         const wrapped = (payload, ctx) => {
@@ -13660,13 +13660,13 @@ ${code}
     return fn;
   }
   function addConstant(ctx, value) {
-    for (const [name18, v] of ctx.constants) {
+    for (const [name20, v] of ctx.constants) {
       if (v === value)
-        return name18;
+        return name20;
     }
-    const name17 = `c${ctx.constantCounter++}`;
-    ctx.constants.set(name17, value);
-    return name17;
+    const name19 = `c${ctx.constantCounter++}`;
+    ctx.constants.set(name19, value);
+    return name19;
   }
   function addUserConstant(ctx, fn) {
     ctx.definite = false;
@@ -13993,39 +13993,39 @@ ${code}
   function generateStringFormatCheck(doc, ctx, def, accessor, needsValue = true) {
     const fmt = def.format;
     if (fmt === "base64") {
-      const validator2 = addConstant(ctx, isValidBase64);
-      doc.write(`if (!${validator2}(${accessor})) return INVALID;`);
+      const validator3 = addConstant(ctx, isValidBase64);
+      doc.write(`if (!${validator3}(${accessor})) return INVALID;`);
       return accessor;
     }
     if (fmt === "base64url") {
-      const validator2 = addConstant(ctx, isValidBase64URL);
-      doc.write(`if (!${validator2}(${accessor})) return INVALID;`);
+      const validator3 = addConstant(ctx, isValidBase64URL);
+      doc.write(`if (!${validator3}(${accessor})) return INVALID;`);
       return accessor;
     }
     if (fmt === "jwt") {
-      const validator2 = addConstant(ctx, isValidJWT);
+      const validator3 = addConstant(ctx, isValidJWT);
       const alg = addConstant(ctx, def.alg ?? null);
-      doc.write(`if (!${validator2}(${accessor}, ${alg})) return INVALID;`);
+      doc.write(`if (!${validator3}(${accessor}, ${alg})) return INVALID;`);
       return accessor;
     }
     if (fmt === "ipv6") {
-      const validator2 = addConstant(ctx, isValidIPv6);
-      doc.write(`if (!${validator2}(${accessor})) return INVALID;`);
+      const validator3 = addConstant(ctx, isValidIPv6);
+      doc.write(`if (!${validator3}(${accessor})) return INVALID;`);
       return accessor;
     }
     if (fmt === "cidrv6") {
-      const validator2 = addConstant(ctx, isValidCIDRv6);
-      doc.write(`if (!${validator2}(${accessor})) return INVALID;`);
+      const validator3 = addConstant(ctx, isValidCIDRv6);
+      doc.write(`if (!${validator3}(${accessor})) return INVALID;`);
       return accessor;
     }
     if (fmt === "credit_card") {
-      const validator2 = addConstant(ctx, isValidCreditCard);
-      doc.write(`if (!${validator2}(${accessor})) return INVALID;`);
+      const validator3 = addConstant(ctx, isValidCreditCard);
+      doc.write(`if (!${validator3}(${accessor})) return INVALID;`);
       return accessor;
     }
     if (fmt === "iban") {
-      const validator2 = addConstant(ctx, isValidIBAN);
-      doc.write(`if (!${validator2}(${accessor})) return INVALID;`);
+      const validator3 = addConstant(ctx, isValidIBAN);
+      doc.write(`if (!${validator3}(${accessor})) return INVALID;`);
       return accessor;
     }
     const formatDef = def;
@@ -16236,7 +16236,7 @@ ${code}
     return true;
   }
   function processSchema(schema, ctx, _params = { path: [], schemaPath: [] }) {
-    var _a20;
+    var _a25;
     const def = schema._zod.def;
     const seen = ctx.seen.get(schema);
     if (seen) {
@@ -16286,7 +16286,7 @@ ${code}
       delete result.schema.default;
     }
     if (ctx.io === "input" && "_prefault" in result.schema)
-      (_a20 = result.schema).default ?? (_a20.default = result.schema._prefault);
+      (_a25 = result.schema).default ?? (_a25.default = result.schema._prefault);
     delete result.schema._prefault;
     const _result = ctx.seen.get(schema);
     return _result.schema;
@@ -24256,9 +24256,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
   async function cancelResponseBody(response) {
-    var _a24;
+    var _a25;
     try {
-      await ((_a24 = response.body) == null ? void 0 : _a24.cancel());
+      await ((_a25 = response.body) == null ? void 0 : _a25.cancel());
     } catch (e) {
     }
   }
@@ -24451,9 +24451,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var initialGlobalFetch = globalThis.fetch;
   var initialGlobalFetchIsNodeDefault = isNodeDefaultFetch(initialGlobalFetch);
   function isNodeRuntime() {
-    var _a24, _b23;
+    var _a25, _b24;
     const runtimeProcess = globalThis.process;
-    return ((_a24 = runtimeProcess == null ? void 0 : runtimeProcess.release) == null ? void 0 : _a24.name) === "node" && ((_b23 = runtimeProcess.versions) == null ? void 0 : _b23.bun) == null;
+    return ((_a25 = runtimeProcess == null ? void 0 : runtimeProcess.release) == null ? void 0 : _a25.name) === "node" && ((_b24 = runtimeProcess.versions) == null ? void 0 : _b24.bun) == null;
   }
   async function getDefaultDownloadFetch() {
     if (!isNodeRuntime() || !initialGlobalFetchIsNodeDefault || globalThis.fetch !== initialGlobalFetch) {
@@ -24490,9 +24490,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     ));
   }
   async function loadNodeModule(id) {
-    var _a24;
+    var _a25;
     const processWithBuiltins = globalThis.process;
-    const builtinModule = (_a24 = processWithBuiltins == null ? void 0 : processWithBuiltins.getBuiltinModule) == null ? void 0 : _a24.call(processWithBuiltins, id);
+    const builtinModule = (_a25 = processWithBuiltins == null ? void 0 : processWithBuiltins.getBuiltinModule) == null ? void 0 : _a25.call(processWithBuiltins, id);
     return builtinModule == null ? await importNodeModule(id) : builtinModule;
   }
   function importNodeModule(id) {
@@ -24726,14 +24726,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return error62;
   }
   function getRuntimeEnvironmentUserAgent(globalThisAny = globalThis) {
-    var _a24, _b23, _c;
+    var _a25, _b24, _c;
     if (globalThisAny.window) {
       return `runtime/browser`;
     }
-    if ((_a24 = globalThisAny.navigator) == null ? void 0 : _a24.userAgent) {
+    if ((_a25 = globalThisAny.navigator) == null ? void 0 : _a25.userAgent) {
       return `runtime/${globalThisAny.navigator.userAgent.toLowerCase()}`;
     }
-    if ((_c = (_b23 = globalThisAny.process) == null ? void 0 : _b23.versions) == null ? void 0 : _c.node) {
+    if ((_c = (_b24 = globalThisAny.process) == null ? void 0 : _b24.versions) == null ? void 0 : _c.node) {
       return `runtime/node.js/${globalThisAny.process.version.substring(0)}`;
     }
     if (globalThisAny.EdgeRuntime) {
@@ -24955,12 +24955,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return typeof value === "object" && value !== null && validatorSymbol in value && value[validatorSymbol] === true && "validate" in value;
   }
   function lazyValidator(createValidator) {
-    let validator2;
+    let validator22;
     return () => {
-      if (validator2 == null) {
-        validator2 = createValidator();
+      if (validator22 == null) {
+        validator22 = createValidator();
       }
-      return validator2;
+      return validator22;
     };
   }
   function asValidator(value) {
@@ -24992,12 +24992,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     value,
     schema
   }) {
-    const validator2 = asValidator(schema);
+    const validator22 = asValidator(schema);
     try {
-      if (validator2.validate == null) {
+      if (validator22.validate == null) {
         return { success: true, value, rawValue: value };
       }
-      const result = await validator2.validate(value);
+      const result = await validator22.validate(value);
       if (result.success) {
         return { success: true, value: result.value, rawValue: value };
       }
@@ -25178,12 +25178,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       throw handleFetchError({ error: error62, url: url2, requestBodyValues: body.values });
     }
   };
-  function tool(tool2) {
-    return tool2;
+  function tool(tool22) {
+    return tool22;
   }
   function createProviderDefinedToolFactory({
     id,
-    name: name24,
+    name: name25,
     inputSchema
   }) {
     return ({
@@ -25197,7 +25197,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }) => tool({
       type: "provider-defined",
       id,
-      name: name24,
+      name: name25,
       args,
       inputSchema,
       outputSchema: outputSchema2,
@@ -25210,7 +25210,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }
   function createProviderDefinedToolFactoryWithOutputSchema({
     id,
-    name: name24,
+    name: name25,
     inputSchema,
     outputSchema: outputSchema2
   }) {
@@ -25224,7 +25224,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }) => tool({
       type: "provider-defined",
       id,
-      name: name24,
+      name: name25,
       args,
       inputSchema,
       outputSchema: outputSchema2,
@@ -25494,11 +25494,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return {};
   }
   function parseArrayDef(def, refs) {
-    var _a24, _b23, _c;
+    var _a25, _b24, _c;
     const res = {
       type: "array"
     };
-    if (((_a24 = def.type) == null ? void 0 : _a24._def) && ((_c = (_b23 = def.type) == null ? void 0 : _b23._def) == null ? void 0 : _c.typeName) !== ZodFirstPartyTypeKind2.ZodAny) {
+    if (((_a25 = def.type) == null ? void 0 : _a25._def) && ((_c = (_b24 = def.type) == null ? void 0 : _b24._def) == null ? void 0 : _c.typeName) !== ZodFirstPartyTypeKind2.ZodAny) {
       res.items = parseDef(def.type._def, {
         ...refs,
         currentPath: [...refs.currentPath, "items"]
@@ -25864,8 +25864,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return result;
   }
   function addFormat(schema, value, message, refs) {
-    var _a24;
-    if (schema.format || ((_a24 = schema.anyOf) == null ? void 0 : _a24.some((x) => x.format))) {
+    var _a25;
+    if (schema.format || ((_a25 = schema.anyOf) == null ? void 0 : _a25.some((x) => x.format))) {
       if (!schema.anyOf) {
         schema.anyOf = [];
       }
@@ -25884,8 +25884,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
   function addPattern2(schema, regex, message, refs) {
-    var _a24;
-    if (schema.pattern || ((_a24 = schema.allOf) == null ? void 0 : _a24.some((x) => x.pattern))) {
+    var _a25;
+    if (schema.pattern || ((_a25 = schema.allOf) == null ? void 0 : _a25.some((x) => x.pattern))) {
       if (!schema.allOf) {
         schema.allOf = [];
       }
@@ -25904,7 +25904,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
   function stringifyRegExpWithFlags(regex, refs) {
-    var _a24;
+    var _a25;
     if (!refs.applyRegexFlags || !regex.flags) {
       return regex.source;
     }
@@ -25934,7 +25934,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
               pattern += source[i];
               pattern += `${source[i - 2]}-${source[i]}`.toUpperCase();
               inCharRange = false;
-            } else if (source[i + 1] === "-" && ((_a24 = source[i + 2]) == null ? void 0 : _a24.match(/[a-z]/))) {
+            } else if (source[i + 1] === "-" && ((_a25 = source[i + 2]) == null ? void 0 : _a25.match(/[a-z]/))) {
               pattern += source[i];
               inCharRange = true;
             } else {
@@ -25986,15 +25986,15 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return pattern;
   }
   function parseRecordDef(def, refs) {
-    var _a24, _b23, _c, _d, _e, _f;
+    var _a25, _b24, _c, _d, _e, _f;
     const schema = {
       type: "object",
-      additionalProperties: (_a24 = parseDef(def.valueType._def, {
+      additionalProperties: (_a25 = parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "additionalProperties"]
-      })) != null ? _a24 : refs.allowedAdditionalProperties
+      })) != null ? _a25 : refs.allowedAdditionalProperties
     };
-    if (((_b23 = def.keyType) == null ? void 0 : _b23._def.typeName) === ZodFirstPartyTypeKind2.ZodString && ((_c = def.keyType._def.checks) == null ? void 0 : _c.length)) {
+    if (((_b24 = def.keyType) == null ? void 0 : _b24._def.typeName) === ZodFirstPartyTypeKind2.ZodString && ((_c = def.keyType._def.checks) == null ? void 0 : _c.length)) {
       const { type, ...keyType } = parseStringDef(def.keyType._def, refs);
       return {
         ...schema,
@@ -26249,8 +26249,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
   var parseOptionalDef = (def, refs) => {
-    var _a24;
-    if (refs.currentPath.toString() === ((_a24 = refs.propertyPath) == null ? void 0 : _a24.toString())) {
+    var _a25;
+    if (refs.currentPath.toString() === ((_a25 = refs.propertyPath) == null ? void 0 : _a25.toString())) {
       return parseDef(def.innerType._def, refs);
     }
     const innerSchema = parseDef(def.innerType._def, {
@@ -26427,10 +26427,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return [(pathA.length - i).toString(), ...pathB.slice(i)].join("/");
   };
   function parseDef(def, refs, forceResolution = false) {
-    var _a24;
+    var _a25;
     const seenItem = refs.seen.get(def);
     if (refs.override) {
-      const overrideResult = (_a24 = refs.override) == null ? void 0 : _a24.call(
+      const overrideResult = (_a25 = refs.override) == null ? void 0 : _a25.call(
         refs,
         def,
         refs,
@@ -26496,11 +26496,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       currentPath,
       propertyPath: void 0,
       seen: new Map(
-        Object.entries(_options.definitions).map(([name24, def]) => [
+        Object.entries(_options.definitions).map(([name25, def]) => [
           def._def,
           {
             def: def._def,
-            path: [..._options.basePath, _options.definitionPath, name24],
+            path: [..._options.basePath, _options.definitionPath, name25],
             // Resolution of references will be forced even though seen, so it's ok that the schema is undefined here for now.
             jsonSchema: void 0
           }
@@ -26509,50 +26509,50 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   };
   var zodToJsonSchema = (schema, options) => {
-    var _a24;
+    var _a25;
     const refs = getRefs(options);
     let definitions = typeof options === "object" && options.definitions ? Object.entries(options.definitions).reduce(
-      (acc, [name34, schema2]) => {
-        var _a34;
+      (acc, [name35, schema2]) => {
+        var _a35;
         return {
           ...acc,
-          [name34]: (_a34 = parseDef(
+          [name35]: (_a35 = parseDef(
             schema2._def,
             {
               ...refs,
-              currentPath: [...refs.basePath, refs.definitionPath, name34]
+              currentPath: [...refs.basePath, refs.definitionPath, name35]
             },
             true
-          )) != null ? _a34 : parseAnyDef()
+          )) != null ? _a35 : parseAnyDef()
         };
       },
       {}
     ) : void 0;
-    const name24 = typeof options === "string" ? options : (options == null ? void 0 : options.nameStrategy) === "title" ? void 0 : options == null ? void 0 : options.name;
-    const main = (_a24 = parseDef(
+    const name25 = typeof options === "string" ? options : (options == null ? void 0 : options.nameStrategy) === "title" ? void 0 : options == null ? void 0 : options.name;
+    const main = (_a25 = parseDef(
       schema._def,
-      name24 === void 0 ? refs : {
+      name25 === void 0 ? refs : {
         ...refs,
-        currentPath: [...refs.basePath, refs.definitionPath, name24]
+        currentPath: [...refs.basePath, refs.definitionPath, name25]
       },
       false
-    )) != null ? _a24 : parseAnyDef();
+    )) != null ? _a25 : parseAnyDef();
     const title = typeof options === "object" && options.name !== void 0 && options.nameStrategy === "title" ? options.name : void 0;
     if (title !== void 0) {
       main.title = title;
     }
-    const combined = name24 === void 0 ? definitions ? {
+    const combined = name25 === void 0 ? definitions ? {
       ...main,
       [refs.definitionPath]: definitions
     } : main : {
       $ref: [
         ...refs.$refStrategy === "relative" ? [] : refs.basePath,
         refs.definitionPath,
-        name24
+        name25
       ].join("/"),
       [refs.definitionPath]: {
         ...definitions,
-        [name24]: main
+        [name25]: main
       }
     };
     combined.$schema = "http://json-schema.org/draft-07/schema#";
@@ -26560,8 +26560,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   };
   var zod_to_json_schema_default = zodToJsonSchema;
   function zod3Schema(zodSchema2, options) {
-    var _a24;
-    const useReferences = (_a24 = options == null ? void 0 : options.useReferences) != null ? _a24 : false;
+    var _a25;
+    const useReferences = (_a25 = options == null ? void 0 : options.useReferences) != null ? _a25 : false;
     return jsonSchema(
       // defer json schema creation to avoid unnecessary computation when only validation is needed
       () => zod_to_json_schema_default(zodSchema2, {
@@ -26576,8 +26576,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     );
   }
   function zod4Schema(zodSchema2, options) {
-    var _a24;
-    const useReferences = (_a24 = options == null ? void 0 : options.useReferences) != null ? _a24 : false;
+    var _a25;
+    const useReferences = (_a25 = options == null ? void 0 : options.useReferences) != null ? _a25 : false;
     return jsonSchema(
       // defer json schema creation to avoid unnecessary computation when only validation is needed
       () => addAdditionalPropertiesToJsonSchema(
@@ -27116,12 +27116,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }
   var SKIP_THOUGHT_SIGNATURE_VALIDATOR = "skip_thought_signature_validator";
   function convertToGoogleGenerativeAIMessages(prompt, options) {
-    var _a20, _b17, _c;
+    var _a25, _b19, _c;
     const systemInstructionParts = [];
     const contents = [];
     let systemMessagesAllowed = true;
-    const isGemmaModel = (_a20 = options == null ? void 0 : options.isGemmaModel) != null ? _a20 : false;
-    const isGemini3Model = (_b17 = options == null ? void 0 : options.isGemini3Model) != null ? _b17 : false;
+    const isGemmaModel = (_a25 = options == null ? void 0 : options.isGemmaModel) != null ? _a25 : false;
+    const isGemini3Model = (_b19 = options == null ? void 0 : options.isGemini3Model) != null ? _b19 : false;
     const supportsFunctionResponseParts = (_c = options == null ? void 0 : options.supportsFunctionResponseParts) != null ? _c : true;
     for (const { role, content } of prompt) {
       switch (role) {
@@ -27171,8 +27171,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           contents.push({
             role: "model",
             parts: content.map((part) => {
-              var _a24, _b23, _c2;
-              const thoughtSignature = ((_b23 = (_a24 = part.providerOptions) == null ? void 0 : _a24.google) == null ? void 0 : _b23.thoughtSignature) != null ? String((_c2 = part.providerOptions.google) == null ? void 0 : _c2.thoughtSignature) : void 0;
+              var _a26, _b24, _c2;
+              const thoughtSignature = ((_b24 = (_a26 = part.providerOptions) == null ? void 0 : _a26.google) == null ? void 0 : _b24.thoughtSignature) != null ? String((_c2 = part.providerOptions.google) == null ? void 0 : _c2.thoughtSignature) : void 0;
               switch (part.type) {
                 case "text": {
                   return part.text.length === 0 ? void 0 : {
@@ -27530,32 +27530,32 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     if (tools == null) {
       return { tools: void 0, toolConfig: void 0, toolWarnings };
     }
-    const hasFunctionTools = tools.some((tool2) => tool2.type === "function");
+    const hasFunctionTools = tools.some((tool3) => tool3.type === "function");
     const hasProviderDefinedTools = tools.some(
-      (tool2) => tool2.type === "provider-defined"
+      (tool3) => tool3.type === "provider-defined"
     );
     if (hasFunctionTools && hasProviderDefinedTools && !usesGemini3Features) {
-      const functionTools = tools.filter((tool2) => tool2.type === "function");
+      const functionTools = tools.filter((tool3) => tool3.type === "function");
       toolWarnings.push({
         type: "unsupported-tool",
-        tool: tools.find((tool2) => tool2.type === "function"),
+        tool: tools.find((tool3) => tool3.type === "function"),
         details: `Cannot mix function tools with provider-defined tools in the same request. Falling back to provider-defined tools only. The following function tools will be ignored: ${functionTools.map((t) => t.name).join(", ")}. Please use either function tools or provider-defined tools, but not both.`
       });
     }
     if (hasProviderDefinedTools) {
       const googleTools2 = [];
       const providerDefinedTools = tools.filter(
-        (tool2) => tool2.type === "provider-defined"
+        (tool3) => tool3.type === "provider-defined"
       );
-      providerDefinedTools.forEach((tool2) => {
-        switch (tool2.id) {
+      providerDefinedTools.forEach((tool3) => {
+        switch (tool3.id) {
           case "google.google_search":
             if (supportsGemini2Tools) {
-              googleTools2.push({ googleSearch: { ...tool2.args } });
+              googleTools2.push({ googleSearch: { ...tool3.args } });
             } else {
               toolWarnings.push({
                 type: "unsupported-tool",
-                tool: tool2,
+                tool: tool3,
                 details: "Google Search requires Gemini 2.0 or newer."
               });
             }
@@ -27566,7 +27566,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             } else {
               toolWarnings.push({
                 type: "unsupported-tool",
-                tool: tool2,
+                tool: tool3,
                 details: "Enterprise Web Search requires Gemini 2.0 or newer."
               });
             }
@@ -27577,7 +27577,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             } else {
               toolWarnings.push({
                 type: "unsupported-tool",
-                tool: tool2,
+                tool: tool3,
                 details: "The URL context tool is not supported with other Gemini models than Gemini 2."
               });
             }
@@ -27588,18 +27588,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             } else {
               toolWarnings.push({
                 type: "unsupported-tool",
-                tool: tool2,
+                tool: tool3,
                 details: "The code execution tools is not supported with other Gemini models than Gemini 2."
               });
             }
             break;
           case "google.file_search":
             if (supportsFileSearch) {
-              googleTools2.push({ fileSearch: { ...tool2.args } });
+              googleTools2.push({ fileSearch: { ...tool3.args } });
             } else {
               toolWarnings.push({
                 type: "unsupported-tool",
-                tool: tool2,
+                tool: tool3,
                 details: "The file search tool is only supported with Gemini 2.5 models."
               });
             }
@@ -27610,16 +27610,16 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
                 retrieval: {
                   vertex_rag_store: {
                     rag_resources: {
-                      rag_corpus: tool2.args.ragCorpus
+                      rag_corpus: tool3.args.ragCorpus
                     },
-                    similarity_top_k: tool2.args.topK
+                    similarity_top_k: tool3.args.topK
                   }
                 }
               });
             } else {
               toolWarnings.push({
                 type: "unsupported-tool",
-                tool: tool2,
+                tool: tool3,
                 details: "The RAG store tool is not supported with other Gemini models than Gemini 2."
               });
             }
@@ -27630,21 +27630,21 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             } else {
               toolWarnings.push({
                 type: "unsupported-tool",
-                tool: tool2,
+                tool: tool3,
                 details: "The Google Maps grounding tool is not supported with Gemini models other than Gemini 2 or newer."
               });
             }
             break;
           default:
-            toolWarnings.push({ type: "unsupported-tool", tool: tool2 });
+            toolWarnings.push({ type: "unsupported-tool", tool: tool3 });
             break;
         }
       });
       if (hasFunctionTools && usesGemini3Features && googleTools2.length > 0) {
         const functionDeclarations2 = [];
-        for (const tool2 of tools) {
-          if (tool2.type === "function") {
-            functionDeclarations2.push(prepareFunctionDeclaration(tool2));
+        for (const tool3 of tools) {
+          if (tool3.type === "function") {
+            functionDeclarations2.push(prepareFunctionDeclaration(tool3));
           }
         }
         const combinedToolConfig = {
@@ -27685,16 +27685,16 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
     const functionDeclarations = [];
     let hasStrictTools = false;
-    for (const tool2 of tools) {
-      switch (tool2.type) {
+    for (const tool3 of tools) {
+      switch (tool3.type) {
         case "function":
-          functionDeclarations.push(prepareFunctionDeclaration(tool2));
-          if (tool2.strict === true) {
+          functionDeclarations.push(prepareFunctionDeclaration(tool3));
+          if (tool3.strict === true) {
             hasStrictTools = true;
           }
           break;
         default:
-          toolWarnings.push({ type: "unsupported-tool", tool: tool2 });
+          toolWarnings.push({ type: "unsupported-tool", tool: tool3 });
           break;
       }
     }
@@ -27752,16 +27752,16 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       }
     }
   }
-  function prepareFunctionDeclaration(tool2) {
-    var _a20;
+  function prepareFunctionDeclaration(tool3) {
+    var _a25;
     const declaration = {
-      name: tool2.name,
-      description: (_a20 = tool2.description) != null ? _a20 : ""
+      name: tool3.name,
+      description: (_a25 = tool3.description) != null ? _a25 : ""
     };
     try {
       return {
         ...declaration,
-        parameters: convertJSONSchemaToOpenAPISchema(tool2.inputSchema)
+        parameters: convertJSONSchemaToOpenAPISchema(tool3.inputSchema)
       };
     } catch (error62) {
       if (!isRecursiveJSONSchemaReferenceError(error62)) {
@@ -27769,7 +27769,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       }
       return {
         ...declaration,
-        parametersJsonSchema: tool2.inputSchema
+        parametersJsonSchema: tool3.inputSchema
       };
     }
   }
@@ -27808,17 +27808,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var GoogleGenerativeAILanguageModel = class {
     constructor(modelId, config2) {
       this.specificationVersion = "v2";
-      var _a20;
+      var _a25;
       this.modelId = modelId;
       this.config = config2;
-      this.generateId = (_a20 = config2.generateId) != null ? _a20 : generateId;
+      this.generateId = (_a25 = config2.generateId) != null ? _a25 : generateId;
     }
     get provider() {
       return this.config.provider;
     }
     get supportedUrls() {
-      var _a20, _b17, _c;
-      return (_c = (_b17 = (_a20 = this.config).supportedUrls) == null ? void 0 : _b17.call(_a20)) != null ? _c : {};
+      var _a25, _b19, _c;
+      return (_c = (_b19 = (_a25 = this.config).supportedUrls) == null ? void 0 : _b19.call(_a25)) != null ? _c : {};
     }
     async getArgs({
       prompt,
@@ -27835,7 +27835,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       toolChoice,
       providerOptions
     }) {
-      var _a20, _b17;
+      var _a25, _b19;
       const warnings = [];
       const googleOptions = await parseProviderOptions({
         provider: "google",
@@ -27844,7 +27844,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       });
       const isVertexProvider = this.config.provider.startsWith("google.vertex.");
       if ((tools == null ? void 0 : tools.some(
-        (tool2) => tool2.type === "provider-defined" && tool2.id === "google.vertex_rag_store"
+        (tool3) => tool3.type === "provider-defined" && tool3.id === "google.vertex_rag_store"
       )) && !isVertexProvider) {
         warnings.push({
           type: "other",
@@ -27877,7 +27877,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         }
       }
       const safetyThreshold = googleOptions == null ? void 0 : googleOptions.threshold;
-      const safetySettings = (_a20 = googleOptions == null ? void 0 : googleOptions.safetySettings) != null ? _a20 : safetyThreshold != null ? configurableSafetySettingCategories.map((category) => ({
+      const safetySettings = (_a25 = googleOptions == null ? void 0 : googleOptions.safetySettings) != null ? _a25 : safetyThreshold != null ? configurableSafetySettingCategories.map((category) => ({
         category,
         threshold: safetyThreshold
       })) : void 0;
@@ -27931,7 +27931,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             responseSchema: (responseFormat == null ? void 0 : responseFormat.type) === "json" && responseFormat.schema != null && // Google GenAI does not support all OpenAPI Schema features,
             // so this is needed as an escape hatch:
             // TODO convert into provider option
-            ((_b17 = googleOptions == null ? void 0 : googleOptions.structuredOutputs) != null ? _b17 : true) ? convertJSONSchemaToOpenAPISchema(responseFormat.schema) : void 0,
+            ((_b19 = googleOptions == null ? void 0 : googleOptions.structuredOutputs) != null ? _b19 : true) ? convertJSONSchemaToOpenAPISchema(responseFormat.schema) : void 0,
             ...(googleOptions == null ? void 0 : googleOptions.audioTimestamp) && {
               audioTimestamp: googleOptions.audioTimestamp
             },
@@ -27959,7 +27959,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       };
     }
     async doGenerate(options) {
-      var _a20, _b17, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q;
+      var _a25, _b19, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q;
       const { args, warnings } = await this.getArgs(options);
       const body = JSON.stringify(args);
       const mergedHeaders = combineHeaders(
@@ -27981,8 +27981,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         abortSignal: options.abortSignal,
         fetch: this.config.fetch
       });
-      const candidate = (_a20 = response.candidates) == null ? void 0 : _a20[0];
-      const promptBlockReason = (_b17 = response.promptFeedback) == null ? void 0 : _b17.blockReason;
+      const candidate = (_a25 = response.candidates) == null ? void 0 : _a25[0];
+      const promptBlockReason = (_b19 = response.promptFeedback) == null ? void 0 : _b19.blockReason;
       const isPromptBlocked = (candidate == null ? void 0 : candidate.finishReason) == null && promptBlockReason != null;
       const content = [];
       const parts = (_d = (_c = candidate == null ? void 0 : candidate.content) == null ? void 0 : _c.parts) != null ? _d : [];
@@ -28124,7 +28124,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
               controller.enqueue({ type: "stream-start", warnings });
             },
             transform(chunk, controller) {
-              var _a20, _b17, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o;
+              var _a25, _b19, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o;
               if (options.includeRawChunks) {
                 controller.enqueue({ type: "raw", rawValue: chunk.rawValue });
               }
@@ -28135,8 +28135,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
               const value = chunk.value;
               const usageMetadata = value.usageMetadata;
               if (usageMetadata != null) {
-                usage.inputTokens = (_a20 = usageMetadata.promptTokenCount) != null ? _a20 : void 0;
-                usage.outputTokens = (_b17 = usageMetadata.candidatesTokenCount) != null ? _b17 : void 0;
+                usage.inputTokens = (_a25 = usageMetadata.promptTokenCount) != null ? _a25 : void 0;
+                usage.outputTokens = (_b19 = usageMetadata.candidatesTokenCount) != null ? _b19 : void 0;
                 usage.totalTokens = (_c = usageMetadata.totalTokenCount) != null ? _c : void 0;
                 usage.reasoningTokens = (_d = usageMetadata.thoughtsTokenCount) != null ? _d : void 0;
                 usage.cachedInputTokens = (_e = usageMetadata.cachedContentTokenCount) != null ? _e : void 0;
@@ -28370,10 +28370,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       (part) => "functionCall" in part
     );
     return functionCallParts == null || functionCallParts.length === 0 ? void 0 : functionCallParts.map((part) => {
-      var _a20;
+      var _a25;
       return {
         type: "tool-call",
-        toolCallId: (_a20 = part.functionCall.id) != null ? _a20 : generateId3(),
+        toolCallId: (_a25 = part.functionCall.id) != null ? _a25 : generateId3(),
         toolName: part.functionCall.name,
         args: JSON.stringify(part.functionCall.args),
         providerMetadata: part.thoughtSignature ? { google: { thoughtSignature: part.thoughtSignature } } : void 0
@@ -28384,7 +28384,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     groundingMetadata,
     generateId: generateId3
   }) {
-    var _a20, _b17, _c, _d, _e, _f;
+    var _a25, _b19, _c, _d, _e, _f;
     if (!(groundingMetadata == null ? void 0 : groundingMetadata.groundingChunks)) {
       return void 0;
     }
@@ -28396,7 +28396,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           sourceType: "url",
           id: generateId3(),
           url: chunk.web.uri,
-          title: (_a20 = chunk.web.title) != null ? _a20 : void 0
+          title: (_a25 = chunk.web.title) != null ? _a25 : void 0
         });
       } else if (chunk.image != null) {
         sources.push({
@@ -28406,7 +28406,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           // Google requires attribution to the source URI, not the actual image URI.
           // TODO: add another type in v7 to allow both the image and source URL to be included separately
           url: chunk.image.sourceUri,
-          title: (_b17 = chunk.image.title) != null ? _b17 : void 0
+          title: (_b19 = chunk.image.title) != null ? _b19 : void 0
         });
       } else if (chunk.retrievedContext != null) {
         const uri = chunk.retrievedContext.uri;
@@ -28776,14 +28776,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       this.specificationVersion = "v2";
     }
     get maxImagesPerCall() {
-      var _a20;
-      return (_a20 = this.settings.maxImagesPerCall) != null ? _a20 : 4;
+      var _a25;
+      return (_a25 = this.settings.maxImagesPerCall) != null ? _a25 : 4;
     }
     get provider() {
       return this.config.provider;
     }
     async doGenerate(options) {
-      var _a20, _b17, _c;
+      var _a25, _b19, _c;
       const {
         prompt,
         n = 1,
@@ -28814,7 +28814,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         providerOptions,
         schema: googleImageProviderOptionsSchema
       });
-      const currentDate = (_c = (_b17 = (_a20 = this.config._internal) == null ? void 0 : _a20.currentDate) == null ? void 0 : _b17.call(_a20)) != null ? _c : /* @__PURE__ */ new Date();
+      const currentDate = (_c = (_b19 = (_a25 = this.config._internal) == null ? void 0 : _a25.currentDate) == null ? void 0 : _b19.call(_a25)) != null ? _c : /* @__PURE__ */ new Date();
       const parameters = {
         sampleCount: n
       };
@@ -28875,9 +28875,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     )
   );
   function createGoogleGenerativeAI(options = {}) {
-    var _a20, _b17;
-    const baseURL = (_a20 = withoutTrailingSlash(options.baseURL)) != null ? _a20 : "https://generativelanguage.googleapis.com/v1beta";
-    const providerName = (_b17 = options.name) != null ? _b17 : "google.generative-ai";
+    var _a25, _b19;
+    const baseURL = (_a25 = withoutTrailingSlash(options.baseURL)) != null ? _a25 : "https://generativelanguage.googleapis.com/v1beta";
+    const providerName = (_b19 = options.name) != null ? _b19 : "google.generative-ai";
     const getHeaders = () => withUserAgentSuffix(
       {
         "x-goog-api-key": loadApiKey({
@@ -28890,12 +28890,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       `ai-sdk/google/${VERSION2}`
     );
     const createChatModel = (modelId) => {
-      var _a24;
+      var _a26;
       return new GoogleGenerativeAILanguageModel(modelId, {
         provider: providerName,
         baseURL,
         headers: getHeaders,
-        generateId: (_a24 = options.generateId) != null ? _a24 : generateId,
+        generateId: (_a26 = options.generateId) != null ? _a26 : generateId,
         supportedUrls: () => ({
           "*": [
             // Google Generative Language "files" endpoint
@@ -28944,14 +28944,2054 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }
   var google = createGoogleGenerativeAI();
 
-  // node_modules/@ai-sdk/gateway/dist/index.mjs
-  var import_oidc = __toESM(require_index_browser(), 1);
-  var import_oidc2 = __toESM(require_index_browser(), 1);
-  var marker16 = "vercel.ai.gateway.error";
+  // node_modules/@ai-sdk/groq/node_modules/@ai-sdk/provider/dist/index.mjs
+  var marker16 = "vercel.ai.error";
   var symbol17 = Symbol.for(marker16);
   var _a18;
   var _b16;
-  var GatewayError = class _GatewayError extends (_b16 = Error, _a18 = symbol17, _b16) {
+  var AISDKError2 = class _AISDKError2 extends (_b16 = Error, _a18 = symbol17, _b16) {
+    /**
+     * Creates an AI SDK Error.
+     *
+     * @param {Object} params - The parameters for creating the error.
+     * @param {string} params.name - The name of the error.
+     * @param {string} params.message - The error message.
+     * @param {unknown} [params.cause] - The underlying cause of the error.
+     */
+    constructor({
+      name: name143,
+      message,
+      cause
+    }) {
+      super(message);
+      this[_a18] = true;
+      this.name = name143;
+      this.cause = cause;
+    }
+    /**
+     * Checks if the given error is an AI SDK Error.
+     * @param {unknown} error - The error to check.
+     * @returns {boolean} True if the error is an AI SDK Error, false otherwise.
+     */
+    static isInstance(error62) {
+      return _AISDKError2.hasMarker(error62, marker16);
+    }
+    static hasMarker(error62, marker153) {
+      const markerSymbol = Symbol.for(marker153);
+      return error62 != null && typeof error62 === "object" && markerSymbol in error62 && typeof error62[markerSymbol] === "boolean" && error62[markerSymbol] === true;
+    }
+  };
+  var name15 = "AI_APICallError";
+  var marker22 = `vercel.ai.error.${name15}`;
+  var symbol22 = Symbol.for(marker22);
+  var _a22;
+  var _b22;
+  var APICallError2 = class extends (_b22 = AISDKError2, _a22 = symbol22, _b22) {
+    constructor({
+      message,
+      url: url2,
+      requestBodyValues,
+      statusCode,
+      responseHeaders,
+      responseBody,
+      cause,
+      isRetryable = statusCode != null && (statusCode === 408 || // request timeout
+      statusCode === 409 || // conflict
+      statusCode === 429 || // too many requests
+      statusCode >= 500),
+      // server error
+      data
+    }) {
+      super({ name: name15, message, cause });
+      this[_a22] = true;
+      this.url = url2;
+      this.requestBodyValues = requestBodyValues;
+      this.statusCode = statusCode;
+      this.responseHeaders = responseHeaders;
+      this.responseBody = responseBody;
+      this.isRetryable = isRetryable;
+      this.data = data;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker22);
+    }
+  };
+  var name22 = "AI_EmptyResponseBodyError";
+  var marker32 = `vercel.ai.error.${name22}`;
+  var symbol32 = Symbol.for(marker32);
+  var _a32;
+  var _b32;
+  var EmptyResponseBodyError2 = class extends (_b32 = AISDKError2, _a32 = symbol32, _b32) {
+    // used in isInstance
+    constructor({ message = "Empty response body" } = {}) {
+      super({ name: name22, message });
+      this[_a32] = true;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker32);
+    }
+  };
+  function getErrorMessage3(error62) {
+    if (error62 == null) {
+      return "unknown error";
+    }
+    if (typeof error62 === "string") {
+      return error62;
+    }
+    if (error62 instanceof Error) {
+      return error62.message;
+    }
+    return JSON.stringify(error62);
+  }
+  var name32 = "AI_InvalidArgumentError";
+  var marker42 = `vercel.ai.error.${name32}`;
+  var symbol42 = Symbol.for(marker42);
+  var _a42;
+  var _b42;
+  var InvalidArgumentError2 = class extends (_b42 = AISDKError2, _a42 = symbol42, _b42) {
+    constructor({
+      message,
+      cause,
+      argument
+    }) {
+      super({ name: name32, message, cause });
+      this[_a42] = true;
+      this.argument = argument;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker42);
+    }
+  };
+  var name42 = "AI_InvalidPromptError";
+  var marker52 = `vercel.ai.error.${name42}`;
+  var symbol52 = Symbol.for(marker52);
+  var _a52;
+  var _b52;
+  var InvalidPromptError2 = class extends (_b52 = AISDKError2, _a52 = symbol52, _b52) {
+    constructor({
+      prompt,
+      message,
+      cause
+    }) {
+      super({ name: name42, message: `Invalid prompt: ${message}`, cause });
+      this[_a52] = true;
+      this.prompt = prompt;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker52);
+    }
+  };
+  var name52 = "AI_InvalidResponseDataError";
+  var marker62 = `vercel.ai.error.${name52}`;
+  var symbol62 = Symbol.for(marker62);
+  var _a62;
+  var _b62;
+  var InvalidResponseDataError2 = class extends (_b62 = AISDKError2, _a62 = symbol62, _b62) {
+    constructor({
+      data,
+      message = `Invalid response data: ${JSON.stringify(data)}.`
+    }) {
+      super({ name: name52, message });
+      this[_a62] = true;
+      this.data = data;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker62);
+    }
+  };
+  var name62 = "AI_JSONParseError";
+  var marker72 = `vercel.ai.error.${name62}`;
+  var symbol72 = Symbol.for(marker72);
+  var _a72;
+  var _b72;
+  var JSONParseError2 = class extends (_b72 = AISDKError2, _a72 = symbol72, _b72) {
+    constructor({ text: text2, cause }) {
+      super({
+        name: name62,
+        message: `JSON parsing failed: Text: ${text2}.
+Error message: ${getErrorMessage3(cause)}`,
+        cause
+      });
+      this[_a72] = true;
+      this.text = text2;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker72);
+    }
+  };
+  var name72 = "AI_LoadAPIKeyError";
+  var marker82 = `vercel.ai.error.${name72}`;
+  var symbol82 = Symbol.for(marker82);
+  var _a82;
+  var _b82;
+  var LoadAPIKeyError2 = class extends (_b82 = AISDKError2, _a82 = symbol82, _b82) {
+    // used in isInstance
+    constructor({ message }) {
+      super({ name: name72, message });
+      this[_a82] = true;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker82);
+    }
+  };
+  var name82 = "AI_LoadSettingError";
+  var marker92 = `vercel.ai.error.${name82}`;
+  var symbol92 = Symbol.for(marker92);
+  var _a92;
+  var _b92;
+  var LoadSettingError2 = class extends (_b92 = AISDKError2, _a92 = symbol92, _b92) {
+    // used in isInstance
+    constructor({ message }) {
+      super({ name: name82, message });
+      this[_a92] = true;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker92);
+    }
+  };
+  var name92 = "AI_NoContentGeneratedError";
+  var marker102 = `vercel.ai.error.${name92}`;
+  var symbol102 = Symbol.for(marker102);
+  var _a102;
+  var _b102;
+  var NoContentGeneratedError2 = class extends (_b102 = AISDKError2, _a102 = symbol102, _b102) {
+    // used in isInstance
+    constructor({
+      message = "No content generated."
+    } = {}) {
+      super({ name: name92, message });
+      this[_a102] = true;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker102);
+    }
+  };
+  var name102 = "AI_NoSuchModelError";
+  var marker112 = `vercel.ai.error.${name102}`;
+  var symbol112 = Symbol.for(marker112);
+  var _a112;
+  var _b112;
+  var NoSuchModelError2 = class extends (_b112 = AISDKError2, _a112 = symbol112, _b112) {
+    constructor({
+      errorName = name102,
+      modelId,
+      modelType,
+      message = `No such ${modelType}: ${modelId}`
+    }) {
+      super({ name: errorName, message });
+      this[_a112] = true;
+      this.modelId = modelId;
+      this.modelType = modelType;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker112);
+    }
+  };
+  var name112 = "AI_TooManyEmbeddingValuesForCallError";
+  var marker122 = `vercel.ai.error.${name112}`;
+  var symbol122 = Symbol.for(marker122);
+  var _a122;
+  var _b122;
+  var TooManyEmbeddingValuesForCallError2 = class extends (_b122 = AISDKError2, _a122 = symbol122, _b122) {
+    constructor(options) {
+      super({
+        name: name112,
+        message: `Too many values for a single embedding call. The ${options.provider} model "${options.modelId}" can only embed up to ${options.maxEmbeddingsPerCall} values per call, but ${options.values.length} values were provided.`
+      });
+      this[_a122] = true;
+      this.provider = options.provider;
+      this.modelId = options.modelId;
+      this.maxEmbeddingsPerCall = options.maxEmbeddingsPerCall;
+      this.values = options.values;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker122);
+    }
+  };
+  var name122 = "AI_TypeValidationError";
+  var marker132 = `vercel.ai.error.${name122}`;
+  var symbol132 = Symbol.for(marker132);
+  var _a132;
+  var _b132;
+  var TypeValidationError2 = class _TypeValidationError2 extends (_b132 = AISDKError2, _a132 = symbol132, _b132) {
+    constructor({ value, cause }) {
+      super({
+        name: name122,
+        message: `Type validation failed: Value: ${JSON.stringify(value)}.
+Error message: ${getErrorMessage3(cause)}`,
+        cause
+      });
+      this[_a132] = true;
+      this.value = value;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker132);
+    }
+    /**
+     * Wraps an error into a TypeValidationError.
+     * If the cause is already a TypeValidationError with the same value, it returns the cause.
+     * Otherwise, it creates a new TypeValidationError.
+     *
+     * @param {Object} params - The parameters for wrapping the error.
+     * @param {unknown} params.value - The value that failed validation.
+     * @param {unknown} params.cause - The original error or cause of the validation failure.
+     * @returns {TypeValidationError} A TypeValidationError instance.
+     */
+    static wrap({
+      value,
+      cause
+    }) {
+      return _TypeValidationError2.isInstance(cause) && cause.value === value ? cause : new _TypeValidationError2({ value, cause });
+    }
+  };
+  var name132 = "AI_UnsupportedFunctionalityError";
+  var marker142 = `vercel.ai.error.${name132}`;
+  var symbol142 = Symbol.for(marker142);
+  var _a142;
+  var _b142;
+  var UnsupportedFunctionalityError2 = class extends (_b142 = AISDKError2, _a142 = symbol142, _b142) {
+    constructor({
+      functionality,
+      message = `'${functionality}' functionality not supported.`
+    }) {
+      super({ name: name132, message });
+      this[_a142] = true;
+      this.functionality = functionality;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker142);
+    }
+  };
+
+  // node_modules/@ai-sdk/groq/node_modules/@ai-sdk/provider-utils/dist/index.mjs
+  function combineHeaders2(...headers) {
+    return headers.reduce(
+      (combinedHeaders, currentHeaders) => ({
+        ...combinedHeaders,
+        ...currentHeaders
+      }),
+      {}
+    );
+  }
+  function extractResponseHeaders2(response) {
+    return Object.fromEntries([...response.headers]);
+  }
+  var name16 = "AI_DownloadError";
+  var marker17 = `vercel.ai.error.${name16}`;
+  var symbol18 = Symbol.for(marker17);
+  var _a19;
+  var _b17;
+  var DownloadError2 = class extends (_b17 = AISDKError2, _a19 = symbol18, _b17) {
+    constructor({
+      url: url2,
+      statusCode,
+      statusText,
+      cause,
+      message = cause == null ? `Failed to download ${url2}: ${statusCode} ${statusText}` : `Failed to download ${url2}: ${cause}`
+    }) {
+      super({ name: name16, message, cause });
+      this[_a19] = true;
+      this.url = url2;
+      this.statusCode = statusCode;
+      this.statusText = statusText;
+    }
+    static isInstance(error62) {
+      return AISDKError2.hasMarker(error62, marker17);
+    }
+  };
+  async function cancelResponseBody2(response) {
+    var _a25;
+    try {
+      await ((_a25 = response.body) == null ? void 0 : _a25.cancel());
+    } catch (e) {
+    }
+  }
+  var DEFAULT_MAX_DOWNLOAD_SIZE2 = 2 * 1024 * 1024 * 1024;
+  async function readResponseWithSizeLimit2({
+    response,
+    url: url2,
+    maxBytes = DEFAULT_MAX_DOWNLOAD_SIZE2
+  }) {
+    const contentLength = response.headers.get("content-length");
+    if (contentLength != null) {
+      const length = parseInt(contentLength, 10);
+      if (!isNaN(length) && length > maxBytes) {
+        await cancelResponseBody2(response);
+        throw new DownloadError2({
+          url: url2,
+          message: `Download of ${url2} exceeded maximum size of ${maxBytes} bytes (Content-Length: ${length}).`
+        });
+      }
+    }
+    const body = response.body;
+    if (body == null) {
+      return new Uint8Array(0);
+    }
+    const reader = body.getReader();
+    const chunks = [];
+    let totalBytes = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        totalBytes += value.length;
+        if (totalBytes > maxBytes) {
+          throw new DownloadError2({
+            url: url2,
+            message: `Download of ${url2} exceeded maximum size of ${maxBytes} bytes.`
+          });
+        }
+        chunks.push(value);
+      }
+    } finally {
+      try {
+        await reader.cancel();
+      } catch (e) {
+      } finally {
+        reader.releaseLock();
+      }
+    }
+    const result = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      result.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return result;
+  }
+  var createIdGenerator2 = ({
+    prefix,
+    size = 16,
+    alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+    separator = "-"
+  } = {}) => {
+    const generator = () => {
+      const alphabetLength = alphabet.length;
+      const chars = new Array(size);
+      for (let i = 0; i < size; i++) {
+        chars[i] = alphabet[Math.random() * alphabetLength | 0];
+      }
+      return chars.join("");
+    };
+    if (prefix == null) {
+      return generator;
+    }
+    if (alphabet.includes(separator)) {
+      throw new InvalidArgumentError2({
+        argument: "separator",
+        message: `The separator "${separator}" must not be part of the alphabet "${alphabet}".`
+      });
+    }
+    return () => `${prefix}${separator}${generator()}`;
+  };
+  var generateId2 = createIdGenerator2();
+  function isAbortError2(error62) {
+    return (error62 instanceof Error || error62 instanceof DOMException) && (error62.name === "AbortError" || error62.name === "ResponseAborted" || // Next.js
+    error62.name === "TimeoutError");
+  }
+  var FETCH_FAILED_ERROR_MESSAGES2 = ["fetch failed", "failed to fetch"];
+  var RETRYABLE_NETWORK_ERROR_CODES2 = /* @__PURE__ */ new Set([
+    "ConnectionRefused",
+    "ConnectionClosed",
+    "FailedToOpenSocket",
+    "ECONNRESET",
+    "ECONNREFUSED",
+    "ETIMEDOUT",
+    "EPIPE",
+    "UND_ERR_SOCKET",
+    "UND_ERR_HEADERS_TIMEOUT",
+    "UND_ERR_BODY_TIMEOUT",
+    "UND_ERR_CONNECT_TIMEOUT"
+  ]);
+  function findNetworkError2(error62) {
+    const visited = /* @__PURE__ */ new Set();
+    let current = error62;
+    while (current instanceof Error && !visited.has(current)) {
+      visited.add(current);
+      const errorWithCode = current;
+      if (typeof errorWithCode.code === "string" && RETRYABLE_NETWORK_ERROR_CODES2.has(errorWithCode.code)) {
+        return errorWithCode;
+      }
+      current = current.cause;
+    }
+    return void 0;
+  }
+  function handleFetchError2({
+    error: error62,
+    url: url2,
+    requestBodyValues
+  }) {
+    if (isAbortError2(error62)) {
+      return error62;
+    }
+    if (error62 instanceof TypeError && FETCH_FAILED_ERROR_MESSAGES2.includes(error62.message.toLowerCase())) {
+      const cause = error62.cause;
+      if (cause != null) {
+        return new APICallError2({
+          message: `Cannot connect to API: ${cause.message}`,
+          cause,
+          url: url2,
+          requestBodyValues,
+          isRetryable: true
+          // retry when network error
+        });
+      }
+    }
+    const networkError = findNetworkError2(error62);
+    if (networkError != null) {
+      if (APICallError2.isInstance(error62)) {
+        return new APICallError2({
+          message: error62.message,
+          cause: error62.cause,
+          url: error62.url,
+          requestBodyValues: error62.requestBodyValues,
+          statusCode: error62.statusCode,
+          responseHeaders: error62.responseHeaders,
+          responseBody: error62.responseBody,
+          data: error62.data,
+          isRetryable: true
+        });
+      }
+      return new APICallError2({
+        message: `Cannot connect to API: ${error62 instanceof Error ? error62.message : networkError.message}`,
+        cause: error62,
+        url: url2,
+        requestBodyValues,
+        isRetryable: true
+      });
+    }
+    return error62;
+  }
+  function getRuntimeEnvironmentUserAgent2(globalThisAny = globalThis) {
+    var _a25, _b24, _c;
+    if (globalThisAny.window) {
+      return `runtime/browser`;
+    }
+    if ((_a25 = globalThisAny.navigator) == null ? void 0 : _a25.userAgent) {
+      return `runtime/${globalThisAny.navigator.userAgent.toLowerCase()}`;
+    }
+    if ((_c = (_b24 = globalThisAny.process) == null ? void 0 : _b24.versions) == null ? void 0 : _c.node) {
+      return `runtime/node.js/${globalThisAny.process.version.substring(0)}`;
+    }
+    if (globalThisAny.EdgeRuntime) {
+      return `runtime/vercel-edge`;
+    }
+    return "runtime/unknown";
+  }
+  function normalizeHeaders2(headers) {
+    if (headers == null) {
+      return {};
+    }
+    const normalized = {};
+    if (headers instanceof Headers) {
+      headers.forEach((value, key) => {
+        normalized[key.toLowerCase()] = value;
+      });
+    } else {
+      if (!Array.isArray(headers)) {
+        headers = Object.entries(headers);
+      }
+      for (const [key, value] of headers) {
+        if (value != null) {
+          normalized[key.toLowerCase()] = value;
+        }
+      }
+    }
+    return normalized;
+  }
+  function withUserAgentSuffix2(headers, ...userAgentSuffixParts) {
+    const normalizedHeaders = new Headers(normalizeHeaders2(headers));
+    const currentUserAgentHeader = normalizedHeaders.get("user-agent") || "";
+    normalizedHeaders.set(
+      "user-agent",
+      [currentUserAgentHeader, ...userAgentSuffixParts].filter(Boolean).join(" ")
+    );
+    return Object.fromEntries(normalizedHeaders.entries());
+  }
+  var VERSION3 = true ? "3.0.41" : "0.0.0-test";
+  function loadApiKey2({
+    apiKey,
+    environmentVariableName,
+    apiKeyParameterName = "apiKey",
+    description
+  }) {
+    if (typeof apiKey === "string") {
+      return apiKey;
+    }
+    if (apiKey != null) {
+      throw new LoadAPIKeyError2({
+        message: `${description} API key must be a string.`
+      });
+    }
+    if (typeof process === "undefined") {
+      throw new LoadAPIKeyError2({
+        message: `${description} API key is missing. Pass it using the '${apiKeyParameterName}' parameter. Environment variables is not supported in this environment.`
+      });
+    }
+    apiKey = process.env[environmentVariableName];
+    if (apiKey == null) {
+      throw new LoadAPIKeyError2({
+        message: `${description} API key is missing. Pass it using the '${apiKeyParameterName}' parameter or the ${environmentVariableName} environment variable.`
+      });
+    }
+    if (typeof apiKey !== "string") {
+      throw new LoadAPIKeyError2({
+        message: `${description} API key must be a string. The value of the ${environmentVariableName} environment variable is not a string.`
+      });
+    }
+    return apiKey;
+  }
+  function mediaTypeToExtension(mediaType) {
+    var _a25;
+    const [_type, subtype = ""] = mediaType.toLowerCase().split("/");
+    return (_a25 = {
+      mpeg: "mp3",
+      "x-wav": "wav",
+      opus: "ogg",
+      mp4: "m4a",
+      "x-m4a": "m4a"
+    }[subtype]) != null ? _a25 : subtype;
+  }
+  var suspectProtoRx2 = /"(?:_|\\u005[Ff])(?:_|\\u005[Ff])(?:p|\\u0070)(?:r|\\u0072)(?:o|\\u006[Ff])(?:t|\\u0074)(?:o|\\u006[Ff])(?:_|\\u005[Ff])(?:_|\\u005[Ff])"\s*:/;
+  var suspectConstructorRx2 = /"(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|\\u0073)(?:t|\\u0074)(?:r|\\u0072)(?:u|\\u0075)(?:c|\\u0063)(?:t|\\u0074)(?:o|\\u006[Ff])(?:r|\\u0072)"\s*:/;
+  function _parse4(text2) {
+    const obj = JSON.parse(text2);
+    if (obj === null || typeof obj !== "object") {
+      return obj;
+    }
+    if (suspectProtoRx2.test(text2) === false && suspectConstructorRx2.test(text2) === false) {
+      return obj;
+    }
+    return filter2(obj);
+  }
+  function filter2(obj) {
+    let next = [obj];
+    while (next.length) {
+      const nodes = next;
+      next = [];
+      for (const node2 of nodes) {
+        if (Object.prototype.hasOwnProperty.call(node2, "__proto__")) {
+          throw new SyntaxError("Object contains forbidden prototype property");
+        }
+        if (Object.prototype.hasOwnProperty.call(node2, "constructor") && node2.constructor !== null && typeof node2.constructor === "object" && Object.prototype.hasOwnProperty.call(node2.constructor, "prototype")) {
+          throw new SyntaxError("Object contains forbidden prototype property");
+        }
+        for (const key in node2) {
+          const value = node2[key];
+          if (value && typeof value === "object") {
+            next.push(value);
+          }
+        }
+      }
+    }
+    return obj;
+  }
+  function secureJsonParse2(text2) {
+    const { stackTraceLimit } = Error;
+    try {
+      Error.stackTraceLimit = 0;
+    } catch (e) {
+      return _parse4(text2);
+    }
+    try {
+      return _parse4(text2);
+    } finally {
+      Error.stackTraceLimit = stackTraceLimit;
+    }
+  }
+  var validatorSymbol2 = /* @__PURE__ */ Symbol.for("vercel.ai.validator");
+  function validator2(validate2) {
+    return { [validatorSymbol2]: true, validate: validate2 };
+  }
+  function isValidator2(value) {
+    return typeof value === "object" && value !== null && validatorSymbol2 in value && value[validatorSymbol2] === true && "validate" in value;
+  }
+  function asValidator2(value) {
+    return isValidator2(value) ? value : "~standard" in value ? standardSchemaValidator2(value) : value();
+  }
+  function standardSchemaValidator2(standardSchema) {
+    return validator2(async (value) => {
+      const result = await standardSchema["~standard"].validate(value);
+      return result.issues == null ? { success: true, value: result.value } : {
+        success: false,
+        error: new TypeValidationError2({
+          value,
+          cause: result.issues
+        })
+      };
+    });
+  }
+  async function validateTypes2({
+    value,
+    schema
+  }) {
+    const result = await safeValidateTypes2({ value, schema });
+    if (!result.success) {
+      throw TypeValidationError2.wrap({ value, cause: result.error });
+    }
+    return result.value;
+  }
+  async function safeValidateTypes2({
+    value,
+    schema
+  }) {
+    const validator22 = asValidator2(schema);
+    try {
+      if (validator22.validate == null) {
+        return { success: true, value, rawValue: value };
+      }
+      const result = await validator22.validate(value);
+      if (result.success) {
+        return { success: true, value: result.value, rawValue: value };
+      }
+      return {
+        success: false,
+        error: TypeValidationError2.wrap({ value, cause: result.error }),
+        rawValue: value
+      };
+    } catch (error62) {
+      return {
+        success: false,
+        error: TypeValidationError2.wrap({ value, cause: error62 }),
+        rawValue: value
+      };
+    }
+  }
+  async function parseJSON2({
+    text: text2,
+    schema
+  }) {
+    try {
+      const value = secureJsonParse2(text2);
+      if (schema == null) {
+        return value;
+      }
+      return validateTypes2({ value, schema });
+    } catch (error62) {
+      if (JSONParseError2.isInstance(error62) || TypeValidationError2.isInstance(error62)) {
+        throw error62;
+      }
+      throw new JSONParseError2({ text: text2, cause: error62 });
+    }
+  }
+  async function safeParseJSON2({
+    text: text2,
+    schema
+  }) {
+    try {
+      const value = secureJsonParse2(text2);
+      if (schema == null) {
+        return { success: true, value, rawValue: value };
+      }
+      return await safeValidateTypes2({ value, schema });
+    } catch (error62) {
+      return {
+        success: false,
+        error: JSONParseError2.isInstance(error62) ? error62 : new JSONParseError2({ text: text2, cause: error62 }),
+        rawValue: void 0
+      };
+    }
+  }
+  function isParsableJson(input2) {
+    try {
+      secureJsonParse2(input2);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function parseJsonEventStream2({
+    stream,
+    schema
+  }) {
+    return stream.pipeThrough(new TextDecoderStream()).pipeThrough(new EventSourceParserStream()).pipeThrough(
+      new TransformStream({
+        async transform({ data }, controller) {
+          if (data === "[DONE]") {
+            return;
+          }
+          controller.enqueue(await safeParseJSON2({ text: data, schema }));
+        }
+      })
+    );
+  }
+  async function parseProviderOptions2({
+    provider,
+    providerOptions,
+    schema
+  }) {
+    if ((providerOptions == null ? void 0 : providerOptions[provider]) == null) {
+      return void 0;
+    }
+    const parsedProviderOptions = await safeValidateTypes2({
+      value: providerOptions[provider],
+      schema
+    });
+    if (!parsedProviderOptions.success) {
+      throw new InvalidArgumentError2({
+        argument: "providerOptions",
+        message: `invalid ${provider} provider options`,
+        cause: parsedProviderOptions.error
+      });
+    }
+    return parsedProviderOptions.value;
+  }
+  var getOriginalFetch22 = () => globalThis.fetch;
+  var postJsonToApi2 = async ({
+    url: url2,
+    headers,
+    body,
+    failedResponseHandler,
+    successfulResponseHandler,
+    abortSignal,
+    fetch: fetch2
+  }) => postToApi2({
+    url: url2,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers
+    },
+    body: {
+      content: JSON.stringify(body),
+      values: body
+    },
+    failedResponseHandler,
+    successfulResponseHandler,
+    abortSignal,
+    fetch: fetch2
+  });
+  var postFormDataToApi = async ({
+    url: url2,
+    headers,
+    formData,
+    failedResponseHandler,
+    successfulResponseHandler,
+    abortSignal,
+    fetch: fetch2
+  }) => postToApi2({
+    url: url2,
+    headers,
+    body: {
+      content: formData,
+      values: Object.fromEntries(formData.entries())
+    },
+    failedResponseHandler,
+    successfulResponseHandler,
+    abortSignal,
+    fetch: fetch2
+  });
+  var postToApi2 = async ({
+    url: url2,
+    headers = {},
+    body,
+    successfulResponseHandler,
+    failedResponseHandler,
+    abortSignal,
+    fetch: fetch2 = getOriginalFetch22()
+  }) => {
+    try {
+      const response = await fetch2(url2, {
+        method: "POST",
+        headers: withUserAgentSuffix2(
+          headers,
+          `ai-sdk/provider-utils/${VERSION3}`,
+          getRuntimeEnvironmentUserAgent2()
+        ),
+        body: body.content,
+        signal: abortSignal
+      });
+      const responseHeaders = extractResponseHeaders2(response);
+      if (!response.ok) {
+        let errorInformation;
+        try {
+          errorInformation = await failedResponseHandler({
+            response,
+            url: url2,
+            requestBodyValues: body.values
+          });
+        } catch (error62) {
+          if (isAbortError2(error62) || APICallError2.isInstance(error62)) {
+            throw error62;
+          }
+          throw new APICallError2({
+            message: "Failed to process error response",
+            cause: error62,
+            statusCode: response.status,
+            url: url2,
+            responseHeaders,
+            requestBodyValues: body.values
+          });
+        }
+        throw errorInformation.value;
+      }
+      try {
+        return await successfulResponseHandler({
+          response,
+          url: url2,
+          requestBodyValues: body.values
+        });
+      } catch (error62) {
+        if (error62 instanceof Error) {
+          if (isAbortError2(error62) || APICallError2.isInstance(error62)) {
+            throw error62;
+          }
+        }
+        throw new APICallError2({
+          message: "Failed to process successful response",
+          cause: error62,
+          statusCode: response.status,
+          url: url2,
+          responseHeaders,
+          requestBodyValues: body.values
+        });
+      }
+    } catch (error62) {
+      throw handleFetchError2({ error: error62, url: url2, requestBodyValues: body.values });
+    }
+  };
+  function tool2(tool22) {
+    return tool22;
+  }
+  function createProviderDefinedToolFactory2({
+    id,
+    name: name25,
+    inputSchema
+  }) {
+    return ({
+      execute,
+      outputSchema: outputSchema2,
+      toModelOutput,
+      onInputStart,
+      onInputDelta,
+      onInputAvailable,
+      ...args
+    }) => tool2({
+      type: "provider-defined",
+      id,
+      name: name25,
+      args,
+      inputSchema,
+      outputSchema: outputSchema2,
+      execute,
+      toModelOutput,
+      onInputStart,
+      onInputDelta,
+      onInputAvailable
+    });
+  }
+  var textDecoder2 = new TextDecoder();
+  function wrapResponseBodyStream2({
+    stream,
+    url: url2,
+    requestBodyValues,
+    statusCode,
+    responseHeaders
+  }) {
+    const reader = stream.getReader();
+    let readerReleased = false;
+    const releaseReader = () => {
+      if (!readerReleased) {
+        reader.releaseLock();
+        readerReleased = true;
+      }
+    };
+    return new ReadableStream({
+      async pull(controller) {
+        try {
+          const { done, value } = await reader.read();
+          if (done) {
+            releaseReader();
+            controller.close();
+          } else {
+            controller.enqueue(value);
+          }
+        } catch (error62) {
+          releaseReader();
+          if (isAbortError2(error62)) {
+            controller.error(error62);
+            return;
+          }
+          controller.error(
+            handleFetchError2({
+              error: new APICallError2({
+                message: "Failed to process successful response",
+                cause: error62,
+                statusCode,
+                url: url2,
+                responseHeaders,
+                requestBodyValues
+              }),
+              url: url2,
+              requestBodyValues
+            })
+          );
+        }
+      },
+      async cancel(reason) {
+        try {
+          await reader.cancel(reason);
+        } finally {
+          releaseReader();
+        }
+      }
+    });
+  }
+  async function readResponseBodyAsText2({
+    response,
+    url: url2
+  }) {
+    return textDecoder2.decode(
+      await readResponseWithSizeLimit2({
+        response,
+        url: url2
+      })
+    );
+  }
+  var createJsonErrorResponseHandler2 = ({
+    errorSchema,
+    errorToMessage,
+    isRetryable
+  }) => async ({ response, url: url2, requestBodyValues }) => {
+    const responseBody = await readResponseBodyAsText2({ response, url: url2 });
+    const responseHeaders = extractResponseHeaders2(response);
+    if (responseBody.trim() === "") {
+      return {
+        responseHeaders,
+        value: new APICallError2({
+          message: response.statusText,
+          url: url2,
+          requestBodyValues,
+          statusCode: response.status,
+          responseHeaders,
+          responseBody,
+          isRetryable: isRetryable == null ? void 0 : isRetryable(response)
+        })
+      };
+    }
+    try {
+      const parsedError = await parseJSON2({
+        text: responseBody,
+        schema: errorSchema
+      });
+      return {
+        responseHeaders,
+        value: new APICallError2({
+          message: errorToMessage(parsedError),
+          url: url2,
+          requestBodyValues,
+          statusCode: response.status,
+          responseHeaders,
+          responseBody,
+          data: parsedError,
+          isRetryable: isRetryable == null ? void 0 : isRetryable(response, parsedError)
+        })
+      };
+    } catch (parseError) {
+      return {
+        responseHeaders,
+        value: new APICallError2({
+          message: response.statusText,
+          url: url2,
+          requestBodyValues,
+          statusCode: response.status,
+          responseHeaders,
+          responseBody,
+          isRetryable: isRetryable == null ? void 0 : isRetryable(response)
+        })
+      };
+    }
+  };
+  var createEventSourceResponseHandler2 = (chunkSchema2) => async ({ response, url: url2, requestBodyValues }) => {
+    const responseHeaders = extractResponseHeaders2(response);
+    if (response.body == null) {
+      throw new EmptyResponseBodyError2({});
+    }
+    return {
+      responseHeaders,
+      value: parseJsonEventStream2({
+        stream: wrapResponseBodyStream2({
+          stream: response.body,
+          url: url2,
+          requestBodyValues,
+          statusCode: response.status,
+          responseHeaders
+        }),
+        schema: chunkSchema2
+      })
+    };
+  };
+  var createJsonResponseHandler2 = (responseSchema2) => async ({ response, url: url2, requestBodyValues }) => {
+    const responseBody = await readResponseBodyAsText2({ response, url: url2 });
+    const parsedResult = await safeParseJSON2({
+      text: responseBody,
+      schema: responseSchema2
+    });
+    const responseHeaders = extractResponseHeaders2(response);
+    if (!parsedResult.success) {
+      throw new APICallError2({
+        message: "Invalid JSON response",
+        cause: parsedResult.error,
+        statusCode: response.status,
+        responseHeaders,
+        responseBody,
+        url: url2,
+        requestBodyValues
+      });
+    }
+    return {
+      responseHeaders,
+      value: parsedResult.value,
+      rawValue: parsedResult.rawValue
+    };
+  };
+  var createBinaryResponseHandler = () => async ({ response, url: url2, requestBodyValues }) => {
+    const responseHeaders = extractResponseHeaders2(response);
+    if (!response.body) {
+      throw new APICallError2({
+        message: "Response body is empty",
+        url: url2,
+        requestBodyValues,
+        statusCode: response.status,
+        responseHeaders,
+        responseBody: void 0
+      });
+    }
+    try {
+      const buffer = await response.arrayBuffer();
+      return {
+        responseHeaders,
+        value: new Uint8Array(buffer)
+      };
+    } catch (error62) {
+      throw new APICallError2({
+        message: "Failed to read response as array buffer",
+        url: url2,
+        requestBodyValues,
+        statusCode: response.status,
+        responseHeaders,
+        responseBody: void 0,
+        cause: error62
+      });
+    }
+  };
+  var ALPHA_NUMERIC2 = new Set(
+    "ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvxyz0123456789"
+  );
+  var { btoa: btoa3, atob: atob3 } = globalThis;
+  function convertBase64ToUint8Array2(base64String) {
+    const base64Url = base64String.replace(/-/g, "+").replace(/_/g, "/");
+    const latin1string = atob3(base64Url);
+    return Uint8Array.from(latin1string, (byte) => byte.codePointAt(0));
+  }
+  function convertUint8ArrayToBase642(array2) {
+    const chunks = [];
+    const chunkSize = 4096;
+    for (let i = 0; i < array2.length; i += chunkSize) {
+      chunks.push(String.fromCodePoint(...array2.subarray(i, i + chunkSize)));
+    }
+    return btoa3(chunks.join(""));
+  }
+  function convertToBase642(value) {
+    return value instanceof Uint8Array ? convertUint8ArrayToBase642(value) : value;
+  }
+  function withoutTrailingSlash2(url2) {
+    return url2 == null ? void 0 : url2.replace(/\/$/, "");
+  }
+
+  // node_modules/@ai-sdk/groq/dist/index.mjs
+  function convertToGroqChatMessages(prompt) {
+    const messages = [];
+    for (const { role, content } of prompt) {
+      switch (role) {
+        case "system": {
+          messages.push({ role: "system", content });
+          break;
+        }
+        case "user": {
+          if (content.length === 1 && content[0].type === "text") {
+            messages.push({ role: "user", content: content[0].text });
+            break;
+          }
+          messages.push({
+            role: "user",
+            content: content.map((part) => {
+              switch (part.type) {
+                case "text": {
+                  return { type: "text", text: part.text };
+                }
+                case "file": {
+                  if (!part.mediaType.startsWith("image/")) {
+                    throw new UnsupportedFunctionalityError2({
+                      functionality: "Non-image file content parts"
+                    });
+                  }
+                  const mediaType = part.mediaType === "image/*" ? "image/jpeg" : part.mediaType;
+                  return {
+                    type: "image_url",
+                    image_url: {
+                      url: part.data instanceof URL ? part.data.toString() : `data:${mediaType};base64,${convertToBase642(part.data)}`
+                    }
+                  };
+                }
+              }
+            })
+          });
+          break;
+        }
+        case "assistant": {
+          let text2 = "";
+          let reasoning = "";
+          const toolCalls = [];
+          for (const part of content) {
+            switch (part.type) {
+              // groq supports reasoning for tool-calls in multi-turn conversations
+              // https://github.com/vercel/ai/issues/7860
+              case "reasoning": {
+                reasoning += part.text;
+                break;
+              }
+              case "text": {
+                text2 += part.text;
+                break;
+              }
+              case "tool-call": {
+                toolCalls.push({
+                  id: part.toolCallId,
+                  type: "function",
+                  function: {
+                    name: part.toolName,
+                    arguments: JSON.stringify(part.input)
+                  }
+                });
+                break;
+              }
+            }
+          }
+          messages.push({
+            role: "assistant",
+            content: text2,
+            ...reasoning.length > 0 ? { reasoning } : null,
+            ...toolCalls.length > 0 ? { tool_calls: toolCalls } : null
+          });
+          break;
+        }
+        case "tool": {
+          for (const toolResponse of content) {
+            const output2 = toolResponse.output;
+            let contentValue;
+            switch (output2.type) {
+              case "text":
+              case "error-text":
+                contentValue = output2.value;
+                break;
+              case "content":
+              case "json":
+              case "error-json":
+                contentValue = JSON.stringify(output2.value);
+                break;
+            }
+            messages.push({
+              role: "tool",
+              tool_call_id: toolResponse.toolCallId,
+              content: contentValue
+            });
+          }
+          break;
+        }
+        default: {
+          const _exhaustiveCheck = role;
+          throw new Error(`Unsupported role: ${_exhaustiveCheck}`);
+        }
+      }
+    }
+    return messages;
+  }
+  function getResponseMetadata({
+    id,
+    model,
+    created
+  }) {
+    return {
+      id: id != null ? id : void 0,
+      modelId: model != null ? model : void 0,
+      timestamp: created != null ? new Date(created * 1e3) : void 0
+    };
+  }
+  var groqProviderOptions = external_exports.object({
+    reasoningFormat: external_exports.enum(["parsed", "raw", "hidden"]).optional(),
+    /**
+     * Specifies the reasoning effort level for model inference.
+     * @see https://console.groq.com/docs/reasoning#reasoning-effort
+     */
+    reasoningEffort: external_exports.enum(["none", "default", "low", "medium", "high"]).optional(),
+    /**
+     * Whether to enable parallel function calling during tool use. Default to true.
+     */
+    parallelToolCalls: external_exports.boolean().optional(),
+    /**
+     * A unique identifier representing your end-user, which can help OpenAI to
+     * monitor and detect abuse. Learn more.
+     */
+    user: external_exports.string().optional(),
+    /**
+     * Whether to use structured outputs.
+     *
+     * @default true
+     */
+    structuredOutputs: external_exports.boolean().optional(),
+    /**
+     * Service tier for the request.
+     * - 'on_demand': Default tier with consistent performance and fairness
+     * - 'flex': Higher throughput tier optimized for workloads that can handle occasional request failures
+     * - 'auto': Uses on_demand rate limits, then falls back to flex tier if exceeded
+     *
+     * @default 'on_demand'
+     */
+    serviceTier: external_exports.enum(["on_demand", "flex", "auto"]).optional()
+  });
+  var groqErrorDataSchema = external_exports.object({
+    error: external_exports.object({
+      message: external_exports.string(),
+      type: external_exports.string()
+    })
+  });
+  var groqFailedResponseHandler = createJsonErrorResponseHandler2({
+    errorSchema: groqErrorDataSchema,
+    errorToMessage: (data) => data.error.message
+  });
+  var BROWSER_SEARCH_SUPPORTED_MODELS = [
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b"
+  ];
+  function isBrowserSearchSupportedModel(modelId) {
+    return BROWSER_SEARCH_SUPPORTED_MODELS.includes(modelId);
+  }
+  function getSupportedModelsString() {
+    return BROWSER_SEARCH_SUPPORTED_MODELS.join(", ");
+  }
+  function prepareTools2({
+    tools,
+    toolChoice,
+    modelId
+  }) {
+    tools = (tools == null ? void 0 : tools.length) ? tools : void 0;
+    const toolWarnings = [];
+    if (tools == null) {
+      return { tools: void 0, toolChoice: void 0, toolWarnings };
+    }
+    const groqTools2 = [];
+    for (const tool3 of tools) {
+      if (tool3.type === "provider-defined") {
+        if (tool3.id === "groq.browser_search") {
+          if (!isBrowserSearchSupportedModel(modelId)) {
+            toolWarnings.push({
+              type: "unsupported-tool",
+              tool: tool3,
+              details: `Browser search is only supported on the following models: ${getSupportedModelsString()}. Current model: ${modelId}`
+            });
+          } else {
+            groqTools2.push({
+              type: "browser_search"
+            });
+          }
+        } else {
+          toolWarnings.push({ type: "unsupported-tool", tool: tool3 });
+        }
+      } else {
+        groqTools2.push({
+          type: "function",
+          function: {
+            name: tool3.name,
+            description: tool3.description,
+            parameters: tool3.inputSchema
+          }
+        });
+      }
+    }
+    if (toolChoice == null) {
+      return { tools: groqTools2, toolChoice: void 0, toolWarnings };
+    }
+    const type = toolChoice.type;
+    switch (type) {
+      case "auto":
+      case "none":
+      case "required":
+        return { tools: groqTools2, toolChoice: type, toolWarnings };
+      case "tool":
+        return {
+          tools: groqTools2,
+          toolChoice: {
+            type: "function",
+            function: {
+              name: toolChoice.toolName
+            }
+          },
+          toolWarnings
+        };
+      default: {
+        const _exhaustiveCheck = type;
+        throw new UnsupportedFunctionalityError2({
+          functionality: `tool choice type: ${_exhaustiveCheck}`
+        });
+      }
+    }
+  }
+  function mapGroqFinishReason(finishReason) {
+    switch (finishReason) {
+      case "stop":
+        return "stop";
+      case "length":
+        return "length";
+      case "content_filter":
+        return "content-filter";
+      case "function_call":
+      case "tool_calls":
+        return "tool-calls";
+      default:
+        return "unknown";
+    }
+  }
+  var GroqChatLanguageModel = class {
+    constructor(modelId, config2) {
+      this.specificationVersion = "v2";
+      this.supportedUrls = {
+        "image/*": [/^https?:\/\/.*$/]
+      };
+      this.modelId = modelId;
+      this.config = config2;
+    }
+    get provider() {
+      return this.config.provider;
+    }
+    async getArgs({
+      prompt,
+      maxOutputTokens,
+      temperature,
+      topP,
+      topK,
+      frequencyPenalty,
+      presencePenalty,
+      stopSequences,
+      responseFormat,
+      seed,
+      stream,
+      tools,
+      toolChoice,
+      providerOptions
+    }) {
+      var _a25, _b19;
+      const warnings = [];
+      const groqOptions = await parseProviderOptions2({
+        provider: "groq",
+        providerOptions,
+        schema: groqProviderOptions
+      });
+      const structuredOutputs = (_a25 = groqOptions == null ? void 0 : groqOptions.structuredOutputs) != null ? _a25 : true;
+      if (topK != null) {
+        warnings.push({
+          type: "unsupported-setting",
+          setting: "topK"
+        });
+      }
+      if ((responseFormat == null ? void 0 : responseFormat.type) === "json" && responseFormat.schema != null && !structuredOutputs) {
+        warnings.push({
+          type: "unsupported-setting",
+          setting: "responseFormat",
+          details: "JSON response format schema is only supported with structuredOutputs"
+        });
+      }
+      const {
+        tools: groqTools2,
+        toolChoice: groqToolChoice,
+        toolWarnings
+      } = prepareTools2({ tools, toolChoice, modelId: this.modelId });
+      return {
+        args: {
+          // model id:
+          model: this.modelId,
+          // model specific settings:
+          user: groqOptions == null ? void 0 : groqOptions.user,
+          parallel_tool_calls: groqOptions == null ? void 0 : groqOptions.parallelToolCalls,
+          // standardized settings:
+          max_tokens: maxOutputTokens,
+          temperature,
+          top_p: topP,
+          frequency_penalty: frequencyPenalty,
+          presence_penalty: presencePenalty,
+          stop: stopSequences,
+          seed,
+          // response format:
+          response_format: (responseFormat == null ? void 0 : responseFormat.type) === "json" ? structuredOutputs && responseFormat.schema != null ? {
+            type: "json_schema",
+            json_schema: {
+              schema: responseFormat.schema,
+              name: (_b19 = responseFormat.name) != null ? _b19 : "response",
+              description: responseFormat.description
+            }
+          } : { type: "json_object" } : void 0,
+          // provider options:
+          reasoning_format: groqOptions == null ? void 0 : groqOptions.reasoningFormat,
+          reasoning_effort: groqOptions == null ? void 0 : groqOptions.reasoningEffort,
+          service_tier: groqOptions == null ? void 0 : groqOptions.serviceTier,
+          // messages:
+          messages: convertToGroqChatMessages(prompt),
+          // tools:
+          tools: groqTools2,
+          tool_choice: groqToolChoice
+        },
+        warnings: [...warnings, ...toolWarnings]
+      };
+    }
+    async doGenerate(options) {
+      var _a25, _b19, _c, _d, _e, _f, _g, _h, _i, _j;
+      const { args, warnings } = await this.getArgs({
+        ...options,
+        stream: false
+      });
+      const body = JSON.stringify(args);
+      const {
+        responseHeaders,
+        value: response,
+        rawValue: rawResponse
+      } = await postJsonToApi2({
+        url: this.config.url({
+          path: "/chat/completions",
+          modelId: this.modelId
+        }),
+        headers: combineHeaders2(this.config.headers(), options.headers),
+        body: args,
+        failedResponseHandler: groqFailedResponseHandler,
+        successfulResponseHandler: createJsonResponseHandler2(
+          groqChatResponseSchema
+        ),
+        abortSignal: options.abortSignal,
+        fetch: this.config.fetch
+      });
+      const choice = response.choices[0];
+      const content = [];
+      const text2 = choice.message.content;
+      if (text2 != null && text2.length > 0) {
+        content.push({ type: "text", text: text2 });
+      }
+      const reasoning = choice.message.reasoning;
+      if (reasoning != null && reasoning.length > 0) {
+        content.push({
+          type: "reasoning",
+          text: reasoning
+        });
+      }
+      if (choice.message.tool_calls != null) {
+        for (const toolCall of choice.message.tool_calls) {
+          content.push({
+            type: "tool-call",
+            toolCallId: (_a25 = toolCall.id) != null ? _a25 : generateId2(),
+            toolName: toolCall.function.name,
+            input: toolCall.function.arguments
+          });
+        }
+      }
+      return {
+        content,
+        finishReason: mapGroqFinishReason(choice.finish_reason),
+        usage: {
+          inputTokens: (_c = (_b19 = response.usage) == null ? void 0 : _b19.prompt_tokens) != null ? _c : void 0,
+          outputTokens: (_e = (_d = response.usage) == null ? void 0 : _d.completion_tokens) != null ? _e : void 0,
+          totalTokens: (_g = (_f = response.usage) == null ? void 0 : _f.total_tokens) != null ? _g : void 0,
+          cachedInputTokens: (_j = (_i = (_h = response.usage) == null ? void 0 : _h.prompt_tokens_details) == null ? void 0 : _i.cached_tokens) != null ? _j : void 0
+        },
+        response: {
+          ...getResponseMetadata(response),
+          headers: responseHeaders,
+          body: rawResponse
+        },
+        warnings,
+        request: { body }
+      };
+    }
+    async doStream(options) {
+      const { args, warnings } = await this.getArgs({ ...options, stream: true });
+      const body = JSON.stringify({ ...args, stream: true });
+      const { responseHeaders, value: response } = await postJsonToApi2({
+        url: this.config.url({
+          path: "/chat/completions",
+          modelId: this.modelId
+        }),
+        headers: combineHeaders2(this.config.headers(), options.headers),
+        body: {
+          ...args,
+          stream: true
+        },
+        failedResponseHandler: groqFailedResponseHandler,
+        successfulResponseHandler: createEventSourceResponseHandler2(groqChatChunkSchema),
+        abortSignal: options.abortSignal,
+        fetch: this.config.fetch
+      });
+      const toolCalls = [];
+      let finishReason = "unknown";
+      const usage = {
+        inputTokens: void 0,
+        outputTokens: void 0,
+        totalTokens: void 0,
+        cachedInputTokens: void 0
+      };
+      let isFirstChunk = true;
+      let isActiveText = false;
+      let isActiveReasoning = false;
+      return {
+        stream: response.pipeThrough(
+          new TransformStream({
+            start(controller) {
+              controller.enqueue({ type: "stream-start", warnings });
+            },
+            transform(chunk, controller) {
+              var _a25, _b19, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r;
+              if (options.includeRawChunks) {
+                controller.enqueue({ type: "raw", rawValue: chunk.rawValue });
+              }
+              if (!chunk.success) {
+                finishReason = "error";
+                controller.enqueue({ type: "error", error: chunk.error });
+                return;
+              }
+              const value = chunk.value;
+              if ("error" in value) {
+                finishReason = "error";
+                controller.enqueue({ type: "error", error: value.error });
+                return;
+              }
+              if (isFirstChunk) {
+                isFirstChunk = false;
+                controller.enqueue({
+                  type: "response-metadata",
+                  ...getResponseMetadata(value)
+                });
+              }
+              if (((_a25 = value.x_groq) == null ? void 0 : _a25.usage) != null) {
+                usage.inputTokens = (_b19 = value.x_groq.usage.prompt_tokens) != null ? _b19 : void 0;
+                usage.outputTokens = (_c = value.x_groq.usage.completion_tokens) != null ? _c : void 0;
+                usage.totalTokens = (_d = value.x_groq.usage.total_tokens) != null ? _d : void 0;
+                usage.cachedInputTokens = (_f = (_e = value.x_groq.usage.prompt_tokens_details) == null ? void 0 : _e.cached_tokens) != null ? _f : void 0;
+              }
+              const choice = value.choices[0];
+              if ((choice == null ? void 0 : choice.finish_reason) != null) {
+                finishReason = mapGroqFinishReason(choice.finish_reason);
+              }
+              if ((choice == null ? void 0 : choice.delta) == null) {
+                return;
+              }
+              const delta = choice.delta;
+              if (delta.reasoning != null && delta.reasoning.length > 0) {
+                if (!isActiveReasoning) {
+                  controller.enqueue({
+                    type: "reasoning-start",
+                    id: "reasoning-0"
+                  });
+                  isActiveReasoning = true;
+                }
+                controller.enqueue({
+                  type: "reasoning-delta",
+                  id: "reasoning-0",
+                  delta: delta.reasoning
+                });
+              }
+              if (delta.content != null && delta.content.length > 0) {
+                if (!isActiveText) {
+                  controller.enqueue({ type: "text-start", id: "txt-0" });
+                  isActiveText = true;
+                }
+                controller.enqueue({
+                  type: "text-delta",
+                  id: "txt-0",
+                  delta: delta.content
+                });
+              }
+              if (delta.tool_calls != null) {
+                for (const toolCallDelta of delta.tool_calls) {
+                  const index = toolCallDelta.index;
+                  if (toolCalls[index] == null) {
+                    if (toolCallDelta.type !== "function") {
+                      throw new InvalidResponseDataError2({
+                        data: toolCallDelta,
+                        message: `Expected 'function' type.`
+                      });
+                    }
+                    if (toolCallDelta.id == null) {
+                      throw new InvalidResponseDataError2({
+                        data: toolCallDelta,
+                        message: `Expected 'id' to be a string.`
+                      });
+                    }
+                    if (((_g = toolCallDelta.function) == null ? void 0 : _g.name) == null) {
+                      throw new InvalidResponseDataError2({
+                        data: toolCallDelta,
+                        message: `Expected 'function.name' to be a string.`
+                      });
+                    }
+                    controller.enqueue({
+                      type: "tool-input-start",
+                      id: toolCallDelta.id,
+                      toolName: toolCallDelta.function.name
+                    });
+                    toolCalls[index] = {
+                      id: toolCallDelta.id,
+                      type: "function",
+                      function: {
+                        name: toolCallDelta.function.name,
+                        arguments: (_h = toolCallDelta.function.arguments) != null ? _h : ""
+                      },
+                      hasFinished: false
+                    };
+                    const toolCall2 = toolCalls[index];
+                    if (((_i = toolCall2.function) == null ? void 0 : _i.name) != null && ((_j = toolCall2.function) == null ? void 0 : _j.arguments) != null) {
+                      if (toolCall2.function.arguments.length > 0) {
+                        controller.enqueue({
+                          type: "tool-input-delta",
+                          id: toolCall2.id,
+                          delta: toolCall2.function.arguments
+                        });
+                      }
+                      if (isParsableJson(toolCall2.function.arguments)) {
+                        controller.enqueue({
+                          type: "tool-input-end",
+                          id: toolCall2.id
+                        });
+                        controller.enqueue({
+                          type: "tool-call",
+                          toolCallId: (_k = toolCall2.id) != null ? _k : generateId2(),
+                          toolName: toolCall2.function.name,
+                          input: toolCall2.function.arguments
+                        });
+                        toolCall2.hasFinished = true;
+                      }
+                    }
+                    continue;
+                  }
+                  const toolCall = toolCalls[index];
+                  if (toolCall.hasFinished) {
+                    continue;
+                  }
+                  if (((_l = toolCallDelta.function) == null ? void 0 : _l.arguments) != null) {
+                    toolCall.function.arguments += (_n = (_m = toolCallDelta.function) == null ? void 0 : _m.arguments) != null ? _n : "";
+                  }
+                  controller.enqueue({
+                    type: "tool-input-delta",
+                    id: toolCall.id,
+                    delta: (_o = toolCallDelta.function.arguments) != null ? _o : ""
+                  });
+                  if (((_p = toolCall.function) == null ? void 0 : _p.name) != null && ((_q = toolCall.function) == null ? void 0 : _q.arguments) != null && isParsableJson(toolCall.function.arguments)) {
+                    controller.enqueue({
+                      type: "tool-input-end",
+                      id: toolCall.id
+                    });
+                    controller.enqueue({
+                      type: "tool-call",
+                      toolCallId: (_r = toolCall.id) != null ? _r : generateId2(),
+                      toolName: toolCall.function.name,
+                      input: toolCall.function.arguments
+                    });
+                    toolCall.hasFinished = true;
+                  }
+                }
+              }
+            },
+            flush(controller) {
+              if (isActiveReasoning) {
+                controller.enqueue({ type: "reasoning-end", id: "reasoning-0" });
+              }
+              if (isActiveText) {
+                controller.enqueue({ type: "text-end", id: "txt-0" });
+              }
+              controller.enqueue({
+                type: "finish",
+                finishReason,
+                usage
+              });
+            }
+          })
+        ),
+        request: { body },
+        response: { headers: responseHeaders }
+      };
+    }
+  };
+  var groqChatResponseSchema = external_exports.object({
+    id: external_exports.string().nullish(),
+    created: external_exports.number().nullish(),
+    model: external_exports.string().nullish(),
+    choices: external_exports.array(
+      external_exports.object({
+        message: external_exports.object({
+          content: external_exports.string().nullish(),
+          reasoning: external_exports.string().nullish(),
+          tool_calls: external_exports.array(
+            external_exports.object({
+              id: external_exports.string().nullish(),
+              type: external_exports.literal("function"),
+              function: external_exports.object({
+                name: external_exports.string(),
+                arguments: external_exports.string()
+              })
+            })
+          ).nullish()
+        }),
+        index: external_exports.number(),
+        finish_reason: external_exports.string().nullish()
+      })
+    ),
+    usage: external_exports.object({
+      prompt_tokens: external_exports.number().nullish(),
+      completion_tokens: external_exports.number().nullish(),
+      total_tokens: external_exports.number().nullish(),
+      prompt_tokens_details: external_exports.object({
+        cached_tokens: external_exports.number().nullish()
+      }).nullish()
+    }).nullish()
+  });
+  var groqChatChunkSchema = external_exports.union([
+    external_exports.object({
+      id: external_exports.string().nullish(),
+      created: external_exports.number().nullish(),
+      model: external_exports.string().nullish(),
+      choices: external_exports.array(
+        external_exports.object({
+          delta: external_exports.object({
+            content: external_exports.string().nullish(),
+            reasoning: external_exports.string().nullish(),
+            tool_calls: external_exports.array(
+              external_exports.object({
+                index: external_exports.number(),
+                id: external_exports.string().nullish(),
+                type: external_exports.literal("function").optional(),
+                function: external_exports.object({
+                  name: external_exports.string().nullish(),
+                  arguments: external_exports.string().nullish()
+                })
+              })
+            ).nullish()
+          }).nullish(),
+          finish_reason: external_exports.string().nullable().optional(),
+          index: external_exports.number()
+        })
+      ),
+      x_groq: external_exports.object({
+        usage: external_exports.object({
+          prompt_tokens: external_exports.number().nullish(),
+          completion_tokens: external_exports.number().nullish(),
+          total_tokens: external_exports.number().nullish(),
+          prompt_tokens_details: external_exports.object({
+            cached_tokens: external_exports.number().nullish()
+          }).nullish()
+        }).nullish()
+      }).nullish()
+    }),
+    groqErrorDataSchema
+  ]);
+  var groqProviderOptionsSchema = external_exports.object({
+    language: external_exports.string().nullish(),
+    prompt: external_exports.string().nullish(),
+    responseFormat: external_exports.string().nullish(),
+    temperature: external_exports.number().min(0).max(1).nullish(),
+    timestampGranularities: external_exports.array(external_exports.string()).nullish()
+  });
+  var GroqTranscriptionModel = class {
+    constructor(modelId, config2) {
+      this.modelId = modelId;
+      this.config = config2;
+      this.specificationVersion = "v2";
+    }
+    get provider() {
+      return this.config.provider;
+    }
+    async getArgs({
+      audio,
+      mediaType,
+      providerOptions
+    }) {
+      var _a25, _b19, _c, _d, _e;
+      const warnings = [];
+      const groqOptions = await parseProviderOptions2({
+        provider: "groq",
+        providerOptions,
+        schema: groqProviderOptionsSchema
+      });
+      const formData = new FormData();
+      const blob = audio instanceof Uint8Array ? new Blob([audio]) : new Blob([convertBase64ToUint8Array2(audio)]);
+      formData.append("model", this.modelId);
+      const fileExtension = mediaTypeToExtension(mediaType);
+      formData.append(
+        "file",
+        new File([blob], "audio", { type: mediaType }),
+        `audio.${fileExtension}`
+      );
+      if (groqOptions) {
+        const transcriptionModelOptions = {
+          language: (_a25 = groqOptions.language) != null ? _a25 : void 0,
+          prompt: (_b19 = groqOptions.prompt) != null ? _b19 : void 0,
+          response_format: (_c = groqOptions.responseFormat) != null ? _c : void 0,
+          temperature: (_d = groqOptions.temperature) != null ? _d : void 0,
+          timestamp_granularities: (_e = groqOptions.timestampGranularities) != null ? _e : void 0
+        };
+        for (const key in transcriptionModelOptions) {
+          const value = transcriptionModelOptions[key];
+          if (value !== void 0) {
+            formData.append(key, String(value));
+          }
+        }
+      }
+      return {
+        formData,
+        responseFormat: groqOptions == null ? void 0 : groqOptions.responseFormat,
+        warnings
+      };
+    }
+    async doGenerate(options) {
+      var _a25, _b19, _c, _d, _e, _f, _g;
+      const currentDate = (_c = (_b19 = (_a25 = this.config._internal) == null ? void 0 : _a25.currentDate) == null ? void 0 : _b19.call(_a25)) != null ? _c : /* @__PURE__ */ new Date();
+      const { formData, responseFormat, warnings } = await this.getArgs(options);
+      const successfulResponseHandler = responseFormat === "text" ? groqTextTranscriptionResponseHandler : createJsonResponseHandler2(groqTranscriptionResponseSchema);
+      const {
+        value: response,
+        responseHeaders,
+        rawValue: rawResponse
+      } = await postFormDataToApi({
+        url: this.config.url({
+          path: "/audio/transcriptions",
+          modelId: this.modelId
+        }),
+        headers: combineHeaders2(this.config.headers(), options.headers),
+        formData,
+        failedResponseHandler: groqFailedResponseHandler,
+        successfulResponseHandler,
+        abortSignal: options.abortSignal,
+        fetch: this.config.fetch
+      });
+      return {
+        text: response.text,
+        segments: (_e = (_d = response.segments) == null ? void 0 : _d.map((segment) => ({
+          text: segment.text,
+          startSecond: segment.start,
+          endSecond: segment.end
+        }))) != null ? _e : [],
+        language: (_f = response.language) != null ? _f : void 0,
+        durationInSeconds: (_g = response.duration) != null ? _g : void 0,
+        warnings,
+        response: {
+          timestamp: currentDate,
+          modelId: this.modelId,
+          headers: responseHeaders,
+          body: rawResponse
+        }
+      };
+    }
+  };
+  var groqTranscriptionResponseSchema = external_exports.object({
+    text: external_exports.string(),
+    x_groq: external_exports.object({
+      id: external_exports.string()
+    }),
+    // additional properties are returned when `response_format: 'verbose_json'` is
+    task: external_exports.string().nullish(),
+    language: external_exports.string().nullish(),
+    duration: external_exports.number().nullish(),
+    segments: external_exports.array(
+      external_exports.object({
+        id: external_exports.number(),
+        seek: external_exports.number(),
+        start: external_exports.number(),
+        end: external_exports.number(),
+        text: external_exports.string(),
+        tokens: external_exports.array(external_exports.number()),
+        temperature: external_exports.number(),
+        avg_logprob: external_exports.number(),
+        compression_ratio: external_exports.number(),
+        no_speech_prob: external_exports.number()
+      })
+    ).nullish()
+  });
+  var binaryResponseHandler = createBinaryResponseHandler();
+  var textDecoder3 = new TextDecoder();
+  var groqTextTranscriptionResponseHandler = async (options) => {
+    const { value, responseHeaders } = await binaryResponseHandler(options);
+    const text2 = textDecoder3.decode(value);
+    return {
+      value: { text: text2 },
+      rawValue: text2,
+      responseHeaders
+    };
+  };
+  var browserSearch = createProviderDefinedToolFactory2({
+    id: "groq.browser_search",
+    name: "browser_search",
+    inputSchema: external_exports.object({})
+  });
+  var groqTools = {
+    browserSearch
+  };
+  var VERSION4 = true ? "2.0.57" : "0.0.0-test";
+  function createGroq(options = {}) {
+    var _a25;
+    const baseURL = (_a25 = withoutTrailingSlash2(options.baseURL)) != null ? _a25 : "https://api.groq.com/openai/v1";
+    const getHeaders = () => withUserAgentSuffix2(
+      {
+        Authorization: `Bearer ${loadApiKey2({
+          apiKey: options.apiKey,
+          environmentVariableName: "GROQ_API_KEY",
+          description: "Groq"
+        })}`,
+        ...options.headers
+      },
+      `ai-sdk/groq/${VERSION4}`
+    );
+    const createChatModel = (modelId) => new GroqChatLanguageModel(modelId, {
+      provider: "groq.chat",
+      url: ({ path }) => `${baseURL}${path}`,
+      headers: getHeaders,
+      fetch: options.fetch
+    });
+    const createLanguageModel = (modelId) => {
+      if (new.target) {
+        throw new Error(
+          "The Groq model function cannot be called with the new keyword."
+        );
+      }
+      return createChatModel(modelId);
+    };
+    const createTranscriptionModel = (modelId) => {
+      return new GroqTranscriptionModel(modelId, {
+        provider: "groq.transcription",
+        url: ({ path }) => `${baseURL}${path}`,
+        headers: getHeaders,
+        fetch: options.fetch
+      });
+    };
+    const provider = function(modelId) {
+      return createLanguageModel(modelId);
+    };
+    provider.languageModel = createLanguageModel;
+    provider.chat = createChatModel;
+    provider.textEmbeddingModel = (modelId) => {
+      throw new NoSuchModelError2({ modelId, modelType: "textEmbeddingModel" });
+    };
+    provider.imageModel = (modelId) => {
+      throw new NoSuchModelError2({ modelId, modelType: "imageModel" });
+    };
+    provider.transcription = createTranscriptionModel;
+    provider.transcriptionModel = createTranscriptionModel;
+    provider.tools = groqTools;
+    return provider;
+  }
+  var groq = createGroq();
+
+  // node_modules/@ai-sdk/gateway/dist/index.mjs
+  var import_oidc = __toESM(require_index_browser(), 1);
+  var import_oidc2 = __toESM(require_index_browser(), 1);
+  var marker18 = "vercel.ai.gateway.error";
+  var symbol19 = Symbol.for(marker18);
+  var _a20;
+  var _b18;
+  var GatewayError = class _GatewayError extends (_b18 = Error, _a20 = symbol19, _b18) {
     constructor({
       message,
       statusCode = 500,
@@ -28963,7 +31003,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       // server error
     }) {
       super(message);
-      this[_a18] = true;
+      this[_a20] = true;
       this.statusCode = statusCode;
       this.cause = cause;
       this.isRetryable = isRetryable;
@@ -28977,27 +31017,27 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       return _GatewayError.hasMarker(error62);
     }
     static hasMarker(error62) {
-      return typeof error62 === "object" && error62 !== null && symbol17 in error62 && error62[symbol17] === true;
+      return typeof error62 === "object" && error62 !== null && symbol19 in error62 && error62[symbol19] === true;
     }
   };
-  var name15 = "GatewayAuthenticationError";
-  var marker22 = `vercel.ai.gateway.error.${name15}`;
-  var symbol22 = Symbol.for(marker22);
-  var _a22;
-  var _b22;
-  var GatewayAuthenticationError = class _GatewayAuthenticationError extends (_b22 = GatewayError, _a22 = symbol22, _b22) {
+  var name17 = "GatewayAuthenticationError";
+  var marker23 = `vercel.ai.gateway.error.${name17}`;
+  var symbol23 = Symbol.for(marker23);
+  var _a23;
+  var _b23;
+  var GatewayAuthenticationError = class _GatewayAuthenticationError extends (_b23 = GatewayError, _a23 = symbol23, _b23) {
     constructor({
       message = "Authentication failed",
       statusCode = 401,
       cause
     } = {}) {
       super({ message, statusCode, cause });
-      this[_a22] = true;
-      this.name = name15;
+      this[_a23] = true;
+      this.name = name17;
       this.type = "authentication_error";
     }
     static isInstance(error62) {
-      return GatewayError.hasMarker(error62) && symbol22 in error62;
+      return GatewayError.hasMarker(error62) && symbol23 in error62;
     }
     /**
      * Creates a contextual error message when authentication fails
@@ -29039,9 +31079,9 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       });
     }
   };
-  var name22 = "GatewayForbiddenError";
-  var marker32 = `vercel.ai.gateway.error.${name22}`;
-  var symbol32 = Symbol.for(marker32);
+  var name23 = "GatewayForbiddenError";
+  var marker33 = `vercel.ai.gateway.error.${name23}`;
+  var symbol33 = Symbol.for(marker33);
   var forbiddenParamSchema = lazyValidator(
     () => zodSchema(
       external_exports.object({
@@ -29049,9 +31089,9 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       })
     )
   );
-  var _a32;
-  var _b32;
-  var GatewayForbiddenError = class extends (_b32 = GatewayError, _a32 = symbol32, _b32) {
+  var _a33;
+  var _b33;
+  var GatewayForbiddenError = class extends (_b33 = GatewayError, _a33 = symbol33, _b33) {
     constructor({
       message = "Forbidden",
       statusCode = 403,
@@ -29059,58 +31099,58 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       ruleId
     } = {}) {
       super({ message, statusCode, cause });
-      this[_a32] = true;
-      this.name = name22;
+      this[_a33] = true;
+      this.name = name23;
       this.type = "forbidden";
       this.ruleId = ruleId;
     }
     static isInstance(error62) {
-      return GatewayError.hasMarker(error62) && symbol32 in error62;
+      return GatewayError.hasMarker(error62) && symbol33 in error62;
     }
   };
-  var name32 = "GatewayInvalidRequestError";
-  var marker42 = `vercel.ai.gateway.error.${name32}`;
-  var symbol42 = Symbol.for(marker42);
-  var _a42;
-  var _b42;
-  var GatewayInvalidRequestError = class extends (_b42 = GatewayError, _a42 = symbol42, _b42) {
+  var name33 = "GatewayInvalidRequestError";
+  var marker43 = `vercel.ai.gateway.error.${name33}`;
+  var symbol43 = Symbol.for(marker43);
+  var _a43;
+  var _b43;
+  var GatewayInvalidRequestError = class extends (_b43 = GatewayError, _a43 = symbol43, _b43) {
     constructor({
       message = "Invalid request",
       statusCode = 400,
       cause
     } = {}) {
       super({ message, statusCode, cause });
-      this[_a42] = true;
-      this.name = name32;
+      this[_a43] = true;
+      this.name = name33;
       this.type = "invalid_request_error";
     }
     static isInstance(error62) {
-      return GatewayError.hasMarker(error62) && symbol42 in error62;
+      return GatewayError.hasMarker(error62) && symbol43 in error62;
     }
   };
-  var name42 = "GatewayRateLimitError";
-  var marker52 = `vercel.ai.gateway.error.${name42}`;
-  var symbol52 = Symbol.for(marker52);
-  var _a52;
-  var _b52;
-  var GatewayRateLimitError = class extends (_b52 = GatewayError, _a52 = symbol52, _b52) {
+  var name43 = "GatewayRateLimitError";
+  var marker53 = `vercel.ai.gateway.error.${name43}`;
+  var symbol53 = Symbol.for(marker53);
+  var _a53;
+  var _b53;
+  var GatewayRateLimitError = class extends (_b53 = GatewayError, _a53 = symbol53, _b53) {
     constructor({
       message = "Rate limit exceeded",
       statusCode = 429,
       cause
     } = {}) {
       super({ message, statusCode, cause });
-      this[_a52] = true;
-      this.name = name42;
+      this[_a53] = true;
+      this.name = name43;
       this.type = "rate_limit_exceeded";
     }
     static isInstance(error62) {
-      return GatewayError.hasMarker(error62) && symbol52 in error62;
+      return GatewayError.hasMarker(error62) && symbol53 in error62;
     }
   };
-  var name52 = "GatewayModelNotFoundError";
-  var marker62 = `vercel.ai.gateway.error.${name52}`;
-  var symbol62 = Symbol.for(marker62);
+  var name53 = "GatewayModelNotFoundError";
+  var marker63 = `vercel.ai.gateway.error.${name53}`;
+  var symbol63 = Symbol.for(marker63);
   var modelNotFoundParamSchema = lazyValidator(
     () => zodSchema(
       external_exports.object({
@@ -29118,9 +31158,9 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       })
     )
   );
-  var _a62;
-  var _b62;
-  var GatewayModelNotFoundError = class extends (_b62 = GatewayError, _a62 = symbol62, _b62) {
+  var _a63;
+  var _b63;
+  var GatewayModelNotFoundError = class extends (_b63 = GatewayError, _a63 = symbol63, _b63) {
     constructor({
       message = "Model not found",
       statusCode = 404,
@@ -29128,41 +31168,41 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       cause
     } = {}) {
       super({ message, statusCode, cause });
-      this[_a62] = true;
-      this.name = name52;
+      this[_a63] = true;
+      this.name = name53;
       this.type = "model_not_found";
       this.modelId = modelId;
     }
     static isInstance(error62) {
-      return GatewayError.hasMarker(error62) && symbol62 in error62;
+      return GatewayError.hasMarker(error62) && symbol63 in error62;
     }
   };
-  var name62 = "GatewayInternalServerError";
-  var marker72 = `vercel.ai.gateway.error.${name62}`;
-  var symbol72 = Symbol.for(marker72);
-  var _a72;
-  var _b72;
-  var GatewayInternalServerError = class extends (_b72 = GatewayError, _a72 = symbol72, _b72) {
+  var name63 = "GatewayInternalServerError";
+  var marker73 = `vercel.ai.gateway.error.${name63}`;
+  var symbol73 = Symbol.for(marker73);
+  var _a73;
+  var _b73;
+  var GatewayInternalServerError = class extends (_b73 = GatewayError, _a73 = symbol73, _b73) {
     constructor({
       message = "Internal server error",
       statusCode = 500,
       cause
     } = {}) {
       super({ message, statusCode, cause });
-      this[_a72] = true;
-      this.name = name62;
+      this[_a73] = true;
+      this.name = name63;
       this.type = "internal_server_error";
     }
     static isInstance(error62) {
-      return GatewayError.hasMarker(error62) && symbol72 in error62;
+      return GatewayError.hasMarker(error62) && symbol73 in error62;
     }
   };
-  var name72 = "GatewayResponseError";
-  var marker82 = `vercel.ai.gateway.error.${name72}`;
-  var symbol82 = Symbol.for(marker82);
-  var _a82;
-  var _b82;
-  var GatewayResponseError = class extends (_b82 = GatewayError, _a82 = symbol82, _b82) {
+  var name73 = "GatewayResponseError";
+  var marker83 = `vercel.ai.gateway.error.${name73}`;
+  var symbol83 = Symbol.for(marker83);
+  var _a83;
+  var _b83;
+  var GatewayResponseError = class extends (_b83 = GatewayError, _a83 = symbol83, _b83) {
     constructor({
       message = "Invalid response from Gateway",
       statusCode = 502,
@@ -29172,14 +31212,14 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       isRetryable
     } = {}) {
       super({ message, statusCode, cause, isRetryable });
-      this[_a82] = true;
-      this.name = name72;
+      this[_a83] = true;
+      this.name = name73;
       this.type = "response_error";
       this.response = response;
       this.validationError = validationError;
     }
     static isInstance(error62) {
-      return GatewayError.hasMarker(error62) && symbol82 in error62;
+      return GatewayError.hasMarker(error62) && symbol83 in error62;
     }
   };
   async function createGatewayErrorFromResponse({
@@ -29274,24 +31314,24 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     }
     return {};
   }
-  var name82 = "GatewayTimeoutError";
-  var marker92 = `vercel.ai.gateway.error.${name82}`;
-  var symbol92 = Symbol.for(marker92);
-  var _a92;
-  var _b92;
-  var GatewayTimeoutError = class _GatewayTimeoutError extends (_b92 = GatewayError, _a92 = symbol92, _b92) {
+  var name83 = "GatewayTimeoutError";
+  var marker93 = `vercel.ai.gateway.error.${name83}`;
+  var symbol93 = Symbol.for(marker93);
+  var _a93;
+  var _b93;
+  var GatewayTimeoutError = class _GatewayTimeoutError extends (_b93 = GatewayError, _a93 = symbol93, _b93) {
     constructor({
       message = "Request timed out",
       statusCode = 408,
       cause
     } = {}) {
       super({ message, statusCode, cause });
-      this[_a92] = true;
-      this.name = name82;
+      this[_a93] = true;
+      this.name = name83;
       this.type = "timeout_error";
     }
     static isInstance(error62) {
-      return GatewayError.hasMarker(error62) && symbol92 in error62;
+      return GatewayError.hasMarker(error62) && symbol93 in error62;
     }
     /**
      * Creates a helpful timeout error message with troubleshooting guidance
@@ -29327,7 +31367,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     return false;
   }
   async function asGatewayError(error62, authMethod) {
-    var _a103;
+    var _a104;
     if (GatewayError.isInstance(error62)) {
       return error62;
     }
@@ -29346,7 +31386,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       }
       return await createGatewayErrorFromResponse({
         response: extractApiCallResponse(error62),
-        statusCode: (_a103 = error62.statusCode) != null ? _a103 : 500,
+        statusCode: (_a104 = error62.statusCode) != null ? _a104 : 500,
         defaultMessage: "Gateway request failed",
         cause: error62,
         authMethod,
@@ -29388,8 +31428,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           failedResponseHandler: createJsonErrorResponseHandler({
             errorSchema: external_exports.any(),
             errorToMessage: (data) => {
-              var _a103;
-              return (_a103 = getErrorMessage2(data)) != null ? _a103 : "unknown error";
+              var _a104;
+              return (_a104 = getErrorMessage2(data)) != null ? _a104 : "unknown error";
             }
           }),
           fetch: this.config.fetch
@@ -29411,8 +31451,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           failedResponseHandler: createJsonErrorResponseHandler({
             errorSchema: external_exports.any(),
             errorToMessage: (data) => {
-              var _a103;
-              return (_a103 = getErrorMessage2(data)) != null ? _a103 : "unknown error";
+              var _a104;
+              return (_a104 = getErrorMessage2(data)) != null ? _a104 : "unknown error";
             }
           }),
           fetch: this.config.fetch
@@ -29510,8 +31550,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           failedResponseHandler: createJsonErrorResponseHandler({
             errorSchema: external_exports.any(),
             errorToMessage: (data) => {
-              var _a103;
-              return (_a103 = getErrorMessage2(data)) != null ? _a103 : "unknown error";
+              var _a104;
+              return (_a104 = getErrorMessage2(data)) != null ? _a104 : "unknown error";
             }
           }),
           fetch: this.config.fetch
@@ -29587,8 +31627,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           failedResponseHandler: createJsonErrorResponseHandler({
             errorSchema: external_exports.any(),
             errorToMessage: (data) => {
-              var _a103;
-              return (_a103 = getErrorMessage2(data)) != null ? _a103 : "unknown error";
+              var _a104;
+              return (_a104 = getErrorMessage2(data)) != null ? _a104 : "unknown error";
             }
           }),
           fetch: this.config.fetch
@@ -29675,7 +31715,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       };
     }
     async doGenerate(options) {
-      var _a103;
+      var _a104;
       const { args, warnings } = await this.getArgs(options);
       const { abortSignal } = options;
       const resolvedHeaders = await resolve(this.config.headers());
@@ -29697,8 +31737,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           failedResponseHandler: createJsonErrorResponseHandler({
             errorSchema: external_exports.any(),
             errorToMessage: (data) => {
-              var _a113;
-              return (_a113 = getErrorMessage2(data)) != null ? _a113 : "unknown error";
+              var _a114;
+              return (_a114 = getErrorMessage2(data)) != null ? _a114 : "unknown error";
             }
           }),
           ...abortSignal && { abortSignal },
@@ -29708,7 +31748,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           ...responseBody,
           request: { body: args },
           response: { headers: responseHeaders, body: rawResponse },
-          warnings: [...(_a103 = responseBody.warnings) != null ? _a103 : [], ...warnings]
+          warnings: [...(_a104 = responseBody.warnings) != null ? _a104 : [], ...warnings]
         };
       } catch (error62) {
         throw await asGatewayError(error62, await parseAuthMethod(resolvedHeaders));
@@ -29732,8 +31772,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           failedResponseHandler: createJsonErrorResponseHandler({
             errorSchema: external_exports.any(),
             errorToMessage: (data) => {
-              var _a103;
-              return (_a103 = getErrorMessage2(data)) != null ? _a103 : "unknown error";
+              var _a104;
+              return (_a104 = getErrorMessage2(data)) != null ? _a104 : "unknown error";
             }
           }),
           ...abortSignal && { abortSignal },
@@ -29826,7 +31866,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       abortSignal,
       providerOptions
     }) {
-      var _a103;
+      var _a104;
       const resolvedHeaders = await resolve(this.config.headers());
       try {
         const {
@@ -29851,8 +31891,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           failedResponseHandler: createJsonErrorResponseHandler({
             errorSchema: external_exports.any(),
             errorToMessage: (data) => {
-              var _a113;
-              return (_a113 = getErrorMessage2(data)) != null ? _a113 : "unknown error";
+              var _a114;
+              return (_a114 = getErrorMessage2(data)) != null ? _a114 : "unknown error";
             }
           }),
           ...abortSignal && { abortSignal },
@@ -29860,7 +31900,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
         });
         return {
           embeddings: responseBody.embeddings,
-          usage: (_a103 = responseBody.usage) != null ? _a103 : void 0,
+          usage: (_a104 = responseBody.usage) != null ? _a104 : void 0,
           providerMetadata: responseBody.providerMetadata,
           response: { headers: responseHeaders, body: rawValue }
         };
@@ -29907,7 +31947,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       headers,
       abortSignal
     }) {
-      var _a103, _b102, _c, _d;
+      var _a104, _b103, _c, _d;
       const resolvedHeaders = await resolve(this.config.headers());
       try {
         const {
@@ -29936,8 +31976,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           failedResponseHandler: createJsonErrorResponseHandler({
             errorSchema: external_exports.any(),
             errorToMessage: (data) => {
-              var _a113;
-              return (_a113 = getErrorMessage2(data)) != null ? _a113 : "unknown error";
+              var _a114;
+              return (_a114 = getErrorMessage2(data)) != null ? _a114 : "unknown error";
             }
           }),
           ...abortSignal && { abortSignal },
@@ -29949,7 +31989,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           ...responseBody.isRetryable != null && {
             isRetryable: responseBody.isRetryable
           },
-          warnings: (_a103 = responseBody.warnings) != null ? _a103 : [],
+          warnings: (_a104 = responseBody.warnings) != null ? _a104 : [],
           providerMetadata: responseBody.providerMetadata,
           response: {
             timestamp: /* @__PURE__ */ new Date(),
@@ -29958,7 +31998,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           },
           ...responseBody.usage != null && {
             usage: {
-              inputTokens: (_b102 = responseBody.usage.inputTokens) != null ? _b102 : void 0,
+              inputTokens: (_b103 = responseBody.usage.inputTokens) != null ? _b103 : void 0,
               outputTokens: (_c = responseBody.usage.outputTokens) != null ? _c : void 0,
               totalTokens: (_d = responseBody.usage.totalTokens) != null ? _d : void 0
             }
@@ -30174,18 +32214,18 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     perplexitySearch
   };
   async function getVercelRequestId() {
-    var _a103;
-    return (_a103 = (0, import_oidc.getContext)().headers) == null ? void 0 : _a103["x-vercel-id"];
+    var _a104;
+    return (_a104 = (0, import_oidc.getContext)().headers) == null ? void 0 : _a104["x-vercel-id"];
   }
-  var VERSION3 = true ? "2.0.152" : "0.0.0-test";
+  var VERSION5 = true ? "2.0.152" : "0.0.0-test";
   var AI_GATEWAY_PROTOCOL_VERSION = "0.0.1";
   function createGatewayProvider(options = {}) {
-    var _a103, _b102;
+    var _a104, _b103;
     let pendingMetadata = null;
     let metadataCache = null;
-    const cacheRefreshMillis = (_a103 = options.metadataCacheRefreshMillis) != null ? _a103 : 1e3 * 60 * 5;
+    const cacheRefreshMillis = (_a104 = options.metadataCacheRefreshMillis) != null ? _a104 : 1e3 * 60 * 5;
     let lastFetchTime = 0;
-    const baseURL = (_b102 = withoutTrailingSlash(options.baseURL)) != null ? _b102 : "https://ai-gateway.vercel.sh/v1/ai";
+    const baseURL = (_b103 = withoutTrailingSlash(options.baseURL)) != null ? _b103 : "https://ai-gateway.vercel.sh/v1/ai";
     const getHeaders = async () => {
       const auth = await getGatewayAuthToken(options);
       if (auth) {
@@ -30196,7 +32236,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
             [GATEWAY_AUTH_METHOD_HEADER]: auth.authMethod,
             ...options.headers
           },
-          `ai-sdk/gateway/${VERSION3}`
+          `ai-sdk/gateway/${VERSION5}`
         );
       }
       throw GatewayAuthenticationError.createContextualError({
@@ -30243,8 +32283,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       });
     };
     const getAvailableModels = async () => {
-      var _a113, _b112, _c;
-      const now = (_c = (_b112 = (_a113 = options._internal) == null ? void 0 : _a113.currentDate) == null ? void 0 : _b112.call(_a113).getTime()) != null ? _c : Date.now();
+      var _a114, _b113, _c;
+      const now = (_c = (_b113 = (_a114 = options._internal) == null ? void 0 : _a114.currentDate) == null ? void 0 : _b113.call(_a114).getTime()) != null ? _c : Date.now();
       if (!pendingMetadata || now - lastFetchTime > cacheRefreshMillis) {
         lastFetchTime = now;
         pendingMetadata = new GatewayFetchMetadata({
@@ -30360,7 +32400,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
   var _globalThis = typeof globalThis === "object" ? globalThis : typeof self === "object" ? self : typeof window === "object" ? window : typeof global === "object" ? global : {};
 
   // node_modules/@opentelemetry/api/build/esm/version.js
-  var VERSION4 = "1.9.0";
+  var VERSION6 = "1.9.0";
 
   // node_modules/@opentelemetry/api/build/esm/internal/semver.js
   var re = /^(\d+)\.(\d+)\.(\d+)(-(.+))?$/;
@@ -30427,44 +32467,44 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       return _reject(globalVersion);
     };
   }
-  var isCompatible = _makeCompatibilityCheck(VERSION4);
+  var isCompatible = _makeCompatibilityCheck(VERSION6);
 
   // node_modules/@opentelemetry/api/build/esm/internal/global-utils.js
-  var major = VERSION4.split(".")[0];
+  var major = VERSION6.split(".")[0];
   var GLOBAL_OPENTELEMETRY_API_KEY = /* @__PURE__ */ Symbol.for("opentelemetry.js.api." + major);
   var _global = _globalThis;
   function registerGlobal(type, instance, diag, allowOverride) {
-    var _a20;
+    var _a25;
     if (allowOverride === void 0) {
       allowOverride = false;
     }
-    var api = _global[GLOBAL_OPENTELEMETRY_API_KEY] = (_a20 = _global[GLOBAL_OPENTELEMETRY_API_KEY]) !== null && _a20 !== void 0 ? _a20 : {
-      version: VERSION4
+    var api = _global[GLOBAL_OPENTELEMETRY_API_KEY] = (_a25 = _global[GLOBAL_OPENTELEMETRY_API_KEY]) !== null && _a25 !== void 0 ? _a25 : {
+      version: VERSION6
     };
     if (!allowOverride && api[type]) {
       var err = new Error("@opentelemetry/api: Attempted duplicate registration of API: " + type);
       diag.error(err.stack || err.message);
       return false;
     }
-    if (api.version !== VERSION4) {
-      var err = new Error("@opentelemetry/api: Registration of version v" + api.version + " for " + type + " does not match previously registered API v" + VERSION4);
+    if (api.version !== VERSION6) {
+      var err = new Error("@opentelemetry/api: Registration of version v" + api.version + " for " + type + " does not match previously registered API v" + VERSION6);
       diag.error(err.stack || err.message);
       return false;
     }
     api[type] = instance;
-    diag.debug("@opentelemetry/api: Registered a global for " + type + " v" + VERSION4 + ".");
+    diag.debug("@opentelemetry/api: Registered a global for " + type + " v" + VERSION6 + ".");
     return true;
   }
   function getGlobal(type) {
-    var _a20, _b17;
-    var globalVersion = (_a20 = _global[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _a20 === void 0 ? void 0 : _a20.version;
+    var _a25, _b19;
+    var globalVersion = (_a25 = _global[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _a25 === void 0 ? void 0 : _a25.version;
     if (!globalVersion || !isCompatible(globalVersion)) {
       return;
     }
-    return (_b17 = _global[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _b17 === void 0 ? void 0 : _b17[type];
+    return (_b19 = _global[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _b19 === void 0 ? void 0 : _b19[type];
   }
   function unregisterGlobal(type, diag) {
-    diag.debug("@opentelemetry/api: Unregistering a global for " + type + " v" + VERSION4 + ".");
+    diag.debug("@opentelemetry/api: Unregistering a global for " + type + " v" + VERSION6 + ".");
     var api = _global[GLOBAL_OPENTELEMETRY_API_KEY];
     if (api) {
       delete api[type];
@@ -30634,13 +32674,13 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
         }
         var self2 = this;
         var setLogger = function(logger, optionsOrLogLevel) {
-          var _a20, _b17, _c;
+          var _a25, _b19, _c;
           if (optionsOrLogLevel === void 0) {
             optionsOrLogLevel = { logLevel: DiagLogLevel.INFO };
           }
           if (logger === self2) {
             var err = new Error("Cannot use diag as the logger for itself. Please use a DiagLogger implementation like ConsoleDiagLogger or a custom implementation");
-            self2.error((_a20 = err.stack) !== null && _a20 !== void 0 ? _a20 : err.message);
+            self2.error((_a25 = err.stack) !== null && _a25 !== void 0 ? _a25 : err.message);
             return false;
           }
           if (typeof optionsOrLogLevel === "number") {
@@ -30649,7 +32689,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
             };
           }
           var oldLogger = getGlobal("diag");
-          var newLogger = createLogLevelDiagLogger((_b17 = optionsOrLogLevel.logLevel) !== null && _b17 !== void 0 ? _b17 : DiagLogLevel.INFO, logger);
+          var newLogger = createLogLevelDiagLogger((_b19 = optionsOrLogLevel.logLevel) !== null && _b19 !== void 0 ? _b19 : DiagLogLevel.INFO, logger);
           if (oldLogger && !optionsOrLogLevel.suppressOverrideMessage) {
             var stack = (_c = new Error().stack) !== null && _c !== void 0 ? _c : "<failed to generate stacktrace>";
             oldLogger.warn("Current logger will be overwritten from " + stack);
@@ -30811,12 +32851,12 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
         return this._getContextManager().active();
       };
       ContextAPI2.prototype.with = function(context, fn, thisArg) {
-        var _a20;
+        var _a25;
         var args = [];
         for (var _i = 3; _i < arguments.length; _i++) {
           args[_i - 3] = arguments[_i];
         }
-        return (_a20 = this._getContextManager()).with.apply(_a20, __spreadArray4([context, fn, thisArg], __read4(args), false));
+        return (_a25 = this._getContextManager()).with.apply(_a25, __spreadArray4([context, fn, thisArg], __read4(args), false));
       };
       ContextAPI2.prototype.bind = function(context, target) {
         return this._getContextManager().bind(context, target);
@@ -30911,8 +32951,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     return setSpan(context, new NonRecordingSpan(spanContext));
   }
   function getSpanContext(context) {
-    var _a20;
-    return (_a20 = getSpan(context)) === null || _a20 === void 0 ? void 0 : _a20.spanContext();
+    var _a25;
+    return (_a25 = getSpan(context)) === null || _a25 === void 0 ? void 0 : _a25.spanContext();
   }
 
   // node_modules/@opentelemetry/api/build/esm/trace/spancontext-utils.js
@@ -30938,7 +32978,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     (function() {
       function NoopTracer2() {
       }
-      NoopTracer2.prototype.startSpan = function(name17, options, context) {
+      NoopTracer2.prototype.startSpan = function(name19, options, context) {
         if (context === void 0) {
           context = contextApi.active();
         }
@@ -30953,7 +32993,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           return new NonRecordingSpan();
         }
       };
-      NoopTracer2.prototype.startActiveSpan = function(name17, arg2, arg3, arg4) {
+      NoopTracer2.prototype.startActiveSpan = function(name19, arg2, arg3, arg4) {
         var opts;
         var ctx;
         var fn;
@@ -30970,7 +33010,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
           fn = arg4;
         }
         var parentContext = ctx !== null && ctx !== void 0 ? ctx : contextApi.active();
-        var span = this.startSpan(name17, opts, parentContext);
+        var span = this.startSpan(name19, opts, parentContext);
         var contextWithSpanSet = setSpan(parentContext, span);
         return contextApi.with(contextWithSpanSet, fn, void 0, span);
       };
@@ -30986,14 +33026,14 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
   var ProxyTracer = (
     /** @class */
     (function() {
-      function ProxyTracer2(_provider, name17, version2, options) {
+      function ProxyTracer2(_provider, name19, version2, options) {
         this._provider = _provider;
-        this.name = name17;
+        this.name = name19;
         this.version = version2;
         this.options = options;
       }
-      ProxyTracer2.prototype.startSpan = function(name17, options, context) {
-        return this._getTracer().startSpan(name17, options, context);
+      ProxyTracer2.prototype.startSpan = function(name19, options, context) {
+        return this._getTracer().startSpan(name19, options, context);
       };
       ProxyTracer2.prototype.startActiveSpan = function(_name, _options, _context, _fn) {
         var tracer = this._getTracer();
@@ -31034,20 +33074,20 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     (function() {
       function ProxyTracerProvider2() {
       }
-      ProxyTracerProvider2.prototype.getTracer = function(name17, version2, options) {
-        var _a20;
-        return (_a20 = this.getDelegateTracer(name17, version2, options)) !== null && _a20 !== void 0 ? _a20 : new ProxyTracer(this, name17, version2, options);
+      ProxyTracerProvider2.prototype.getTracer = function(name19, version2, options) {
+        var _a25;
+        return (_a25 = this.getDelegateTracer(name19, version2, options)) !== null && _a25 !== void 0 ? _a25 : new ProxyTracer(this, name19, version2, options);
       };
       ProxyTracerProvider2.prototype.getDelegate = function() {
-        var _a20;
-        return (_a20 = this._delegate) !== null && _a20 !== void 0 ? _a20 : NOOP_TRACER_PROVIDER;
+        var _a25;
+        return (_a25 = this._delegate) !== null && _a25 !== void 0 ? _a25 : NOOP_TRACER_PROVIDER;
       };
       ProxyTracerProvider2.prototype.setDelegate = function(delegate) {
         this._delegate = delegate;
       };
-      ProxyTracerProvider2.prototype.getDelegateTracer = function(name17, version2, options) {
-        var _a20;
-        return (_a20 = this._delegate) === null || _a20 === void 0 ? void 0 : _a20.getTracer(name17, version2, options);
+      ProxyTracerProvider2.prototype.getDelegateTracer = function(name19, version2, options) {
+        var _a25;
+        return (_a25 = this._delegate) === null || _a25 === void 0 ? void 0 : _a25.getTracer(name19, version2, options);
       };
       return ProxyTracerProvider2;
     })()
@@ -31093,8 +33133,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       TraceAPI2.prototype.getTracerProvider = function() {
         return getGlobal(API_NAME3) || this._proxyTracerProvider;
       };
-      TraceAPI2.prototype.getTracer = function(name17, version2) {
-        return this.getTracerProvider().getTracer(name17, version2);
+      TraceAPI2.prototype.getTracer = function(name19, version2) {
+        return this.getTracerProvider().getTracer(name19, version2);
       };
       TraceAPI2.prototype.disable = function() {
         unregisterGlobal(API_NAME3, DiagAPI.instance());
@@ -31113,21 +33153,21 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     for (var name162 in all)
       __defProp2(target, name162, { get: all[name162], enumerable: true });
   };
-  var name16 = "AI_NoOutputSpecifiedError";
-  var marker17 = `vercel.ai.error.${name16}`;
-  var symbol18 = Symbol.for(marker17);
-  var _a19;
+  var name18 = "AI_NoOutputSpecifiedError";
+  var marker19 = `vercel.ai.error.${name18}`;
+  var symbol20 = Symbol.for(marker19);
+  var _a21;
   var NoOutputSpecifiedError = class extends AISDKError {
     // used in isInstance
     constructor({ message = "No output specified." } = {}) {
-      super({ name: name16, message });
-      this[_a19] = true;
+      super({ name: name18, message });
+      this[_a21] = true;
     }
     static isInstance(error62) {
-      return AISDKError.hasMarker(error62, marker17);
+      return AISDKError.hasMarker(error62, marker19);
     }
   };
-  _a19 = symbol18;
+  _a21 = symbol20;
   function formatWarning(warning) {
     const prefix = "AI SDK Warning:";
     switch (warning.type) {
@@ -31192,38 +33232,38 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       });
     }
   };
-  var name23 = "AI_InvalidArgumentError";
-  var marker23 = `vercel.ai.error.${name23}`;
-  var symbol23 = Symbol.for(marker23);
-  var _a23;
-  var InvalidArgumentError2 = class extends AISDKError {
+  var name24 = "AI_InvalidArgumentError";
+  var marker24 = `vercel.ai.error.${name24}`;
+  var symbol24 = Symbol.for(marker24);
+  var _a24;
+  var InvalidArgumentError3 = class extends AISDKError {
     constructor({
       parameter,
       value,
       message
     }) {
       super({
-        name: name23,
+        name: name24,
         message: `Invalid argument for parameter ${parameter}: ${message}`
       });
-      this[_a23] = true;
+      this[_a24] = true;
       this.parameter = parameter;
       this.value = value;
     }
     static isInstance(error62) {
-      return AISDKError.hasMarker(error62, marker23);
+      return AISDKError.hasMarker(error62, marker24);
     }
   };
-  _a23 = symbol23;
-  var name33 = "AI_InvalidStreamPartError";
-  var marker33 = `vercel.ai.error.${name33}`;
-  var symbol33 = Symbol.for(marker33);
-  var _a33;
-  _a33 = symbol33;
-  var name43 = "AI_InvalidToolInputError";
-  var marker43 = `vercel.ai.error.${name43}`;
-  var symbol43 = Symbol.for(marker43);
-  var _a43;
+  _a24 = symbol24;
+  var name34 = "AI_InvalidStreamPartError";
+  var marker34 = `vercel.ai.error.${name34}`;
+  var symbol34 = Symbol.for(marker34);
+  var _a34;
+  _a34 = symbol34;
+  var name44 = "AI_InvalidToolInputError";
+  var marker44 = `vercel.ai.error.${name44}`;
+  var symbol44 = Symbol.for(marker44);
+  var _a44;
   var InvalidToolInputError = class extends AISDKError {
     constructor({
       toolInput,
@@ -31231,25 +33271,25 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       cause,
       message = `Invalid input for tool ${toolName}: ${getErrorMessage(cause)}`
     }) {
-      super({ name: name43, message, cause });
-      this[_a43] = true;
+      super({ name: name44, message, cause });
+      this[_a44] = true;
       this.toolInput = toolInput;
       this.toolName = toolName;
     }
     static isInstance(error62) {
-      return AISDKError.hasMarker(error62, marker43);
+      return AISDKError.hasMarker(error62, marker44);
     }
   };
-  _a43 = symbol43;
-  var name53 = "AI_NoImageGeneratedError";
-  var marker53 = `vercel.ai.error.${name53}`;
-  var symbol53 = Symbol.for(marker53);
-  var _a53;
-  _a53 = symbol53;
-  var name63 = "AI_NoObjectGeneratedError";
-  var marker63 = `vercel.ai.error.${name63}`;
-  var symbol63 = Symbol.for(marker63);
-  var _a63;
+  _a44 = symbol44;
+  var name54 = "AI_NoImageGeneratedError";
+  var marker54 = `vercel.ai.error.${name54}`;
+  var symbol54 = Symbol.for(marker54);
+  var _a54;
+  _a54 = symbol54;
+  var name64 = "AI_NoObjectGeneratedError";
+  var marker64 = `vercel.ai.error.${name64}`;
+  var symbol64 = Symbol.for(marker64);
+  var _a64;
   var NoObjectGeneratedError = class extends AISDKError {
     constructor({
       message = "No object generated.",
@@ -31259,62 +33299,62 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       usage,
       finishReason
     }) {
-      super({ name: name63, message, cause });
-      this[_a63] = true;
+      super({ name: name64, message, cause });
+      this[_a64] = true;
       this.text = text2;
       this.response = response;
       this.usage = usage;
       this.finishReason = finishReason;
     }
     static isInstance(error62) {
-      return AISDKError.hasMarker(error62, marker63);
+      return AISDKError.hasMarker(error62, marker64);
     }
   };
-  _a63 = symbol63;
-  var name73 = "AI_NoOutputGeneratedError";
-  var marker73 = `vercel.ai.error.${name73}`;
-  var symbol73 = Symbol.for(marker73);
-  var _a73;
-  _a73 = symbol73;
-  var name83 = "AI_NoSuchToolError";
-  var marker83 = `vercel.ai.error.${name83}`;
-  var symbol83 = Symbol.for(marker83);
-  var _a83;
+  _a64 = symbol64;
+  var name74 = "AI_NoOutputGeneratedError";
+  var marker74 = `vercel.ai.error.${name74}`;
+  var symbol74 = Symbol.for(marker74);
+  var _a74;
+  _a74 = symbol74;
+  var name84 = "AI_NoSuchToolError";
+  var marker84 = `vercel.ai.error.${name84}`;
+  var symbol84 = Symbol.for(marker84);
+  var _a84;
   var NoSuchToolError = class extends AISDKError {
     constructor({
       toolName,
       availableTools = void 0,
       message = `Model tried to call unavailable tool '${toolName}'. ${availableTools === void 0 ? "No tools are available." : `Available tools: ${availableTools.join(", ")}.`}`
     }) {
-      super({ name: name83, message });
-      this[_a83] = true;
+      super({ name: name84, message });
+      this[_a84] = true;
       this.toolName = toolName;
       this.availableTools = availableTools;
     }
     static isInstance(error62) {
-      return AISDKError.hasMarker(error62, marker83);
+      return AISDKError.hasMarker(error62, marker84);
     }
   };
-  _a83 = symbol83;
-  var name92 = "AI_ToolCallRepairError";
-  var marker93 = `vercel.ai.error.${name92}`;
-  var symbol93 = Symbol.for(marker93);
-  var _a93;
+  _a84 = symbol84;
+  var name93 = "AI_ToolCallRepairError";
+  var marker94 = `vercel.ai.error.${name93}`;
+  var symbol94 = Symbol.for(marker94);
+  var _a94;
   var ToolCallRepairError = class extends AISDKError {
     constructor({
       cause,
       originalError,
       message = `Error repairing tool call: ${getErrorMessage(cause)}`
     }) {
-      super({ name: name92, message, cause });
-      this[_a93] = true;
+      super({ name: name93, message, cause });
+      this[_a94] = true;
       this.originalError = originalError;
     }
     static isInstance(error62) {
-      return AISDKError.hasMarker(error62, marker93);
+      return AISDKError.hasMarker(error62, marker94);
     }
   };
-  _a93 = symbol93;
+  _a94 = symbol94;
   var UnsupportedModelVersionError = class extends AISDKError {
     constructor(options) {
       super({
@@ -31326,43 +33366,43 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       this.modelId = options.modelId;
     }
   };
-  var name102 = "AI_InvalidDataContentError";
-  var marker102 = `vercel.ai.error.${name102}`;
-  var symbol102 = Symbol.for(marker102);
-  var _a102;
-  _a102 = symbol102;
-  var name112 = "AI_InvalidMessageRoleError";
-  var marker112 = `vercel.ai.error.${name112}`;
-  var symbol112 = Symbol.for(marker112);
-  var _a112;
+  var name103 = "AI_InvalidDataContentError";
+  var marker103 = `vercel.ai.error.${name103}`;
+  var symbol103 = Symbol.for(marker103);
+  var _a103;
+  _a103 = symbol103;
+  var name113 = "AI_InvalidMessageRoleError";
+  var marker113 = `vercel.ai.error.${name113}`;
+  var symbol113 = Symbol.for(marker113);
+  var _a113;
   var InvalidMessageRoleError = class extends AISDKError {
     constructor({
       role,
       message = `Invalid message role: '${role}'. Must be one of: "system", "user", "assistant", "tool".`
     }) {
-      super({ name: name112, message });
-      this[_a112] = true;
+      super({ name: name113, message });
+      this[_a113] = true;
       this.role = role;
     }
     static isInstance(error62) {
-      return AISDKError.hasMarker(error62, marker112);
+      return AISDKError.hasMarker(error62, marker113);
     }
   };
-  _a112 = symbol112;
-  var name122 = "AI_MessageConversionError";
-  var marker122 = `vercel.ai.error.${name122}`;
-  var symbol122 = Symbol.for(marker122);
-  var _a122;
-  _a122 = symbol122;
-  var name132 = "AI_DownloadError";
-  var marker132 = `vercel.ai.error.${name132}`;
-  var symbol132 = Symbol.for(marker132);
-  var _a132;
-  _a132 = symbol132;
+  _a113 = symbol113;
+  var name123 = "AI_MessageConversionError";
+  var marker123 = `vercel.ai.error.${name123}`;
+  var symbol123 = Symbol.for(marker123);
+  var _a123;
+  _a123 = symbol123;
+  var name133 = "AI_DownloadError";
+  var marker133 = `vercel.ai.error.${name133}`;
+  var symbol133 = Symbol.for(marker133);
+  var _a133;
+  _a133 = symbol133;
   var name142 = "AI_RetryError";
-  var marker142 = `vercel.ai.error.${name142}`;
-  var symbol142 = Symbol.for(marker142);
-  var _a142;
+  var marker143 = `vercel.ai.error.${name142}`;
+  var symbol143 = Symbol.for(marker143);
+  var _a143;
   var RetryError = class extends AISDKError {
     constructor({
       message,
@@ -31370,16 +33410,16 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       errors
     }) {
       super({ name: name142, message });
-      this[_a142] = true;
+      this[_a143] = true;
       this.reason = reason;
       this.errors = errors;
       this.lastError = errors[errors.length - 1];
     }
     static isInstance(error62) {
-      return AISDKError.hasMarker(error62, marker142);
+      return AISDKError.hasMarker(error62, marker143);
     }
   };
-  _a142 = symbol142;
+  _a143 = symbol143;
   function resolveLanguageModel(model) {
     if (typeof model !== "string") {
       if (model.specificationVersion !== "v2") {
@@ -31520,7 +33560,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     }
     return void 0;
   }
-  var VERSION5 = true ? "5.0.258" : "0.0.0-test";
+  var VERSION7 = true ? "5.0.258" : "0.0.0-test";
   var download = async ({
     url: url2,
     maxBytes,
@@ -31531,7 +33571,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     try {
       const headers = withUserAgentSuffix(
         {},
-        `ai-sdk/${VERSION5}`,
+        `ai-sdk/${VERSION7}`,
         getRuntimeEnvironmentUserAgent()
       );
       const response = await fetchWithValidatedRedirects({
@@ -31589,8 +33629,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     external_exports.custom(
       // Buffer might not be available in some environments such as CloudFlare:
       (value) => {
-        var _a162, _b17;
-        return (_b17 = (_a162 = globalThis.Buffer) == null ? void 0 : _a162.isBuffer(value)) != null ? _b17 : false;
+        var _a162, _b19;
+        return (_b19 = (_a162 = globalThis.Buffer) == null ? void 0 : _a162.isBuffer(value)) != null ? _b19 : false;
       },
       { message: "Must be a Buffer" }
     )
@@ -31867,14 +33907,14 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
   }) {
     if (maxOutputTokens != null) {
       if (!Number.isInteger(maxOutputTokens)) {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "maxOutputTokens",
           value: maxOutputTokens,
           message: "maxOutputTokens must be an integer"
         });
       }
       if (maxOutputTokens < 1) {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "maxOutputTokens",
           value: maxOutputTokens,
           message: "maxOutputTokens must be >= 1"
@@ -31883,7 +33923,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     }
     if (temperature != null) {
       if (typeof temperature !== "number") {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "temperature",
           value: temperature,
           message: "temperature must be a number"
@@ -31892,7 +33932,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     }
     if (topP != null) {
       if (typeof topP !== "number") {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "topP",
           value: topP,
           message: "topP must be a number"
@@ -31901,7 +33941,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     }
     if (topK != null) {
       if (typeof topK !== "number") {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "topK",
           value: topK,
           message: "topK must be a number"
@@ -31910,7 +33950,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     }
     if (presencePenalty != null) {
       if (typeof presencePenalty !== "number") {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "presencePenalty",
           value: presencePenalty,
           message: "presencePenalty must be a number"
@@ -31919,7 +33959,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     }
     if (frequencyPenalty != null) {
       if (typeof frequencyPenalty !== "number") {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "frequencyPenalty",
           value: frequencyPenalty,
           message: "frequencyPenalty must be a number"
@@ -31928,7 +33968,7 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
     }
     if (seed != null) {
       if (!Number.isInteger(seed)) {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "seed",
           value: seed,
           message: "seed must be an integer"
@@ -31964,8 +34004,8 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
       ([name162]) => activeTools.includes(name162)
     ) : Object.entries(tools);
     return {
-      tools: filteredTools.map(([name162, tool2]) => {
-        const toolType = tool2.type;
+      tools: filteredTools.map(([name162, tool22]) => {
+        const toolType = tool22.type;
         switch (toolType) {
           case void 0:
           case "dynamic":
@@ -31973,16 +34013,16 @@ Run 'npx vercel link' to link your project, then 'vc env pull' to fetch the toke
             return {
               type: "function",
               name: name162,
-              description: tool2.description,
-              inputSchema: asSchema(tool2.inputSchema).jsonSchema,
-              providerOptions: tool2.providerOptions
+              description: tool22.description,
+              inputSchema: asSchema(tool22.inputSchema).jsonSchema,
+              providerOptions: tool22.providerOptions
             };
           case "provider-defined":
             return {
               type: "provider-defined",
               name: name162,
-              id: tool2.id,
-              args: tool2.args
+              id: tool22.id,
+              args: tool22.args
             };
           default: {
             const exhaustiveCheck = toolType;
@@ -32536,14 +34576,14 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
   }) {
     if (maxRetries != null) {
       if (!Number.isInteger(maxRetries)) {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "maxRetries",
           value: maxRetries,
           message: "maxRetries must be an integer"
         });
       }
       if (maxRetries < 0) {
-        throw new InvalidArgumentError2({
+        throw new InvalidArgumentError3({
           parameter: "maxRetries",
           value: maxRetries,
           message: "maxRetries must be >= 0"
@@ -32671,14 +34711,14 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
     tools
   }) {
     const toolName = toolCall.toolName;
-    const tool2 = tools[toolName];
-    if (tool2 == null) {
+    const tool22 = tools[toolName];
+    if (tool22 == null) {
       throw new NoSuchToolError({
         toolName: toolCall.toolName,
         availableTools: Object.keys(tools)
       });
     }
-    const schema = asSchema(tool2.inputSchema);
+    const schema = asSchema(tool22.inputSchema);
     const parseResult = toolCall.input.trim() === "" ? await safeValidateTypes({ value: {}, schema }) : await safeParseJSON({ text: toolCall.input, schema });
     if (parseResult.success === false) {
       throw new InvalidToolInputError({
@@ -32687,7 +34727,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
         cause: parseResult.error
       });
     }
-    return tool2.type === "dynamic" ? {
+    return tool22.type === "dynamic" ? {
       type: "tool-call",
       toolCallId: toolCall.toolCallId,
       toolName: toolCall.toolName,
@@ -32775,7 +34815,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
   }
   function createToolModelOutput({
     output: output2,
-    tool: tool2,
+    tool: tool22,
     errorMode
   }) {
     if (errorMode === "text") {
@@ -32783,8 +34823,8 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
     } else if (errorMode === "json") {
       return { type: "error-json", value: toJSONValue(output2) };
     }
-    if (tool2 == null ? void 0 : tool2.toModelOutput) {
-      return tool2.toModelOutput(output2);
+    if (tool22 == null ? void 0 : tool22.toModelOutput) {
+      return tool22.toModelOutput(output2);
     }
     return typeof output2 === "string" ? { type: "text", value: output2 } : { type: "json", value: toJSONValue(output2) };
   }
@@ -32922,7 +34962,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
     const callSettings = prepareCallSettings(settings);
     const headersWithUserAgent = withUserAgentSuffix(
       headers != null ? headers : {},
-      `ai/${VERSION5}`
+      `ai/${VERSION7}`
     );
     const baseTelemetryAttributes = getBaseTelemetryAttributes({
       model,
@@ -32959,7 +34999,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
         }),
         tracer,
         fn: async (span) => {
-          var _a162, _b17, _c, _d, _e, _f, _g;
+          var _a162, _b19, _c, _d, _e, _f, _g;
           const callSettings2 = prepareCallSettings(settings);
           let currentModelResponse;
           let clientToolCalls = [];
@@ -32985,7 +35025,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
             );
             const promptMessages = await convertToLanguageModelPrompt({
               prompt: {
-                system: (_b17 = prepareStepResult == null ? void 0 : prepareStepResult.system) != null ? _b17 : initialPrompt.system,
+                system: (_b19 = prepareStepResult == null ? void 0 : prepareStepResult.system) != null ? _b19 : initialPrompt.system,
                 messages: (_c = prepareStepResult == null ? void 0 : prepareStepResult.messages) != null ? _c : stepInputMessages
               },
               supportedUrls: await stepModel.supportedUrls,
@@ -33023,7 +35063,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
                       },
                       "ai.prompt.tools": {
                         // convert the language model level tools:
-                        input: () => stepTools == null ? void 0 : stepTools.map((tool2) => JSON.stringify(tool2))
+                        input: () => stepTools == null ? void 0 : stepTools.map((tool22) => JSON.stringify(tool22))
                       },
                       "ai.prompt.toolChoice": {
                         input: () => stepToolChoice != null ? JSON.stringify(stepToolChoice) : void 0
@@ -33042,7 +35082,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
                   }),
                   tracer,
                   fn: async (span2) => {
-                    var _a182, _b23, _c2, _d2, _e2, _f2, _g2, _h;
+                    var _a182, _b24, _c2, _d2, _e2, _f2, _g2, _h;
                     const result = await stepModel.doGenerate({
                       ...callSettings2,
                       tools: stepTools,
@@ -33054,7 +35094,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
                       headers: headersWithUserAgent
                     });
                     const responseData = {
-                      id: (_b23 = (_a182 = result.response) == null ? void 0 : _a182.id) != null ? _b23 : generateId3(),
+                      id: (_b24 = (_a182 = result.response) == null ? void 0 : _a182.id) != null ? _b24 : generateId3(),
                       timestamp: (_d2 = (_c2 = result.response) == null ? void 0 : _c2.timestamp) != null ? _d2 : currentDate(),
                       modelId: (_f2 = (_e2 = result.response) == null ? void 0 : _e2.modelId) != null ? _f2 : stepModel.modelId,
                       headers: (_g2 = result.response) == null ? void 0 : _g2.headers,
@@ -33114,17 +35154,17 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
               if (toolCall.invalid) {
                 continue;
               }
-              const tool2 = stepToolSet[toolCall.toolName];
-              if (tool2.onInputStart != null) {
-                await tool2.onInputStart({
+              const tool22 = stepToolSet[toolCall.toolName];
+              if (tool22.onInputStart != null) {
+                await tool22.onInputStart({
                   toolCallId: toolCall.toolCallId,
                   messages: stepInputMessages,
                   abortSignal,
                   experimental_context
                 });
               }
-              if ((tool2 == null ? void 0 : tool2.onInputAvailable) != null) {
-                await tool2.onInputAvailable({
+              if ((tool22 == null ? void 0 : tool22.onInputAvailable) != null) {
+                await tool22.onInputAvailable({
                   input: toolCall.input,
                   toolCallId: toolCall.toolCallId,
                   messages: stepInputMessages,
@@ -33256,8 +35296,8 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
   }) {
     const toolOutputs = await Promise.all(
       toolCalls.map(async ({ toolCallId, toolName, input: input2 }) => {
-        const tool2 = tools[toolName];
-        if ((tool2 == null ? void 0 : tool2.execute) == null) {
+        const tool22 = tools[toolName];
+        if ((tool22 == null ? void 0 : tool22.execute) == null) {
           return void 0;
         }
         return recordSpan({
@@ -33281,7 +35321,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
           fn: async (span) => {
             try {
               const stream = executeTool({
-                execute: tool2.execute.bind(tool2),
+                execute: tool22.execute.bind(tool22),
                 input: input2,
                 options: {
                   toolCallId,
@@ -33315,7 +35355,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
                 toolName,
                 input: input2,
                 output: output2,
-                dynamic: tool2.type === "dynamic"
+                dynamic: tool22.type === "dynamic"
               };
             } catch (error62) {
               recordErrorOnSpan(span, error62);
@@ -33325,7 +35365,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
                 toolName,
                 input: input2,
                 error: error62,
-                dynamic: tool2.type === "dynamic"
+                dynamic: tool22.type === "dynamic"
               };
             }
           }
@@ -33990,7 +36030,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
   function createDownload(options) {
     return ({ url: url2, abortSignal }) => download({ url: url2, maxBytes: options == null ? void 0 : options.maxBytes, abortSignal });
   }
-  var { atob: atob3 } = globalThis;
+  var { atob: atob4 } = globalThis;
   var originalGenerateId4 = createIdGenerator({ prefix: "aiobj", size: 24 });
   var output_exports = {};
   __export2(output_exports, {
@@ -34398,12 +36438,12 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
         if (clean) items.push(JSON.stringify({ _type: "message", text: clean }));
       }
     };
-    const marker18 = /(?:\[ACTION\]|(?:^|\n)\s*ACTION)\s*:\s*(?=\{)/gi;
+    const marker20 = /(?:\[ACTION\]|(?:^|\n)\s*ACTION)\s*:\s*(?=\{)/gi;
     let cursor = 0;
     let match;
-    while ((match = marker18.exec(text2)) !== null) {
+    while ((match = marker20.exec(text2)) !== null) {
       pushProse(text2.slice(cursor, match.index));
-      const jsonStart = marker18.lastIndex;
+      const jsonStart = marker20.lastIndex;
       const jsonEnd = findJsonEnd(text2, jsonStart);
       if (jsonEnd === -1) {
         items.push(text2.slice(jsonStart));
@@ -34412,7 +36452,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
       }
       items.push(text2.slice(jsonStart, jsonEnd));
       cursor = jsonEnd;
-      marker18.lastIndex = jsonEnd;
+      marker20.lastIndex = jsonEnd;
     }
     pushProse(text2.slice(cursor));
     return '{"actions":[' + items.join(",");
@@ -34440,39 +36480,14 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
   }
 
   // extension/src/generate.ts
-  var MODEL_ID = "gemini-3.1-flash-lite";
+  var GEMINI_MODEL_ID = "gemini-3.1-flash-lite";
+  var GROQ_MODEL_ID = "openai/gpt-oss-120b";
   var MAX_ATTEMPTS = 3;
   var MIN_PLAUSIBLE_HTML_LENGTH = 80;
   function isSuspiciouslyThin(html) {
     return html.trim().length < MIN_PLAUSIBLE_HTML_LENGTH;
   }
-  async function generateVisualizationHtml(apiKey, transcript, selection, previousHtml, imageBase64) {
-    const google2 = createGoogleGenerativeAI({ apiKey });
-    const model = google2(MODEL_ID);
-    const systemPrompt = buildExtensionSystemPrompt();
-    const userMessage = [
-      `Circled element: <${selection.tag}${selection.id ? ` id="${selection.id}"` : ""}${selection.classes?.length ? ` class="${selection.classes.join(" ")}"` : ""}>`,
-      selection.preview ? `Its content: "${selection.preview}"` : null,
-      // Triggered client-side (content-script.ts) whenever the circled
-      // element's own text content was empty or it's an image/canvas/svg -
-      // covers actual images, and canvas-rendered text (Google Docs draws
-      // its document onto <canvas>, so there's no real DOM text to read at
-      // all) uniformly, without needing to special-case either.
-      imageBase64 ? "A screenshot of exactly the circled region is attached - it may contain an image, a diagram, or text rendered in a way that has no readable DOM text (e.g. drawn on a canvas). Read it visually." : null,
-      // Hold-V-while-hovering lets the user iterate on a result they're
-      // already looking at (content-script.ts's showGeneratedVisualization) -
-      // when that's what's happening, the model should adjust what's there
-      // rather than starting over from the original circled element.
-      previousHtml ? `This is a follow-up request refining a visualization you already created for this same circled element - the user wants it adjusted, not rebuilt from scratch, unless they clearly ask for something different. Its current HTML:
----
-${previousHtml}
----` : null,
-      `What the user said they want: "${transcript}"`
-    ].filter(Boolean).join("\n");
-    const content = imageBase64 ? [
-      { type: "text", text: userMessage },
-      { type: "image", image: imageBase64 }
-    ] : userMessage;
+  async function attemptWithModel(model, systemPrompt, content, providerOptions) {
     let lastError;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
@@ -34481,9 +36496,7 @@ ${previousHtml}
           system: systemPrompt,
           messages: [{ role: "user", content }],
           maxOutputTokens: 8192,
-          providerOptions: {
-            google: { thinkingConfig: { thinkingLevel: "low" } }
-          }
+          ...providerOptions ? { providerOptions } : {}
         });
         const partialObject = closeAndParseJson(normalizeModelText(result.text));
         const actions = partialObject?.actions;
@@ -34512,6 +36525,55 @@ ${previousHtml}
           continue;
         }
         break;
+      }
+    }
+    throw toErrorWithMessage(lastError);
+  }
+  async function generateVisualizationHtml(keys, transcript, selection, previousHtml, imageBase64) {
+    if (!keys.gemini && !keys.groq) {
+      throw new Error("No API key set. Right-click the extension icon \u2192 Options to add one.");
+    }
+    const systemPrompt = buildExtensionSystemPrompt();
+    const userMessage = [
+      `Circled element: <${selection.tag}${selection.id ? ` id="${selection.id}"` : ""}${selection.classes?.length ? ` class="${selection.classes.join(" ")}"` : ""}>`,
+      selection.preview ? `Its content: "${selection.preview}"` : null,
+      // Triggered client-side (content-script.ts) whenever the circled
+      // element's own text content was empty or it's an image/canvas/svg -
+      // covers actual images, and canvas-rendered text (Google Docs draws
+      // its document onto <canvas>, so there's no real DOM text to read at
+      // all) uniformly, without needing to special-case either.
+      imageBase64 ? "A screenshot of exactly the circled region is attached - it may contain an image, a diagram, or text rendered in a way that has no readable DOM text (e.g. drawn on a canvas). Read it visually." : null,
+      // Hold-V-while-hovering lets the user iterate on a result they're
+      // already looking at (content-script.ts's showGeneratedVisualization) -
+      // when that's what's happening, the model should adjust what's there
+      // rather than starting over from the original circled element.
+      previousHtml ? `This is a follow-up request refining a visualization you already created for this same circled element - the user wants it adjusted, not rebuilt from scratch, unless they clearly ask for something different. Its current HTML:
+---
+${previousHtml}
+---` : null,
+      `What the user said they want: "${transcript}"`
+    ].filter(Boolean).join("\n");
+    const content = imageBase64 ? [
+      { type: "text", text: userMessage },
+      { type: "image", image: imageBase64 }
+    ] : userMessage;
+    let lastError;
+    if (keys.gemini) {
+      try {
+        const model = createGoogleGenerativeAI({ apiKey: keys.gemini })(GEMINI_MODEL_ID);
+        return await attemptWithModel(model, systemPrompt, content, {
+          google: { thinkingConfig: { thinkingLevel: "low" } }
+        });
+      } catch (error62) {
+        lastError = error62;
+      }
+    }
+    if (keys.groq && !imageBase64) {
+      try {
+        const model = createGroq({ apiKey: keys.groq })(GROQ_MODEL_ID);
+        return await attemptWithModel(model, systemPrompt, content);
+      } catch (error62) {
+        lastError = error62;
       }
     }
     throw toErrorWithMessage(lastError);
@@ -34553,17 +36615,9 @@ ${previousHtml}
     if (message?.type !== "generate") return false;
     (async () => {
       try {
-        const stored = await chrome.storage.local.get("geminiApiKey");
-        const geminiApiKey = stored.geminiApiKey;
-        if (!geminiApiKey) {
-          sendResponse({
-            ok: false,
-            error: "No Gemini API key set. Right-click the extension icon \u2192 Options to add one."
-          });
-          return;
-        }
+        const stored = await chrome.storage.local.get(["geminiApiKey", "groqApiKey"]);
         const action = await generateVisualizationHtml(
-          geminiApiKey,
+          { gemini: stored.geminiApiKey, groq: stored.groqApiKey },
           message.payload.transcript,
           message.payload.selection,
           message.payload.previousHtml,

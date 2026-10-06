@@ -11,14 +11,14 @@ npm install
 npm run build:extension
 ```
 
-Load `extension/` unpacked at `chrome://extensions` (Developer mode → Load unpacked), then right-click the extension's icon → Options to paste a Gemini API key.
+Load `extension/` unpacked at `chrome://extensions` (Developer mode → Load unpacked), then right-click the extension's icon → Options to paste a Gemini API key (and optionally a Groq key, used as an automatic fallback).
 
 `npm run typecheck:extension` and `npm run test` should both pass before you open a pull request. `npm run watch:extension` rebuilds on save.
 
 ## Where things live
 
 - Circle-select, voice capture, popups, hold-V iteration: `extension/src/content-script.ts`
-- Generation (the model call, using your own API key): `extension/src/generate.ts`
+- Generation (the model call, using your own API key(s); Gemini primary, Groq as a confirmed-working fallback): `extension/src/generate.ts`
 - The visualization schema + prompt the model is asked to follow: `shared/extension/createHtmlAction.ts`
 - Background script (keyboard shortcut relay, owns the API key, calls `generate.ts`): `extension/src/background.ts`
 - Options page (API key entry): `extension/src/options.ts`
@@ -28,8 +28,8 @@ Load `extension/` unpacked at `chrome://extensions` (Developer mode → Load unp
 
 ## Good first contributions
 
-- **A provider fallback** — generation is Gemini-only right now, despite the underlying `ai` SDK supporting other providers. No fallback if Gemini's free tier changes.
-- **More test coverage** — `shared/ai/`, `shared/extension/createHtmlAction.ts`, and `extension/src/generate.ts`'s pure helpers have real Vitest coverage now (`npm run test`); `extension/src/content-script.ts` doesn't, since it's deeply DOM/`chrome.*`-API-dependent and would need a jsdom + mocked-`chrome` setup.
+- **More test coverage** — `shared/ai/`, `shared/extension/createHtmlAction.ts`, and `extension/src/generate.ts`'s pure/mockable logic have real Vitest coverage now (`npm run test`); `extension/src/content-script.ts` doesn't, since it's deeply DOM/`chrome.*`-API-dependent and would need a jsdom + mocked-`chrome` setup.
+- **A third provider option** — Groq was added as a fallback after confirming it genuinely works from a browser (free, CORS-capable, text-only). Mistral looked like a plausible second fallback in research but wasn't confirmed working from the browser the way Groq was - worth verifying directly before adding.
 - **The missing-backslash case** — `shared/extension/createHtmlAction.ts`'s prompt was strengthened after a confirmed bug where LaTeX commands lost their backslash in the model's JSON output (see `extension/src/generate.ts`'s `repairUnescapedLatexBackslashes` for the mechanically-fixable half of it). Commands dropped entirely rather than corrupted into a control character aren't mechanically detectable the same way - worth watching for.
 
 ## Pull requests

@@ -76,6 +76,11 @@
 				font-size: 14px;
 				margin: 28px 0 4px;
 			}
+			h3 {
+				font-size: 13px;
+				margin: 20px 0 4px;
+				color: #333;
+			}
 			kbd {
 				font: 12px ui-monospace, monospace;
 				background: #f0f0f0;
@@ -114,11 +119,12 @@
 		<div class="trust-box">
 			<ul>
 				<li>
-					<strong>Nothing leaves your browser except the one call to Google.</strong> Your key, and whatever
-					you circle and say, goes straight from this extension to Google's Gemini API
-					(<code>generativelanguage.googleapis.com</code>) - never through a server of ours, because there
-					isn't one. Open DevTools → Network tab while it's generating and that's the only request you'll
-					see leave the machine.
+					<strong>Nothing leaves your browser except the one call to whichever provider generates it.</strong>
+					Your key(s), and whatever you circle and say, go straight from this extension to Google's Gemini
+					API (<code>generativelanguage.googleapis.com</code>) or Groq's API
+					(<code>api.groq.com</code>) - never through a server of ours, because there isn't one. Open
+					DevTools → Network tab while it's generating and that's the only request you'll see leave the
+					machine.
 				</li>
 				<li>
 					<strong>Zero analytics, zero telemetry.</strong> There's no tracking code anywhere in this
@@ -157,7 +163,7 @@
 							<code>activeTab</code> + running on the page you're looking at - needed so circle-select
 							can see and grab what you drag a box around, on whatever site you're actually using it on.
 						</li>
-						<li><code>storage</code> - to remember your API key locally between sessions. That's all it's used for.</li>
+						<li><code>storage</code> - to remember your API key(s) locally between sessions. That's all it's used for.</li>
 					</ul>
 					That's the complete list - nothing about reading your history, your other tabs, or anything you're
 					not actively circling.
@@ -165,36 +171,67 @@
 			</ul>
 		</div>
 
-		<h2>1. Add your Gemini API key</h2>
+		<h2>1. Add your API key(s)</h2>
 		<p class="hint">
-			Generation runs entirely from your browser using your own key - it's stored only in this browser
-			(<code>chrome.storage.local</code>), never synced anywhere, and sent only directly to Google's API when
-			generating, never to a server of ours. Get a free one at
-			<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a> -
-			consider creating one dedicated to this extension rather than reusing one from elsewhere, so you can revoke
-			just this one if you ever need to.
+			Generation runs entirely from your browser using your own key(s) - stored only in this browser
+			(<code>chrome.storage.local</code>), never synced anywhere, sent only directly to the matching provider
+			when generating, never to a server of ours.
 		</p>
 
-		<div id="keyDisplay" style="display: none">
-			<p>Key saved: <code id="keyMask"></code></p>
-			<button id="changeKey" class="linklike" type="button">Change key</button>
+		<h3>Gemini (primary)</h3>
+		<p class="hint">
+			Get a free key at
+			<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a> -
+			consider creating one dedicated to this extension rather than reusing one from elsewhere, so you can
+			revoke just this one if you ever need to.
+		</p>
+		<div id="geminiKeyDisplay" style="display: none">
+			<p>Key saved: <code id="geminiKeyMask"></code></p>
+			<button id="geminiChangeKey" class="linklike" type="button">Change key</button>
 			&nbsp;·&nbsp;
-			<button id="removeKey" class="linklike" type="button">Remove</button>
+			<button id="geminiRemoveKey" class="linklike" type="button">Remove</button>
 		</div>
-
-		<div id="keyForm">
-			<label for="apiKey">Gemini API key</label>
+		<div id="geminiKeyForm">
+			<label for="geminiApiKey">Gemini API key</label>
 			<div class="keyRow">
-				<input id="apiKey" type="password" autocomplete="off" placeholder="AIza..." />
-				<button id="toggleVisibility" type="button" aria-label="Show key">👁</button>
+				<input id="geminiApiKey" type="password" autocomplete="off" placeholder="AIza..." />
+				<button id="geminiToggleVisibility" type="button" aria-label="Show key">👁</button>
 			</div>
-			<button id="save">Save</button>
+			<button id="geminiSave">Save</button>
 		</div>
-		<div id="status"></div>
+		<div id="geminiStatus"></div>
 		<p class="hint">
 			Think it may have leaked?
 			<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Revoke or rotate it here</a>
-			- takes about 10 seconds, and this extension stops working with the old one immediately.
+			- takes about 10 seconds, and this extension stops using the old one immediately.
+		</p>
+
+		<h3>Groq (optional fallback)</h3>
+		<p class="hint">
+			Used automatically only if Gemini is unavailable (a daily quota cap or an outage) - not required.
+			Text-only (no image/screenshot support), so it isn't used for anything you circle that needed a
+			screenshot. Get a free key at
+			<a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>.
+		</p>
+		<div id="groqKeyDisplay" style="display: none">
+			<p>Key saved: <code id="groqKeyMask"></code></p>
+			<button id="groqChangeKey" class="linklike" type="button">Change key</button>
+			&nbsp;·&nbsp;
+			<button id="groqRemoveKey" class="linklike" type="button">Remove</button>
+		</div>
+		<div id="groqKeyForm">
+			<label for="groqApiKey">Groq API key</label>
+			<div class="keyRow">
+				<input id="groqApiKey" type="password" autocomplete="off" placeholder="gsk_..." />
+				<button id="groqToggleVisibility" type="button" aria-label="Show key">👁</button>
+			</div>
+			<button id="groqSave">Save</button>
+		</div>
+		<div id="groqStatus"></div>
+		<p class="hint">
+			Think it may have leaked?
+			<a href="https://console.groq.com/keys" target="_blank" rel="noopener">Revoke or rotate it here</a> -
+			takes about 10 seconds, and this extension stops using the old one immediately.
 		</p>
 
 		<h2>2. How to use it</h2>

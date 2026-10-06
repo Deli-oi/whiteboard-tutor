@@ -1,11 +1,16 @@
 import { createGoogleGenerativeAI, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
-import { generateText } from 'ai'
+import { createGroq } from '@ai-sdk/groq'
+import { generateText, LanguageModel, UserContent } from 'ai'
 import { isQuotaExceededError, isRetryableApiError, toErrorWithMessage } from '../../shared/ai/modelErrors'
 import { buildExtensionSystemPrompt, ExtensionCreateHtmlAction } from '../../shared/extension/createHtmlAction'
 import { closeAndParseJson } from '../../shared/ai/closeAndParseJson'
 import { normalizeModelText } from '../../shared/ai/normalizeModelText'
 
-const MODEL_ID = 'gemini-3.1-flash-lite'
+const GEMINI_MODEL_ID = 'gemini-3.1-flash-lite'
+// Groq's free tier moves fast (Llama 3.x/4 were free, now aren't) - gpt-oss-120b
+// is the current free, strong, fast (~500 tok/s) option as of this writing.
+// Confirmed text-only (no vision support), unlike Gemini.
+const GROQ_MODEL_ID = 'openai/gpt-oss-120b'
 const MAX_ATTEMPTS = 3
 
 /**
@@ -27,58 +32,27 @@ export interface Selection {
 	preview?: string
 }
 
+/** Whichever of these the user has configured - at least one is required. */
+export interface ProviderKeys {
+	gemini?: string
+	groq?: string
+}
+
 /**
- * Phase 5 of the extension pivot: generation moves out of the worker and
- * into the extension itself - each user supplies their own Gemini API key
- * (options.ts, stored via chrome.storage.local), so there's no shared
- * backend and no bill for anyone but the key's owner. Reuses the worker's
- * hard-won prompt text (shared/extension/createHtmlAction.ts) and parsing
- * helpers (worker/do/*.ts, both already pure/dependency-free) unchanged -
- * only the model-calling glue is new.
+ * Runs the full generate-parse-validate-retry cycle against one already-
+ * constructed model. Three content-quality failure modes (unparseable JSON,
+ * schema mismatch, suspiciously thin output) retry immediately - no backoff
+ * needed, this isn't a rate-limit situation - while attempts remain, then
+ * fall through and accept/surface whatever came back rather than retrying
+ * forever. API-level errors (the catch block) go through the shared
+ * quota/retryable classification instead, with backoff.
  */
-export async function generateVisualizationHtml(
-	apiKey: string,
-	transcript: string,
-	selection: Selection,
-	previousHtml?: string,
-	imageBase64?: string
+async function attemptWithModel(
+	model: LanguageModel,
+	systemPrompt: string,
+	content: UserContent,
+	providerOptions?: Parameters<typeof generateText>[0]['providerOptions']
 ): Promise<ExtensionCreateHtmlAction> {
-	const google = createGoogleGenerativeAI({ apiKey })
-	const model = google(MODEL_ID)
-
-	const systemPrompt = buildExtensionSystemPrompt()
-	const userMessage = [
-		`Circled element: <${selection.tag}${selection.id ? ` id="${selection.id}"` : ''}${
-			selection.classes?.length ? ` class="${selection.classes.join(' ')}"` : ''
-		}>`,
-		selection.preview ? `Its content: "${selection.preview}"` : null,
-		// Triggered client-side (content-script.ts) whenever the circled
-		// element's own text content was empty or it's an image/canvas/svg -
-		// covers actual images, and canvas-rendered text (Google Docs draws
-		// its document onto <canvas>, so there's no real DOM text to read at
-		// all) uniformly, without needing to special-case either.
-		imageBase64
-			? 'A screenshot of exactly the circled region is attached - it may contain an image, a diagram, or text rendered in a way that has no readable DOM text (e.g. drawn on a canvas). Read it visually.'
-			: null,
-		// Hold-V-while-hovering lets the user iterate on a result they're
-		// already looking at (content-script.ts's showGeneratedVisualization) -
-		// when that's what's happening, the model should adjust what's there
-		// rather than starting over from the original circled element.
-		previousHtml
-			? `This is a follow-up request refining a visualization you already created for this same circled element - the user wants it adjusted, not rebuilt from scratch, unless they clearly ask for something different. Its current HTML:\n---\n${previousHtml}\n---`
-			: null,
-		`What the user said they want: "${transcript}"`,
-	]
-		.filter(Boolean)
-		.join('\n')
-
-	const content = imageBase64
-		? [
-				{ type: 'text' as const, text: userMessage },
-				{ type: 'image' as const, image: imageBase64 },
-			]
-		: userMessage
-
 	let lastError: unknown
 	for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
 		try {
@@ -87,19 +61,9 @@ export async function generateVisualizationHtml(
 				system: systemPrompt,
 				messages: [{ role: 'user', content }],
 				maxOutputTokens: 8192,
-				providerOptions: {
-					google: { thinkingConfig: { thinkingLevel: 'low' } } satisfies GoogleGenerativeAIProviderOptions,
-				},
+				...(providerOptions ? { providerOptions } : {}),
 			})
 
-			// Three content-quality failure modes, all handled the same way: the
-			// call itself succeeded, but what came back isn't usable - retry
-			// immediately (no backoff needed, this isn't a rate-limit situation)
-			// while attempts remain, otherwise fall through and surface the last
-			// one. Previously only API-level errors (the catch block below) got
-			// retried at all - an unparseable or schema-invalid response threw a
-			// plain Error that didn't match isRetryableApiError's pattern, so it
-			// burned the whole interaction on attempt 1 with no retry.
 			const partialObject = closeAndParseJson(normalizeModelText(result.text))
 			const actions = partialObject?.actions
 			if (!Array.isArray(actions) || actions.length === 0) {
@@ -135,6 +99,86 @@ export async function generateVisualizationHtml(
 				continue
 			}
 			break
+		}
+	}
+
+	throw toErrorWithMessage(lastError)
+}
+
+/**
+ * Bring-your-own-key generation, each user's own provider key(s) stored via
+ * chrome.storage.local - no shared backend, no bill for anyone but the
+ * key's owner. Gemini is the primary provider (vision-capable, used first
+ * whenever a key is set); Groq (gpt-oss-120b, text-only) is a real fallback
+ * if Gemini is unavailable - a daily quota cap or an outage, not just a
+ * theoretical option the `ai` SDK happens to support - provided the request
+ * doesn't need vision, which Groq's free model can't do.
+ */
+export async function generateVisualizationHtml(
+	keys: ProviderKeys,
+	transcript: string,
+	selection: Selection,
+	previousHtml?: string,
+	imageBase64?: string
+): Promise<ExtensionCreateHtmlAction> {
+	if (!keys.gemini && !keys.groq) {
+		throw new Error('No API key set. Right-click the extension icon → Options to add one.')
+	}
+
+	const systemPrompt = buildExtensionSystemPrompt()
+	const userMessage = [
+		`Circled element: <${selection.tag}${selection.id ? ` id="${selection.id}"` : ''}${
+			selection.classes?.length ? ` class="${selection.classes.join(' ')}"` : ''
+		}>`,
+		selection.preview ? `Its content: "${selection.preview}"` : null,
+		// Triggered client-side (content-script.ts) whenever the circled
+		// element's own text content was empty or it's an image/canvas/svg -
+		// covers actual images, and canvas-rendered text (Google Docs draws
+		// its document onto <canvas>, so there's no real DOM text to read at
+		// all) uniformly, without needing to special-case either.
+		imageBase64
+			? 'A screenshot of exactly the circled region is attached - it may contain an image, a diagram, or text rendered in a way that has no readable DOM text (e.g. drawn on a canvas). Read it visually.'
+			: null,
+		// Hold-V-while-hovering lets the user iterate on a result they're
+		// already looking at (content-script.ts's showGeneratedVisualization) -
+		// when that's what's happening, the model should adjust what's there
+		// rather than starting over from the original circled element.
+		previousHtml
+			? `This is a follow-up request refining a visualization you already created for this same circled element - the user wants it adjusted, not rebuilt from scratch, unless they clearly ask for something different. Its current HTML:\n---\n${previousHtml}\n---`
+			: null,
+		`What the user said they want: "${transcript}"`,
+	]
+		.filter(Boolean)
+		.join('\n')
+
+	const content = imageBase64
+		? [
+				{ type: 'text' as const, text: userMessage },
+				{ type: 'image' as const, image: imageBase64 },
+			]
+		: userMessage
+
+	let lastError: unknown
+	if (keys.gemini) {
+		try {
+			const model = createGoogleGenerativeAI({ apiKey: keys.gemini })(GEMINI_MODEL_ID)
+			return await attemptWithModel(model, systemPrompt, content, {
+				google: { thinkingConfig: { thinkingLevel: 'low' } } satisfies GoogleGenerativeAIProviderOptions,
+			})
+		} catch (error) {
+			lastError = error
+		}
+	}
+
+	// Falls back to Groq when Gemini is unavailable (quota exhausted after
+	// retries, or just not configured) - skipped for vision requests, since
+	// gpt-oss-120b has no image support and would just fail a different way.
+	if (keys.groq && !imageBase64) {
+		try {
+			const model = createGroq({ apiKey: keys.groq })(GROQ_MODEL_ID)
+			return await attemptWithModel(model, systemPrompt, content)
+		} catch (error) {
+			lastError = error
 		}
 	}
 
