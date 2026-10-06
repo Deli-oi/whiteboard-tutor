@@ -5,11 +5,54 @@
   var apiKeyInput = document.getElementById("apiKey");
   var saveButton = document.getElementById("save");
   var statusEl = document.getElementById("status");
-  chrome.storage.local.get("geminiApiKey").then(({ geminiApiKey }) => {
-    if (typeof geminiApiKey === "string") apiKeyInput.value = geminiApiKey;
+  var keyDisplayEl = document.getElementById("keyDisplay");
+  var keyMaskEl = document.getElementById("keyMask");
+  var keyFormEl = document.getElementById("keyForm");
+  var changeKeyButton = document.getElementById("changeKey");
+  var removeKeyButton = document.getElementById("removeKey");
+  var toggleVisibilityButton = document.getElementById("toggleVisibility");
+  function maskKey(key) {
+    return `${key.slice(0, 4)}\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022${key.slice(-4)}`;
+  }
+  function looksLikeGeminiKey(key) {
+    return /^AIza[\w-]{30,40}$/.test(key);
+  }
+  async function render() {
+    const { geminiApiKey } = await chrome.storage.local.get("geminiApiKey");
+    const hasKey = typeof geminiApiKey === "string" && geminiApiKey.length > 0;
+    keyDisplayEl.style.display = hasKey ? "block" : "none";
+    keyFormEl.style.display = hasKey ? "none" : "block";
+    if (hasKey) keyMaskEl.textContent = maskKey(geminiApiKey);
+  }
+  void render();
+  changeKeyButton.addEventListener("click", () => {
+    keyDisplayEl.style.display = "none";
+    keyFormEl.style.display = "block";
+    apiKeyInput.value = "";
+    apiKeyInput.focus();
+  });
+  removeKeyButton.addEventListener("click", async () => {
+    await chrome.storage.local.remove("geminiApiKey");
+    await render();
+  });
+  toggleVisibilityButton.addEventListener("click", () => {
+    const willShow = apiKeyInput.type === "password";
+    apiKeyInput.type = willShow ? "text" : "password";
+    toggleVisibilityButton.textContent = willShow ? "\u{1F648}" : "\u{1F441}";
   });
   saveButton.addEventListener("click", async () => {
-    await chrome.storage.local.set({ geminiApiKey: apiKeyInput.value.trim() });
+    const key = apiKeyInput.value.trim();
+    if (!key) {
+      statusEl.textContent = "Paste a key first.";
+      return;
+    }
+    if (!looksLikeGeminiKey(key)) {
+      statusEl.textContent = `That doesn't look like a Gemini API key (should start with "AIza"). Double-check what you pasted.`;
+      return;
+    }
+    await chrome.storage.local.set({ geminiApiKey: key });
+    apiKeyInput.value = "";
+    await render();
     statusEl.textContent = "Saved.";
     setTimeout(() => {
       statusEl.textContent = "";

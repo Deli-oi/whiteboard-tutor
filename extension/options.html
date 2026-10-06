@@ -19,12 +19,17 @@
 				font-weight: 600;
 				margin-top: 16px;
 			}
+			.keyRow {
+				display: flex;
+				gap: 6px;
+				margin-top: 6px;
+			}
 			input[type='password'],
 			input[type='text'] {
-				width: 100%;
+				flex: 1 1 auto;
+				min-width: 0;
 				box-sizing: border-box;
 				padding: 8px;
-				margin-top: 6px;
 				font: inherit;
 				border: 1px solid #ccc;
 				border-radius: 6px;
@@ -39,6 +44,26 @@
 				color: white;
 				cursor: pointer;
 			}
+			.keyRow button {
+				margin-top: 0;
+				padding: 8px 10px;
+				background: #eee;
+				color: #1a1a1a;
+			}
+			button.linklike {
+				background: none;
+				color: #1a56db;
+				padding: 0;
+				margin-top: 0;
+				text-decoration: underline;
+				font-size: 13px;
+			}
+			code {
+				font: 13px ui-monospace, monospace;
+				background: #f0f0f0;
+				padding: 2px 6px;
+				border-radius: 4px;
+			}
 			p.hint {
 				color: #666;
 				font-size: 12px;
@@ -47,19 +72,141 @@
 				margin-top: 12px;
 				font-size: 13px;
 			}
+			h2 {
+				font-size: 14px;
+				margin: 28px 0 4px;
+			}
+			kbd {
+				font: 12px ui-monospace, monospace;
+				background: #f0f0f0;
+				border: 1px solid #ccc;
+				border-radius: 4px;
+				padding: 1px 5px;
+			}
+			ol,
+			ul {
+				margin: 8px 0 0;
+				padding-left: 20px;
+			}
+			ol li,
+			ul li {
+				margin-bottom: 10px;
+			}
+			ul ul {
+				margin-top: 6px;
+			}
+			ul ul li {
+				margin-bottom: 4px;
+			}
+			.trust-box {
+				background: #f7f9fc;
+				border: 1px solid #e0e6ef;
+				border-radius: 8px;
+				padding: 4px 16px 12px;
+			}
 		</style>
 	</head>
 	<body>
 		<h1>Study Buddy — Visual Edit</h1>
+
+		<h2>Why trust this with your key?</h2>
+		<p class="hint">Don't take our word for it - every claim below is something you can check yourself.</p>
+		<div class="trust-box">
+			<ul>
+				<li>
+					<strong>Nothing leaves your browser except the one call to Google.</strong> Your key, and whatever
+					you circle and say, goes straight from this extension to Google's Gemini API
+					(<code>generativelanguage.googleapis.com</code>) - never through a server of ours, because there
+					isn't one. Open DevTools → Network tab while it's generating and that's the only request you'll
+					see leave the machine.
+				</li>
+				<li>
+					<strong>Zero analytics, zero telemetry.</strong> There's no tracking code anywhere in this
+					extension - it doesn't know who uses it, how often, or for what.
+				</li>
+				<li>
+					<strong>It's open source.</strong> The entire path your key travels is three short files:
+					<a
+						href="https://github.com/Deli-oi/whiteboard-tutor/blob/main/extension/src/options.ts"
+						target="_blank"
+						rel="noopener"
+						>options.ts</a
+					>
+					(saves it), <a
+						href="https://github.com/Deli-oi/whiteboard-tutor/blob/main/extension/src/background.ts"
+						target="_blank"
+						rel="noopener"
+						>background.ts</a
+					>
+					(reads it, never logs it), and
+					<a
+						href="https://github.com/Deli-oi/whiteboard-tutor/blob/main/extension/src/generate.ts"
+						target="_blank"
+						rel="noopener"
+						>generate.ts</a
+					>
+					(the only place it's actually used). No other file in the extension even knows it exists.
+					<a href="https://github.com/Deli-oi/whiteboard-tutor" target="_blank" rel="noopener"
+						>Full source on GitHub</a
+					>.
+				</li>
+				<li>
+					<strong>Minimal permissions, and here's why each one exists:</strong>
+					<ul>
+						<li>
+							<code>activeTab</code> + running on the page you're looking at - needed so circle-select
+							can see and grab what you drag a box around, on whatever site you're actually using it on.
+						</li>
+						<li><code>storage</code> - to remember your API key locally between sessions. That's all it's used for.</li>
+					</ul>
+					That's the complete list - nothing about reading your history, your other tabs, or anything you're
+					not actively circling.
+				</li>
+			</ul>
+		</div>
+
+		<h2>1. Add your Gemini API key</h2>
 		<p class="hint">
-			Generation runs entirely from your browser using your own Gemini API key - nothing is sent to a shared
-			backend. Get a free key at
-			<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a>.
+			Generation runs entirely from your browser using your own key - it's stored only in this browser
+			(<code>chrome.storage.local</code>), never synced anywhere, and sent only directly to Google's API when
+			generating, never to a server of ours. Get a free one at
+			<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a> -
+			consider creating one dedicated to this extension rather than reusing one from elsewhere, so you can revoke
+			just this one if you ever need to.
 		</p>
-		<label for="apiKey">Gemini API key</label>
-		<input id="apiKey" type="password" autocomplete="off" placeholder="AIza..." />
-		<button id="save">Save</button>
+
+		<div id="keyDisplay" style="display: none">
+			<p>Key saved: <code id="keyMask"></code></p>
+			<button id="changeKey" class="linklike" type="button">Change key</button>
+			&nbsp;·&nbsp;
+			<button id="removeKey" class="linklike" type="button">Remove</button>
+		</div>
+
+		<div id="keyForm">
+			<label for="apiKey">Gemini API key</label>
+			<div class="keyRow">
+				<input id="apiKey" type="password" autocomplete="off" placeholder="AIza..." />
+				<button id="toggleVisibility" type="button" aria-label="Show key">👁</button>
+			</div>
+			<button id="save">Save</button>
+		</div>
 		<div id="status"></div>
+		<p class="hint">
+			Think it may have leaked?
+			<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Revoke or rotate it here</a>
+			- takes about 10 seconds, and this extension stops working with the old one immediately.
+		</p>
+
+		<h2>2. How to use it</h2>
+		<ol>
+			<li>On any webpage, press <kbd>Ctrl+Shift+E</kbd> (<kbd>Cmd+Shift+E</kbd> on Mac) to turn on circle-select.</li>
+			<li>Drag a box around whatever you want explained or visualized.</li>
+			<li>Speak what you want - it starts listening automatically and sends once you pause.</li>
+			<li>
+				Once a visualization shows up, hover it and hold <kbd>V</kbd> to refine it by voice without re-circling.
+			</li>
+		</ol>
+
 		<script src="options.js"></script>
 	</body>
 </html>
