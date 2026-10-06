@@ -13,7 +13,7 @@ npm run build:extension
 
 Load `extension/` unpacked at `chrome://extensions` (Developer mode → Load unpacked), then right-click the extension's icon → Options to paste a Gemini API key.
 
-`npm run typecheck:extension` should pass before you open a pull request. `npm run watch:extension` rebuilds on save.
+`npm run typecheck:extension` and `npm run test` should both pass before you open a pull request. `npm run watch:extension` rebuilds on save.
 
 ## Where things live
 
@@ -28,10 +28,10 @@ Load `extension/` unpacked at `chrome://extensions` (Developer mode → Load unp
 
 ## Good first contributions
 
-- **Image/canvas-rendered content support** — circling an `<img>` or a canvas-rendered page (Google Docs, for example) currently sends no visual data to the model at all. This is the single biggest known gap.
-- **A real test suite** — there currently isn't one for the extension. Vitest is already wired up (`vitest.config.ts`); `shared/` is pure TS and trivially unit-testable, starting with `shared/extension/createHtmlAction.ts`'s schema and `shared/ai/`'s parsing helpers.
-- **Onboarding** — a first-run tab (`chrome.runtime.onInstalled`) pointing a new install at the options page, since right now there's no in-product hint that an API key is needed at all.
-- **A provider fallback** — generation is Gemini-only right now, despite the underlying `ai` SDK supporting other providers.
+- **A provider fallback** — generation is Gemini-only right now, despite the underlying `ai` SDK supporting other providers. No fallback if Gemini's free tier changes.
+- **More test coverage** — `shared/ai/`, `shared/extension/createHtmlAction.ts`, and `extension/src/generate.ts`'s pure helpers have real Vitest coverage now (`npm run test`); `extension/src/content-script.ts` doesn't, since it's deeply DOM/`chrome.*`-API-dependent and would need a jsdom + mocked-`chrome` setup.
+- **Retry-on-weak-output** — the model occasionally returns a near-empty `createHtml` response that still passes schema validation (confirmed as ordinary model variance, not a bug). No safeguard retries a suspiciously thin result yet.
+- **The missing-backslash case** — `shared/extension/createHtmlAction.ts`'s prompt was strengthened after a confirmed bug where LaTeX commands lost their backslash in the model's JSON output (see `extension/src/generate.ts`'s `repairUnescapedLatexBackslashes` for the mechanically-fixable half of it). Commands dropped entirely rather than corrupted into a control character aren't mechanically detectable the same way - worth watching for.
 
 ## Pull requests
 
