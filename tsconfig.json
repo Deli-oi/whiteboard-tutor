@@ -1,14 +1,13 @@
 {
 	"compilerOptions": {
 		"outDir": "./.tsbuild",
-		"types": ["@cloudflare/workers-types", "node"],
+		"types": ["node"],
 		"noEmit": true,
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"importHelpers": true,
 		"resolveJsonModule": true,
-				"jsx": "react-jsx",
 		"lib": ["DOM", "DOM.Iterable", "ESNext"],
 		"module": "esnext",
 		"target": "esnext",
@@ -26,6 +25,5 @@
 		"noImplicitOverride": true
 	},
 	"exclude": ["node_modules"],
-	"include": ["client", "shared", "worker"],
-	"files": ["./vite.config.ts"]
+	"include": ["shared"]
 }

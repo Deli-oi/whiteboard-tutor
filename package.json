@@ -8,52 +8,24 @@
 	},
 	"type": "module",
 	"scripts": {
-		"dev": "vite --host",
-		"build": "vite build",
-		"preview": "vite preview",
-		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run",
-		"deploy": "vite build && wrangler deploy --config dist/whiteboard_tutor/wrangler.json",
 		"typecheck:extension": "tsc --noEmit -p extension/tsconfig.json",
 		"build:extension": "node extension/build.mjs",
 		"watch:extension": "node extension/build.mjs --watch"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "^2.0.80",
 		"@ai-sdk/google": "^2.0.74",
-		"@ai-sdk/groq": "^2.0.57",
-		"@ai-sdk/openai": "^2.0.106",
-		"@cloudflare/vite-plugin": "^1.29.1",
-		"@dagrejs/dagre": "^3.1.1",
-		"@mozilla/readability": "^0.6.0",
-		"@sentry/browser": "^11.4.0",
-		"@sentry/cloudflare": "^11.4.0",
-		"@tldraw/tlschema": "^5.4.2",
 		"ai": "^5.0.194",
-		"itty-router": "^5.0.18",
-		"katex": "^0.19.0",
-		"linkedom": "^0.18.13",
-		"parse5": "^8.0.1",
-		"react": "^19.2.1",
-		"react-dom": "^19.2.1",
-		"react-markdown": "^10.1.0",
-		"tldraw": "^5.4.2",
-		"wrangler": "^4.75.0",
 		"zod": "^4.1.8"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^5.20260915.1",
 		"@types/chrome": "^0.3.4",
 		"@types/node": "^22.0.0",
-		"@types/react": "^19.2.7",
-		"@types/react-dom": "^19.2.3",
-		"@vitejs/plugin-react": "^6.0.1",
 		"esbuild": "^0.28.1",
 		"typescript": "^5.8.3",
-		"vite": "^8.0.16",
 		"vitest": "^5.0.3"
 	},
-	"description": "Voice-driven whiteboard tutor built on the tldraw agent starter kit. Speak a question, hear the answer, watch it drawn.",
+	"description": "Study Buddy — circle anything on a webpage, speak, and get a real computed visualization. Chrome extension, bring your own Gemini API key, no shared backend.",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Deli-oi/whiteboard-tutor.git"
@@ -62,20 +34,8 @@
 		"url": "https://github.com/Deli-oi/whiteboard-tutor/issues"
 	},
 	"homepage": "https://github.com/Deli-oi/whiteboard-tutor#readme",
-	"keywords": [
-		"tldraw",
-		"whiteboard",
-		"voice",
-		"tutor",
-		"ai",
-		"claude",
-		"gemini",
-		"groq",
-		"speech-recognition",
-		"cloudflare-workers"
-	],
+	"keywords": ["browser-extension", "voice", "ai", "gemini", "speech-recognition", "chrome-extension"],
 	"allowScripts": {
-		"esbuild@0.28.1": true,
-		"workerd@1.20260915.1": true
+		"esbuild@0.28.1": true
 	}
 }

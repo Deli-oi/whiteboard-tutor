@@ -1,29 +1,17 @@
 /**
- * Phase 4.5 of the extension pivot: runs on any webpage now, not just the
- * local dev server. Two modes, auto-detected per selection, no manual
- * toggle - see the plan (ancient-rolling-hellman.md) for the full reasoning:
- *
- * - Tagged selection (the Phase 1 plugin's data-src-start/end attributes
- *   are present - i.e. this is a page served by a dev server we control):
- *   persistent-edit mode. Phase 5 is what actually writes to disk; for now
- *   this still just previews, same as the untagged case.
- * - Untagged selection (any other webpage): ephemeral-preview mode. Same
- *   generation call, but there's nowhere to write to, so it only ever
- *   floats a dismissable preview.
- *
- * Reuses client/voice/stt.ts as-is (confirmed zero tldraw coupling earlier
- * in the pivot) - this is the whole point of the reuse-first plan.
+ * Runs on any webpage: circle something, speak, get a real computed
+ * visualization in a floating, dismissable popup. Tier 1 ("Anywhere") only
+ * - the companion app and direct file-editing (Tier 2) were built, tested,
+ * and then retired (too much setup friction for the benefit delivered); see
+ * project memory for the full history if that ever gets revisited.
  */
-import { createStt, isBrowserSttSupported, SttEngineInstance } from '../../client/voice/stt'
+import { createStt, SttEngineInstance } from '../../shared/voice/stt'
 import type { Selection } from './generate'
 
 interface Match {
 	el: Element
 	coverage: number
 	area: number
-	/** Present only for a tagged (dev-server) match - absent means ephemeral-preview mode. */
-	start?: number
-	end?: number
 }
 
 type Mode = 'idle' | 'selecting' | 'listening'
@@ -226,53 +214,16 @@ function onMouseUp() {
 }
 
 /**
- * Every element the selection box overlaps, best match first. Tries the
- * precise tagged path first (exact rect-intersection against the Phase 1
- * plugin's attributes); only falls back to the untagged heuristic when the
- * page has no tagging at all, so a dev-server page always gets the precise
- * path even if the circled element itself is a child of a tagged ancestor.
- */
-function findMatches(selectionRect: DOMRect): Match[] {
-	const tagged = findTaggedMatches(selectionRect)
-	if (tagged.length > 0) return tagged
-	return findUntaggedMatches(selectionRect)
-}
-
-function findTaggedMatches(selectionRect: DOMRect): Match[] {
-	const candidates = document.querySelectorAll('[data-src-start][data-src-end]')
-	const results: Match[] = []
-	for (const el of candidates) {
-		const r = el.getBoundingClientRect()
-		const ix = Math.max(0, Math.min(r.right, selectionRect.right) - Math.max(r.left, selectionRect.left))
-		const iy = Math.max(0, Math.min(r.bottom, selectionRect.bottom) - Math.max(r.top, selectionRect.top))
-		const intersection = ix * iy
-		if (intersection <= 0) continue
-		const ownArea = Math.max(1, r.width * r.height)
-		results.push({
-			el,
-			coverage: intersection / ownArea,
-			area: ownArea,
-			start: Number(el.getAttribute('data-src-start')),
-			end: Number(el.getAttribute('data-src-end')),
-		})
-	}
-	// Prefer the element most fully covered by the box; among ties, the
-	// smallest (most specific) one.
-	results.sort((a, b) => b.coverage - a.coverage || a.area - b.area)
-	return results
-}
-
-/**
- * Ephemeral-preview fallback for pages with no source-tagging at all (i.e.
- * almost every real website). Rect-intersection against every element on
- * the page doesn't scale to a real site's DOM size, so this samples a grid
- * of points inside the box with `elementsFromPoint` instead - a constant
- * number of point-queries regardless of how big the page's DOM is, same
- * standard technique devtools-style element pickers use. By the time this
- * runs, exitSelectMode() has already removed the overlay/badge/box, so the
+ * Every element the selection box overlaps, best match first. Rect-
+ * intersection against every element on the page doesn't scale to a real
+ * site's DOM size, so this samples a grid of points inside the box with
+ * `elementsFromPoint` instead - a constant number of point-queries
+ * regardless of how big the page's DOM is, same standard technique
+ * devtools-style element pickers use. By the time this runs,
+ * exitSelectMode() has already removed the overlay/badge/box, so the
  * samples land on real page content, never our own UI.
  */
-function findUntaggedMatches(selectionRect: DOMRect): Match[] {
+function findMatches(selectionRect: DOMRect): Match[] {
 	const SAMPLES_PER_AXIS = 5
 	const counts = new Map<Element, number>()
 	for (let i = 0; i < SAMPLES_PER_AXIS; i++) {
@@ -303,12 +254,8 @@ function describe(el: Element): string {
 function matchSummary(matches: Match[]): string {
 	const best = matches[0]
 	const preview = (best.el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 80)
-	const tagged = best.start !== undefined && best.end !== undefined
 	return (
 		`Selected: ${describe(best.el)}\n` +
-		(tagged
-			? `source range: [${best.start}, ${best.end}) - editable\n`
-			: `(preview only - not a source-tagged page)\n`) +
 		`content: "${preview}${preview.length === 80 ? '…' : ''}"` +
 		(matches.length > 1 ? `\n(${matches.length - 1} other candidate(s) also in the box)` : '')
 	)
@@ -316,12 +263,11 @@ function matchSummary(matches: Match[]): string {
 
 function startListening(rect: DOMRect, matches: Match[]) {
 	mode = 'listening'
-	const engine = isBrowserSttSupported() ? 'browser' : 'groq'
 	let interim = ''
 
 	showPanel(rect, `${matchSummary(matches)}\n\n🎤 Listening…`)
 
-	stt = createStt(engine, {
+	stt = createStt({
 		onInterim(text) {
 			interim = text
 			showPanel(rect, `${matchSummary(matches)}\n\n🎤 Listening… "${interim}"`)
@@ -575,10 +521,9 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
 	function startIterateCapture() {
 		if (iterateStt) return
 		micBadge.style.background = '#ef4444'
-		const engine = isBrowserSttSupported() ? 'browser' : 'groq'
 		let interimText = ''
 		let gotFinal = false
-		iterateStt = createStt(engine, {
+		iterateStt = createStt({
 			onInterim(text) {
 				interimText = text
 			},

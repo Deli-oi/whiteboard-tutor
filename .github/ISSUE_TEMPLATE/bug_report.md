@@ -1,12 +1,12 @@
 ---
 name: Bug report
-about: Something broke or the tutor behaved badly
+about: Something broke or a generated visualization behaved badly
 ---
 
-**What did you ask?**
+**What page were you on, and what did you circle?**
 
-**What happened?** (screenshot of the board helps)
+**What did you say?**
 
-**Model:** (e.g. claude-sonnet-5)
+**What happened?** (a screenshot helps a lot)
+
 **Browser:**
-**Voice settings:** (ears / voice engine)

@@ -5,42 +5,38 @@ Thanks for taking a look. This is a small project and easy to get into.
 ## Set up
 
 ```bash
-git clone https://github.com/harjothkhara/whiteboard-tutor
+git clone https://github.com/Deli-oi/whiteboard-tutor
 cd whiteboard-tutor
 npm install
-cp .dev.vars.example .dev.vars   # GROQ_API_KEY + GOOGLE_API_KEY runs it at $0
-npm run dev
+npm run build:extension
 ```
 
-`npm run typecheck` and `npm run build` should both pass before you open a pull request.
+Load `extension/` unpacked at `chrome://extensions` (Developer mode → Load unpacked), then right-click the extension's icon → Options to paste a Gemini API key.
+
+`npm run typecheck:extension` should pass before you open a pull request. `npm run watch:extension` rebuilds on save.
 
 ## Where things live
 
-- Voice (mic, speech-to-text, settings): `client/voice/`. Replies are text-only — there is no TTS in this app.
-- Voice UI: `client/components/VoiceBar.tsx`
-- Visualization tools (the main feature): `shared/schema/AgentActionSchemas.ts` (schema), `client/actions/Create*ActionUtil.ts` (one per tool), `client/tools/*Template.ts` (render functions). See `ARCHITECTURE.md` for how to add a new one.
-- Deterministic algorithm traces (dijkstra/bfs/dfs/two-sum/binary-search): `client/tools/algorithms/`
-- The `createHtml` fallback and its vendored libraries: `client/actions/CreateHtmlActionUtil.ts`, `public/vendor/katex/`, `public/vendor/stepper/stepper.js`
-- Fallback logging: `worker/do/AgentDurableObject.ts` (`fallback_log` table, `/fallback-logs` routes)
-- How the tutor teaches: `worker/prompt/sections/tutor-section.ts`
-- What the tutor can see and do: the `tutor`/`working` entries in `client/modes/AgentModeDefinitions.ts`
-- Speech-to-text proxies: `worker/routes/transcribe.ts`
-- Cost meter: `client/agent/managers/AgentUsageManager.ts`, `client/components/UsageMeter.tsx`
-
-Everything else is the upstream tldraw agent starter kit. Prefer changing the files above over editing kit internals, so upstream updates stay easy to merge.
+- Circle-select, voice capture, popups, hold-V iteration: `extension/src/content-script.ts`
+- Generation (the model call, using your own API key): `extension/src/generate.ts`
+- The visualization schema + prompt the model is asked to follow: `shared/extension/createHtmlAction.ts`
+- Background script (keyboard shortcut relay, owns the API key, calls `generate.ts`): `extension/src/background.ts`
+- Options page (API key entry): `extension/src/options.ts`
+- The sandboxed rendering page (runs the model's generated HTML safely): `extension/src/render.ts` + `extension/render.html`
+- Voice: `shared/voice/stt.ts` (Web Speech API only — no backend fallback, by design)
+- Vendored Chart.js/Mermaid/KaTeX/Stepper: `public/vendor/*`, copied into `extension/vendor/` at build time (`extension/build.mjs`)
 
 ## Good first contributions
 
-- A new visualization tool, built the same way as the existing 7 (see `ARCHITECTURE.md`) — the strongest signal for what's worth building is a repeated pattern in `GET /fallback-logs`, not a guess.
-- A deterministic trace for another well-known algorithm (sorting, sliding window, a DP table fill) in `client/tools/algorithms/`, following the pattern in `dijkstra.ts`/`twoSum.ts` — same rationale: small/free models reliably get hand-simulated traces wrong.
-- A real test suite (there currently isn't one) — Vitest is the natural fit given this is already a Vite project, and the algorithm/layout functions in `client/tools/` are pure and trivially unit-testable.
-- Pricing entries for the OpenAI and Gemini models in `shared/models.ts` so the cost meter covers them.
-- Better tutoring prompts. If you find a phrasing that draws clearer diagrams, send it with a before/after example.
+- **Image/canvas-rendered content support** — circling an `<img>` or a canvas-rendered page (Google Docs, for example) currently sends no visual data to the model at all. This is the single biggest known gap.
+- **A real test suite** — there currently isn't one for the extension. Vitest is already wired up (`vitest.config.ts`); `shared/` is pure TS and trivially unit-testable, starting with `shared/extension/createHtmlAction.ts`'s schema and `shared/ai/`'s parsing helpers.
+- **Onboarding** — a first-run tab (`chrome.runtime.onInstalled`) pointing a new install at the options page, since right now there's no in-product hint that an API key is needed at all.
+- **A provider fallback** — generation is Gemini-only right now, despite the underlying `ai` SDK supporting other providers.
 
 ## Pull requests
 
-Keep them focused. Say what you changed, why, and how you tested it (a short screen recording of the tutor drawing is ideal). No AI-disclosure line is required.
+Keep them focused. Say what you changed, why, and how you tested it (a before/after on a real webpage is ideal, since most of this is hard to unit-test). No AI-disclosure line is required.
 
 ## Reporting bugs
 
-Open an issue with the model you used, the browser, what you asked, and what happened. If the tutor drew something wrong, a screenshot of the board helps a lot.
+Open an issue with the page you were on, what you circled, what you said, and what happened. A screenshot helps a lot.

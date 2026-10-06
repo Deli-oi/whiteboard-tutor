@@ -2,8 +2,8 @@ import { createGoogleGenerativeAI, GoogleGenerativeAIProviderOptions } from '@ai
 import { generateText } from 'ai'
 import { isQuotaExceededError, isRetryableApiError, toErrorWithMessage } from '../../shared/ai/modelErrors'
 import { buildExtensionSystemPrompt, ExtensionCreateHtmlAction } from '../../shared/extension/createHtmlAction'
-import { closeAndParseJson } from '../../worker/do/closeAndParseJson'
-import { normalizeModelText } from '../../worker/do/normalizeModelText'
+import { closeAndParseJson } from '../../shared/ai/closeAndParseJson'
+import { normalizeModelText } from '../../shared/ai/normalizeModelText'
 
 const MODEL_ID = 'gemini-3.1-flash-lite'
 const MAX_ATTEMPTS = 3

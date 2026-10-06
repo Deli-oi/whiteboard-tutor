@@ -34330,7 +34330,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
     ].join("\n");
   }
 
-  // worker/do/closeAndParseJson.ts
+  // shared/ai/closeAndParseJson.ts
   function closeAndParseJson(string4) {
     const stackOfOpenings = [];
     let i = 0;
@@ -34382,7 +34382,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
     }
   }
 
-  // worker/do/normalizeModelText.ts
+  // shared/ai/normalizeModelText.ts
   function normalizeModelText(raw) {
     let text2 = raw.replace(/^\s+/, "");
     if (text2.startsWith("```")) {
