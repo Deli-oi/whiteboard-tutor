@@ -30,7 +30,6 @@ Load `extension/` unpacked at `chrome://extensions` (Developer mode → Load unp
 
 - **A provider fallback** — generation is Gemini-only right now, despite the underlying `ai` SDK supporting other providers. No fallback if Gemini's free tier changes.
 - **More test coverage** — `shared/ai/`, `shared/extension/createHtmlAction.ts`, and `extension/src/generate.ts`'s pure helpers have real Vitest coverage now (`npm run test`); `extension/src/content-script.ts` doesn't, since it's deeply DOM/`chrome.*`-API-dependent and would need a jsdom + mocked-`chrome` setup.
-- **Retry-on-weak-output** — the model occasionally returns a near-empty `createHtml` response that still passes schema validation (confirmed as ordinary model variance, not a bug). No safeguard retries a suspiciously thin result yet.
 - **The missing-backslash case** — `shared/extension/createHtmlAction.ts`'s prompt was strengthened after a confirmed bug where LaTeX commands lost their backslash in the model's JSON output (see `extension/src/generate.ts`'s `repairUnescapedLatexBackslashes` for the mechanically-fixable half of it). Commands dropped entirely rather than corrupted into a control character aren't mechanically detectable the same way - worth watching for.
 
 ## Pull requests

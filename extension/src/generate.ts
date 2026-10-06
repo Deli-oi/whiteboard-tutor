@@ -8,6 +8,18 @@ import { normalizeModelText } from '../../shared/ai/normalizeModelText'
 const MODEL_ID = 'gemini-3.1-flash-lite'
 const MAX_ATTEMPTS = 3
 
+/**
+ * Deliberately conservative - a legitimately short real answer (a one-line
+ * explanation, a single small formula) is common and shouldn't be penalized.
+ * This only catches the extreme, near-empty case: a bare caption with no
+ * real content, confirmed live as something the model occasionally returns.
+ */
+const MIN_PLAUSIBLE_HTML_LENGTH = 80
+
+export function isSuspiciouslyThin(html: string): boolean {
+	return html.trim().length < MIN_PLAUSIBLE_HTML_LENGTH
+}
+
 export interface Selection {
 	tag: string
 	id?: string
@@ -80,18 +92,41 @@ export async function generateVisualizationHtml(
 				},
 			})
 
+			// Three content-quality failure modes, all handled the same way: the
+			// call itself succeeded, but what came back isn't usable - retry
+			// immediately (no backoff needed, this isn't a rate-limit situation)
+			// while attempts remain, otherwise fall through and surface the last
+			// one. Previously only API-level errors (the catch block below) got
+			// retried at all - an unparseable or schema-invalid response threw a
+			// plain Error that didn't match isRetryableApiError's pattern, so it
+			// burned the whole interaction on attempt 1 with no retry.
 			const partialObject = closeAndParseJson(normalizeModelText(result.text))
 			const actions = partialObject?.actions
 			if (!Array.isArray(actions) || actions.length === 0) {
-				throw new Error("The model's response couldn't be understood. Try again.")
+				lastError = new Error("The model's response couldn't be understood. Try again.")
+				if (attempt < MAX_ATTEMPTS) continue
+				break
 			}
 
 			const validated = ExtensionCreateHtmlAction.safeParse(actions[0])
 			if (!validated.success) {
-				throw new Error("The model's response didn't match the expected shape. Try again.")
+				lastError = new Error("The model's response didn't match the expected shape. Try again.")
+				if (attempt < MAX_ATTEMPTS) continue
+				break
 			}
 
-			return { ...validated.data, html: repairUnescapedLatexBackslashes(validated.data.html) }
+			const html = repairUnescapedLatexBackslashes(validated.data.html)
+			// Confirmed live: the model occasionally returns a genuinely
+			// near-empty response that still passes schema validation (e.g. a
+			// bare caption, no real content) - worth one retry rather than
+			// accepting the first thing that happens to parse. On the last
+			// attempt, a thin result still beats throwing an error.
+			if (isSuspiciouslyThin(html) && attempt < MAX_ATTEMPTS) {
+				lastError = new Error("The model's response was suspiciously thin. Try again.")
+				continue
+			}
+
+			return { ...validated.data, html }
 		} catch (error) {
 			lastError = error
 			if (isQuotaExceededError(error)) break

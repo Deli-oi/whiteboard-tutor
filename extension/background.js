@@ -34442,6 +34442,10 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
   // extension/src/generate.ts
   var MODEL_ID = "gemini-3.1-flash-lite";
   var MAX_ATTEMPTS = 3;
+  var MIN_PLAUSIBLE_HTML_LENGTH = 80;
+  function isSuspiciouslyThin(html) {
+    return html.trim().length < MIN_PLAUSIBLE_HTML_LENGTH;
+  }
   async function generateVisualizationHtml(apiKey, transcript, selection, previousHtml, imageBase64) {
     const google2 = createGoogleGenerativeAI({ apiKey });
     const model = google2(MODEL_ID);
@@ -34484,13 +34488,22 @@ ${previousHtml}
         const partialObject = closeAndParseJson(normalizeModelText(result.text));
         const actions = partialObject?.actions;
         if (!Array.isArray(actions) || actions.length === 0) {
-          throw new Error("The model's response couldn't be understood. Try again.");
+          lastError = new Error("The model's response couldn't be understood. Try again.");
+          if (attempt < MAX_ATTEMPTS) continue;
+          break;
         }
         const validated = ExtensionCreateHtmlAction.safeParse(actions[0]);
         if (!validated.success) {
-          throw new Error("The model's response didn't match the expected shape. Try again.");
+          lastError = new Error("The model's response didn't match the expected shape. Try again.");
+          if (attempt < MAX_ATTEMPTS) continue;
+          break;
         }
-        return { ...validated.data, html: repairUnescapedLatexBackslashes(validated.data.html) };
+        const html = repairUnescapedLatexBackslashes(validated.data.html);
+        if (isSuspiciouslyThin(html) && attempt < MAX_ATTEMPTS) {
+          lastError = new Error("The model's response was suspiciously thin. Try again.");
+          continue;
+        }
+        return { ...validated.data, html };
       } catch (error62) {
         lastError = error62;
         if (isQuotaExceededError(error62)) break;
