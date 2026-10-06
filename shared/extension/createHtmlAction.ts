@@ -19,6 +19,7 @@ export const ExtensionCreateHtmlAction = z
 		title: 'Create Visualization',
 		description:
 			'Creates an interactive HTML visualization (a chart, diagram, table, or similar) that will be shown in a small floating panel overlaid on the webpage the user circled something on. The html must be a single self-contained HTML document, sized to read comfortably in a compact panel (around 420x320px; make the content scrollable rather than assuming more room). If the visualization involves any computed, transformed, or plotted values (not just static labels), the html MUST include actual <script> logic that computes those values and renders them (e.g. draw real plotted points on a canvas or compute SVG coordinates from the real formula) - never fake the result with a static decorative shape plus a caption asserting the outcome. A smaller/simpler but genuinely computed visualization is better than an elaborate-looking one with no real logic behind it.\n\n' +
+				'Any time you show a code snippet (e.g. explaining an algorithm from a circled code editor), wrap it in <pre style="white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, monospace;"><code>...</code></pre> - plain HTML collapses newlines, indentation, and repeated spaces by default, so code shown without this renders as one unreadable run-on line. Escape any `<`/`>`/`&` in the code as `&lt;`/`&gt;`/`&amp;` so it displays as text instead of being parsed as HTML.\n\n' +
 				'If the request is "show this algorithm/process running step by step", do not hand-write a fixed sequence of per-step UI updates (e.g. a chain of `if (step === 0) {...} else if (step === 1) {...}`) - that reliably goes wrong (a forgotten branch, a missing end-of-sequence state, a step count that desyncs from what was actually written). Instead, implement the real algorithm as plain code operating on the actual input, and record a snapshot of its state each time something meaningful happens as it actually runs, then hand those snapshots to the vendored stepper library, which owns all the Previous/Next/step-counter/disabled-at-the-ends logic so that part can never break:\n' +
 				'<script src="/vendor/stepper/stepper.js"></script>\n' +
 				'Then, inside your own <script>, run the real algorithm while pushing a snapshot at each step:\n' +
@@ -62,8 +63,9 @@ export const ExtensionCreateHtmlAction = z
 				'<script src="/vendor/katex/katex.min.js"></script>\n' +
 				'<script src="/vendor/katex/auto-render.min.js"></script>\n' +
 				'Then write LaTeX inline as $...$ or block as $$...$$ anywhere in the body, and at the end of the body call:\n' +
-				'<script>renderMathInElement(document.body, {delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}]});</script>\n' +
-				'Example formula source: $\\varepsilon = \\sqrt{\\frac{8}{N} \\ln\\frac{4 m_H(2N)}{\\delta}}$',
+				'<script>renderMathInElement(document.body, {delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}], throwOnError: false});</script>\n' +
+				'Example formula source: $\\varepsilon = \\sqrt{\\frac{8}{N} \\ln\\frac{4 m_H(2N)}{\\delta}}$\n' +
+				"CRITICAL: your whole response is a JSON string, so every single backslash in your LaTeX must be doubled - write two backslash characters for every one backslash the LaTeX command needs. This applies to every LaTeX command with no exceptions (bar, frac, mathbf, mathbb, mathcal, nabla, tau, text, and all the rest). Getting this wrong for a command starting with b, f, n, r, or t is worse than a normal typo: a single un-doubled backslash there is still valid JSON, just a DIFFERENT character (backspace, form feed, newline, carriage return, or tab) - so it will not error, it will silently corrupt that command into an invisible control character with no warning at all. Before finalizing, check every backslash in your LaTeX is doubled.",
 	})
 
 export type ExtensionCreateHtmlAction = z.infer<typeof ExtensionCreateHtmlAction>
@@ -81,7 +83,7 @@ export function buildExtensionSystemPrompt(): string {
 	return [
 		"You turn a short spoken request into one real, computed visualization, to be shown in a floating panel right where the user circled something on a webpage they're looking at.",
 		'',
-		"You'll be given: the HTML tag/id/classes of the element the user circled, a text preview of its content, and a transcript of what they said they want (speech-to-text, so expect occasional minor transcription errors - use your best judgment about intent).",
+		"You'll be given: the HTML tag/id/classes of the element the user circled, a text preview of its content (empty if it had none - that just means the content wasn't real DOM text, not that the element was empty), and a transcript of what they said they want (speech-to-text, so expect occasional minor transcription errors - use your best judgment about intent). Sometimes a screenshot of exactly the circled region is attached too - when it is, that's your real source for what's actually there (an image, a diagram, text rendered in a way with no extractable DOM text), not the empty/sparse preview.",
 		'',
 		'Generate the visualization directly. Never ask a clarifying question and never describe what you would do instead of doing it - this is a one-shot request with no way for the user to reply.',
 		'',

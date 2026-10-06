@@ -1,6 +1,19 @@
 import { generateVisualizationHtml, Selection } from './generate'
 
 /**
+ * Onboarding: a fresh install has no in-product hint that an API key is
+ * required before anything works, or that the keyboard shortcut even
+ * exists - `reason === 'install'` (not 'update', so reloading the
+ * unpacked extension during development doesn't keep reopening this)
+ * opens the options page once, right away, instead of leaving the user to
+ * discover both on their own.
+ */
+chrome.runtime.onInstalled.addListener((details) => {
+	if (details.reason !== 'install') return
+	chrome.runtime.openOptionsPage()
+})
+
+/**
  * Keyboard shortcuts fire here (chrome.commands only reaches the background
  * service worker, never a content script directly), so this just relays the
  * toggle to whichever tab is active.
@@ -23,8 +36,44 @@ chrome.commands.onCommand.addListener(async (command) => {
 
 interface GenerateMessage {
 	type: 'generate'
-	payload: { transcript: string; selection: Selection; previousHtml?: string }
+	payload: { transcript: string; selection: Selection; previousHtml?: string; imageBase64?: string }
 }
+
+interface CaptureTabMessage {
+	type: 'capture-tab'
+}
+
+export interface CaptureTabResponse {
+	ok: boolean
+	dataUrl?: string
+	error?: string
+}
+
+/**
+ * The image/vision fix: a content script can't screenshot anything itself
+ * (no such API), and `captureVisibleTab` is background/popup-only anyway -
+ * relayed the same way `generate` already is. Capturing happens right when
+ * the circle-select box is finalized (content-script.ts), not later once
+ * speech finishes, so the captured pixels always match what was actually
+ * circled even if the page scrolls while the user is still talking.
+ */
+chrome.runtime.onMessage.addListener((message: CaptureTabMessage, _sender, sendResponse) => {
+	if (message?.type !== 'capture-tab') return false
+
+	;(async () => {
+		try {
+			const dataUrl = await chrome.tabs.captureVisibleTab({ format: 'png' })
+			sendResponse({ ok: true, dataUrl } satisfies CaptureTabResponse)
+		} catch (e) {
+			sendResponse({
+				ok: false,
+				error: e instanceof Error ? e.message : 'Screen capture failed',
+			} satisfies CaptureTabResponse)
+		}
+	})()
+
+	return true
+})
 
 export interface GenerateResponse {
 	ok: boolean
@@ -57,7 +106,8 @@ chrome.runtime.onMessage.addListener((message: GenerateMessage, _sender, sendRes
 				geminiApiKey,
 				message.payload.transcript,
 				message.payload.selection,
-				message.payload.previousHtml
+				message.payload.previousHtml,
+				message.payload.imageBase64
 			)
 			sendResponse({ ok: true, action } satisfies GenerateResponse)
 		} catch (e) {

@@ -26,6 +26,15 @@ let startX = 0
 let startY = 0
 let activeMatches: Match[] | null = null
 let activeRect: DOMRect | null = null
+/**
+ * Resolves to a cropped screenshot of the circled region, or null when the
+ * circled element has real DOM text (no vision needed). Kicked off in
+ * onMouseUp - right when the box is finalized, before voice capture even
+ * starts - rather than later once speech finishes, so the captured pixels
+ * always match what was actually circled even if the page scrolls while the
+ * user is still talking.
+ */
+let activeImagePromise: Promise<string | null> | null = null
 
 // Both the status panel and the generated-visualization box get removed and
 // recreated on every update (new interim text, generating -> done, etc.),
@@ -148,6 +157,7 @@ function closeEverything() {
 	panelEl = null
 	activeMatches = null
 	activeRect = null
+	activeImagePromise = null
 	mode = 'idle'
 }
 
@@ -210,7 +220,60 @@ function onMouseUp() {
 	}
 	activeMatches = matches
 	activeRect = rect
+	activeImagePromise = needsVision(matches[0].el) ? captureSelectionImage(rect) : Promise.resolve(null)
 	startListening(rect, matches)
+}
+
+/**
+ * Whether the circled element needs a screenshot instead of (or alongside)
+ * its DOM text - an `<img>`/`<canvas>`/`<svg>` always does regardless of any
+ * stray textContent, and anything else with no real text at all does too.
+ * Covers two confirmed-broken cases uniformly: an actual image, and
+ * canvas-rendered text (Google Docs draws its whole document onto a
+ * `<canvas>` for rendering fidelity, so there's no real DOM text to read
+ * there either) - without needing to special-case either one.
+ */
+function needsVision(el: Element): boolean {
+	if (el.tagName === 'IMG' || el.tagName === 'CANVAS' || el.tagName === 'SVG') return true
+	return (el.textContent ?? '').trim().length === 0
+}
+
+/**
+ * Screenshots the visible tab (via the background script - a content script
+ * has no such API) and crops to exactly the circled region client-side. The
+ * crop rect is scaled by devicePixelRatio: captureVisibleTab returns actual
+ * device pixels, but getBoundingClientRect() is in CSS pixels - without this
+ * the crop drifts on any non-1x display.
+ */
+async function captureSelectionImage(rect: DOMRect): Promise<string | null> {
+	try {
+		const relay = (await chrome.runtime.sendMessage({ type: 'capture-tab' })) as {
+			ok: boolean
+			dataUrl?: string
+		}
+		if (!relay.ok || !relay.dataUrl) return null
+
+		const img = new Image()
+		const loaded = new Promise<void>((resolve, reject) => {
+			img.onload = () => resolve()
+			img.onerror = () => reject(new Error('Screenshot failed to load'))
+		})
+		img.src = relay.dataUrl
+		await loaded
+
+		const dpr = window.devicePixelRatio || 1
+		const w = Math.max(1, Math.round(rect.width * dpr))
+		const h = Math.max(1, Math.round(rect.height * dpr))
+		const canvas = document.createElement('canvas')
+		canvas.width = w
+		canvas.height = h
+		const ctx = canvas.getContext('2d')
+		if (!ctx) return null
+		ctx.drawImage(img, Math.round(rect.left * dpr), Math.round(rect.top * dpr), w, h, 0, 0, w, h)
+		return canvas.toDataURL('image/png').split(',')[1] ?? null
+	} catch {
+		return null
+	}
 }
 
 /**
@@ -315,9 +378,10 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 	showPanel(rect, `${matchSummary(matches)}\n\n✅ Heard: "${transcript}"\n\n⚙️ Generating…`)
 
 	try {
+		const imageBase64 = (await activeImagePromise) ?? undefined
 		const relay = (await chrome.runtime.sendMessage({
 			type: 'generate',
-			payload: { transcript, selection },
+			payload: { transcript, selection, imageBase64 },
 		})) as GenerateRelayResponse
 		if (!relay.ok || !relay.action) {
 			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${relay.error ?? 'unknown error'}`)

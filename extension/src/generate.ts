@@ -28,7 +28,8 @@ export async function generateVisualizationHtml(
 	apiKey: string,
 	transcript: string,
 	selection: Selection,
-	previousHtml?: string
+	previousHtml?: string,
+	imageBase64?: string
 ): Promise<ExtensionCreateHtmlAction> {
 	const google = createGoogleGenerativeAI({ apiKey })
 	const model = google(MODEL_ID)
@@ -39,6 +40,14 @@ export async function generateVisualizationHtml(
 			selection.classes?.length ? ` class="${selection.classes.join(' ')}"` : ''
 		}>`,
 		selection.preview ? `Its content: "${selection.preview}"` : null,
+		// Triggered client-side (content-script.ts) whenever the circled
+		// element's own text content was empty or it's an image/canvas/svg -
+		// covers actual images, and canvas-rendered text (Google Docs draws
+		// its document onto <canvas>, so there's no real DOM text to read at
+		// all) uniformly, without needing to special-case either.
+		imageBase64
+			? 'A screenshot of exactly the circled region is attached - it may contain an image, a diagram, or text rendered in a way that has no readable DOM text (e.g. drawn on a canvas). Read it visually.'
+			: null,
 		// Hold-V-while-hovering lets the user iterate on a result they're
 		// already looking at (content-script.ts's showGeneratedVisualization) -
 		// when that's what's happening, the model should adjust what's there
@@ -51,13 +60,20 @@ export async function generateVisualizationHtml(
 		.filter(Boolean)
 		.join('\n')
 
+	const content = imageBase64
+		? [
+				{ type: 'text' as const, text: userMessage },
+				{ type: 'image' as const, image: imageBase64 },
+			]
+		: userMessage
+
 	let lastError: unknown
 	for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
 		try {
 			const result = await generateText({
 				model,
 				system: systemPrompt,
-				messages: [{ role: 'user', content: userMessage }],
+				messages: [{ role: 'user', content }],
 				maxOutputTokens: 8192,
 				providerOptions: {
 					google: { thinkingConfig: { thinkingLevel: 'low' } } satisfies GoogleGenerativeAIProviderOptions,
@@ -75,7 +91,7 @@ export async function generateVisualizationHtml(
 				throw new Error("The model's response didn't match the expected shape. Try again.")
 			}
 
-			return validated.data
+			return { ...validated.data, html: repairUnescapedLatexBackslashes(validated.data.html) }
 		} catch (error) {
 			lastError = error
 			if (isQuotaExceededError(error)) break
@@ -88,4 +104,20 @@ export async function generateVisualizationHtml(
 	}
 
 	throw toErrorWithMessage(lastError)
+}
+
+/**
+ * Fixes a specific, confirmed-live JSON-escaping failure mode: a LaTeX
+ * command like \bar or \frac needs its backslash doubled to survive the
+ * model's own JSON output (see createHtmlAction.ts's prompt) - when the
+ * model doesn't double it, \b and \f are themselves VALID JSON escapes
+ * (backspace/form feed), so JSON.parse doesn't error, it silently turns
+ * the whole two-character escape into one invisible control character
+ * instead (confirmed live: "\bar{g}" rendered as a box glyph then "ar{g}").
+ * Only those two are repaired here - never \n/\r/\t, which are extremely
+ * common and legitimate in real generated HTML formatting; repairing those
+ * would corrupt normal content instead of fixing anything.
+ */
+export function repairUnescapedLatexBackslashes(html: string): string {
+	return html.replace(/\x08/g, '\\b').replace(/\x0c/g, '\\f')
 }

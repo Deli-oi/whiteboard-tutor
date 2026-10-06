@@ -90,6 +90,7 @@
   var startY = 0;
   var activeMatches = null;
   var activeRect = null;
+  var activeImagePromise = null;
   var draggedPosition = null;
   var panelDragCleanup = null;
   var panelVoiceCleanup = null;
@@ -185,6 +186,7 @@
     panelEl = null;
     activeMatches = null;
     activeRect = null;
+    activeImagePromise = null;
     mode = "idle";
   }
   function onKeyDown(e) {
@@ -243,7 +245,37 @@
     }
     activeMatches = matches;
     activeRect = rect;
+    activeImagePromise = needsVision(matches[0].el) ? captureSelectionImage(rect) : Promise.resolve(null);
     startListening(rect, matches);
+  }
+  function needsVision(el) {
+    if (el.tagName === "IMG" || el.tagName === "CANVAS" || el.tagName === "SVG") return true;
+    return (el.textContent ?? "").trim().length === 0;
+  }
+  async function captureSelectionImage(rect) {
+    try {
+      const relay = await chrome.runtime.sendMessage({ type: "capture-tab" });
+      if (!relay.ok || !relay.dataUrl) return null;
+      const img = new Image();
+      const loaded = new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Screenshot failed to load"));
+      });
+      img.src = relay.dataUrl;
+      await loaded;
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(img, Math.round(rect.left * dpr), Math.round(rect.top * dpr), w, h, 0, 0, w, h);
+      return canvas.toDataURL("image/png").split(",")[1] ?? null;
+    } catch {
+      return null;
+    }
   }
   function findMatches(selectionRect) {
     const SAMPLES_PER_AXIS = 5;
@@ -320,9 +352,10 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
 
 \u2699\uFE0F Generating\u2026`);
     try {
+      const imageBase64 = await activeImagePromise ?? void 0;
       const relay = await chrome.runtime.sendMessage({
         type: "generate",
-        payload: { transcript, selection }
+        payload: { transcript, selection, imageBase64 }
       });
       if (!relay.ok || !relay.action) {
         showPanel(rect, `${matchSummary(matches)}
