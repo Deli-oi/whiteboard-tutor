@@ -147,7 +147,7 @@
   function setBadge(text) {
     badgeEl?.remove();
     const badge = document.createElement("div");
-    badge.textContent = text;
+    badge.textContent = "\u25CE " + text;
     Object.assign(badge.style, {
       position: "fixed",
       top: "12px",
@@ -155,13 +155,13 @@
       transform: "translateX(-50%)",
       background: "#1a1a1a",
       color: "#fff",
-      padding: "6px 14px",
-      borderRadius: "6px",
+      padding: "7px 16px",
+      borderRadius: "20px",
       fontFamily: "system-ui, sans-serif",
       fontSize: "13px",
       zIndex: "2147483647",
       pointerEvents: "none",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
+      boxShadow: "0 2px 10px rgba(0,0,0,0.35)"
     });
     document.documentElement.appendChild(badge);
     badgeEl = badge;
@@ -428,7 +428,14 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       height: "18px",
       cursor: "pointer",
       fontSize: "11px",
-      lineHeight: "1"
+      lineHeight: "1",
+      transition: "background-color 0.1s"
+    });
+    closeBtn.addEventListener("mouseenter", () => {
+      closeBtn.style.background = "rgba(255,255,255,0.15)";
+    });
+    closeBtn.addEventListener("mouseleave", () => {
+      closeBtn.style.background = "transparent";
     });
     closeBtn.addEventListener("click", () => {
       panelDragCleanup?.();
@@ -472,15 +479,18 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
     generatingLabel.textContent = "Generating\u2026";
     Object.assign(generatingLabel.style, {
       position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      padding: "6px 14px",
-      borderRadius: "6px",
-      background: "rgba(0,0,0,0.55)",
+      left: 6 + MIC_SIZE + 6 + "px",
+      bottom: "6px",
+      height: MIC_SIZE + "px",
+      lineHeight: MIC_SIZE + "px",
+      padding: "0 10px",
+      borderRadius: MIC_SIZE / 2 + "px",
+      background: "rgba(0,0,0,0.72)",
       color: "white",
       fontFamily: "system-ui, sans-serif",
-      fontSize: "12px",
+      fontSize: "11px",
+      whiteSpace: "nowrap",
+      boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
       pointerEvents: "none",
       zIndex: "1",
       display: "none"
@@ -580,14 +590,15 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       position: "fixed",
       zIndex: "2147483647",
       maxWidth: "420px",
-      background: "#1a1a1a",
+      background: "#1c1c1f",
       color: "#e5e5e5",
       padding: "12px 14px",
-      borderRadius: "8px",
-      fontFamily: "ui-monospace, monospace",
-      fontSize: "12px",
-      lineHeight: "1.5",
-      boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+      borderRadius: "10px",
+      borderLeft: "3px solid #3b82f6",
+      fontFamily: "system-ui, sans-serif",
+      fontSize: "12.5px",
+      lineHeight: "1.6",
+      boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
       whiteSpace: "pre-wrap",
       overflowY: "auto"
     });
