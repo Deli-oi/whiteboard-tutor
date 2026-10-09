@@ -12,6 +12,14 @@ const GEMINI_MODEL_ID = 'gemini-3.1-flash-lite'
 // Confirmed text-only (no vision support), unlike Gemini.
 const GROQ_MODEL_ID = 'openai/gpt-oss-120b'
 const MAX_ATTEMPTS = 3
+/** Per-attempt cap: a hung provider must surface an error, not "Generating..." forever. */
+const ATTEMPT_TIMEOUT_MS = 45_000
+export const TIMEOUT_MESSAGE = 'The model took too long to respond. Try again.'
+
+function isTimeoutError(error: unknown): boolean {
+	const name = (error as { name?: unknown } | undefined)?.name
+	return name === 'TimeoutError' || name === 'AbortError'
+}
 
 /**
  * Deliberately conservative - a legitimately short real answer (a one-line
@@ -61,6 +69,7 @@ async function attemptWithModel(
 				system: systemPrompt,
 				messages: [{ role: 'user', content }],
 				maxOutputTokens: 8192,
+				abortSignal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
 				...(providerOptions ? { providerOptions } : {}),
 			})
 
@@ -92,6 +101,12 @@ async function attemptWithModel(
 
 			return { ...validated.data, html }
 		} catch (error) {
+			if (isTimeoutError(error)) {
+				// Not retried: another 45s wait is unlikely to go better, and the
+				// caller can still fall through to the next provider.
+				lastError = new Error(TIMEOUT_MESSAGE)
+				break
+			}
 			lastError = error
 			if (isQuotaExceededError(error)) break
 			if (attempt < MAX_ATTEMPTS && isRetryableApiError(error)) {

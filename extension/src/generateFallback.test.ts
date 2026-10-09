@@ -79,4 +79,30 @@ describe('generateVisualizationHtml provider fallback', () => {
 		).rejects.toThrow('Gemini is down')
 		expect(generateTextMock).toHaveBeenCalledTimes(1)
 	})
+
+	it('passes an abort signal so a hung provider times out', async () => {
+		generateTextMock.mockResolvedValueOnce({ text: goodResponseText })
+		await generateVisualizationHtml({ gemini: 'fake-gemini-key' }, 'hi', selection)
+		expect(generateTextMock.mock.calls[0][0].abortSignal).toBeInstanceOf(AbortSignal)
+	})
+
+	it('reports a timeout clearly and does not retry it', async () => {
+		generateTextMock.mockRejectedValue(new DOMException('timed out', 'TimeoutError'))
+		await expect(generateVisualizationHtml({ gemini: 'fake-gemini-key' }, 'hi', selection)).rejects.toThrow(
+			'The model took too long to respond. Try again.'
+		)
+		expect(generateTextMock).toHaveBeenCalledTimes(1)
+	})
+
+	it('still falls back to Groq after a Gemini timeout', async () => {
+		generateTextMock.mockRejectedValueOnce(new DOMException('timed out', 'TimeoutError'))
+		generateTextMock.mockResolvedValueOnce({ text: goodResponseText })
+		const result = await generateVisualizationHtml(
+			{ gemini: 'fake-gemini-key', groq: 'fake-groq-key' },
+			'hi',
+			selection
+		)
+		expect(result._type).toBe('createHtml')
+		expect(generateTextMock).toHaveBeenCalledTimes(2)
+	})
 })

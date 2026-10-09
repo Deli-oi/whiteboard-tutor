@@ -36483,6 +36483,12 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
   var GEMINI_MODEL_ID = "gemini-3.1-flash-lite";
   var GROQ_MODEL_ID = "openai/gpt-oss-120b";
   var MAX_ATTEMPTS = 3;
+  var ATTEMPT_TIMEOUT_MS = 45e3;
+  var TIMEOUT_MESSAGE = "The model took too long to respond. Try again.";
+  function isTimeoutError2(error62) {
+    const name19 = error62?.name;
+    return name19 === "TimeoutError" || name19 === "AbortError";
+  }
   var MIN_PLAUSIBLE_HTML_LENGTH = 80;
   function isSuspiciouslyThin(html) {
     return html.trim().length < MIN_PLAUSIBLE_HTML_LENGTH;
@@ -36496,6 +36502,7 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
           system: systemPrompt,
           messages: [{ role: "user", content }],
           maxOutputTokens: 8192,
+          abortSignal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
           ...providerOptions ? { providerOptions } : {}
         });
         const partialObject = closeAndParseJson(normalizeModelText(result.text));
@@ -36518,6 +36525,10 @@ Learn more: \x1B[34m${moreInfoURL}\x1B[0m
         }
         return { ...validated.data, html };
       } catch (error62) {
+        if (isTimeoutError2(error62)) {
+          lastError = new Error(TIMEOUT_MESSAGE);
+          break;
+        }
         lastError = error62;
         if (isQuotaExceededError(error62)) break;
         if (attempt < MAX_ATTEMPTS && isRetryableApiError(error62)) {
