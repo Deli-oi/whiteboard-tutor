@@ -853,14 +853,23 @@ function showGeneratedVisualization(
 	// arrives afterward (or after a newer iteration started) is dropped.
 	let popupClosed = false
 	let iterationId = 0
+	// One automatic retry when a Mermaid diagram fails to parse (render.ts
+	// reports it); reset whenever the user asks for something themselves, so a
+	// broken repair can't loop.
+	let mermaidRepairsLeft = 1
 
-	async function iterateVisualization(transcript: string) {
+	async function iterateVisualization(transcript: string, options: { autoRepair?: boolean } = {}) {
 		if (popupClosed) return
 		const myIteration = ++iterationId
 		clearTimeout(labelTimer)
 		hideLabel()
+		if (options.autoRepair) {
+			generatingLabel.textContent = 'Fixing diagram…'
+		} else {
+			lastTranscript = transcript
+			mermaidRepairsLeft = 1
+		}
 		generatingLabel.style.display = 'block'
-		lastTranscript = transcript
 		let failed = false
 		try {
 			const relay = (await chrome.runtime.sendMessage({
@@ -975,6 +984,19 @@ function showGeneratedVisualization(
 			// every repetition.
 			runtimeErrors.push(e.data.message)
 			if (runtimeErrors.length > 10) runtimeErrors.shift()
+		} else if (e.data?.type === 'mermaid-error' && typeof e.data.message === 'string') {
+			runtimeErrors.push(`Mermaid parse error: ${e.data.message}`)
+			if (runtimeErrors.length > 10) runtimeErrors.shift()
+			if (mermaidRepairsLeft > 0) {
+				mermaidRepairsLeft--
+				void iterateVisualization(
+					'The Mermaid diagram in your previous HTML failed to parse and rendered as an error. ' +
+						`Parser error: ${e.data.message.slice(0, 500)}\n` +
+						'Fix only the Mermaid syntax - wrap every node label in double quotes, and use plain text or ' +
+						'Unicode (x̄, x₁, ≤) instead of $ math inside the diagram - and keep everything else the same.',
+					{ autoRepair: true }
+				)
+			}
 		}
 	}
 	document.addEventListener('keydown', onIterateKeyDown)

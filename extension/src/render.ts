@@ -86,7 +86,13 @@ function convertInlineDollarMath(root: Element): boolean {
 	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
 		acceptNode(node) {
 			for (let el = node.parentElement; el && el !== root; el = el.parentElement) {
-				if (NO_MATH_TAGS.test(el.tagName) || el.classList.contains('katex')) return NodeFilter.FILTER_REJECT
+				if (
+					NO_MATH_TAGS.test(el.tagName) ||
+					el.classList.contains('katex') ||
+					el.classList.contains('mermaid') ||
+					el instanceof SVGElement
+				)
+					return NodeFilter.FILTER_REJECT
 			}
 			return (node as Text).data.includes('$') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
 		},
@@ -145,6 +151,7 @@ function renderMathIfPresent() {
 					{ left: '\\(', right: '\\)', display: false },
 				],
 				throwOnError: false,
+				ignoredClasses: ['mermaid'],
 			})
 		)
 		.catch((e) => {
@@ -172,6 +179,115 @@ function attachMathSafetyNet() {
 	}).observe(document.documentElement, { childList: true, subtree: true, characterData: true })
 }
 
+const MERMAID_BLOCK = /(<(div|pre)\b[^>]*\bclass\s*=\s*["'][^"']*\bmermaid\b[^"']*["'][^>]*>)([\s\S]*?)(<\/\2>)/gi
+
+/**
+ * Deterministic fixes for the two Mermaid failures beta reports keep showing,
+ * applied to the HTML string before it's written (so there's no race with
+ * Mermaid or KaTeX at runtime):
+ * - $...$ math inside a diagram. Mermaid can't render it, and the page's
+ *   KaTeX pass rewrites it into HTML before Mermaid parses, corrupting the
+ *   whole diagram. The delimiters are dropped; the TeX stays as plain text.
+ * - Unquoted flowchart labels containing parentheses or other punctuation,
+ *   e.g. G1[Model g(x)] or Avg((Avg g(x))). Quoting a label is always valid.
+ */
+const TEX_ACCENTS: Record<string, string> = { bar: '̄', overline: '̄', hat: '̂', tilde: '̃', vec: '⃗' }
+const TEX_NAMES: Record<string, string> = {
+	alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', varepsilon: 'ε', theta: 'θ', lambda: 'λ',
+	mu: 'μ', pi: 'π', sigma: 'σ', tau: 'τ', phi: 'φ', omega: 'ω', Delta: 'Δ', Sigma: 'Σ', Omega: 'Ω',
+	leq: '≤', le: '≤', geq: '≥', ge: '≥', neq: '≠', ne: '≠', times: '×', cdot: '·', infty: '∞',
+	to: '→', rightarrow: '→', approx: '≈', in: '∈', sum: 'Σ', ldots: '…', dots: '…',
+}
+const SUBSCRIPT: Record<string, string> = Object.fromEntries(
+	[...'0123456789+-()aeijknoxt'].map((c, i) => [c, '₀₁₂₃₄₅₆₇₈₉₊₋₍₎ₐₑᵢⱼₖₙₒₓₜ'[i]])
+)
+const SUPERSCRIPT: Record<string, string> = Object.fromEntries(
+	[...'0123456789+-()niT'].map((c, i) => [c, '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾ⁿⁱᵀ'[i]])
+)
+
+/** Readable plain text for TeX inside a diagram label: \bar{g}_1 -> ḡ₁, g^{(1)} -> g⁽¹⁾. */
+function texToPlain(tex: string): string {
+	return tex
+		.replace(/\\(bar|overline|hat|tilde|vec)\{([^{}])\}/g, (_m, cmd: string, c: string) => c + TEX_ACCENTS[cmd])
+		.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)')
+		.replace(/\\([A-Za-z]+)/g, (_m, name: string) => TEX_NAMES[name] ?? name)
+		.replace(/([_^])(?:\{([^{}]*)\}|(.))/g, (m, op: string, group: string | undefined, ch: string | undefined) => {
+			const body = group ?? ch ?? ''
+			const map = op === '_' ? SUBSCRIPT : SUPERSCRIPT
+			return [...body].every((c) => map[c]) ? [...body].map((c) => map[c]).join('') : m
+		})
+		.replace(/[{}]/g, '')
+}
+
+function fixMermaidSource(src: string): string {
+	const withoutMath = src
+		.replace(/\$\$([\s\S]+?)\$\$/g, (_m, inner: string) => texToPlain(inner))
+		.replace(INLINE_DOLLAR, (match, inner: string) => (isInlineMath(inner) ? texToPlain(inner) : match))
+	if (!/^\s*(graph|flowchart)\b/.test(withoutMath)) return withoutMath
+	return withoutMath
+		.split('\n')
+		.map((line) =>
+			line
+				.replace(/([A-Za-z0-9_-]+)\[(?![[\]"(/\\])([^[\]"\n]+?)\](?!\])/g, '$1["$2"]')
+				.replace(/([A-Za-z0-9_-]+)\(\((?!")(.+?)\)\)(?=\s*(?:$|-|=|&|;|:::))/g, '$1(("$2"))')
+		)
+		.join('\n')
+}
+
+function decodeHtmlText(html: string): string {
+	const textarea = document.createElement('textarea')
+	textarea.innerHTML = html
+	return textarea.value
+}
+
+type MermaidApi = {
+	parse: (text: string) => Promise<unknown>
+	initialize: (config: object) => void
+	run: () => Promise<void>
+}
+
+/**
+ * Parses every diagram with Mermaid's own parser and reports the first
+ * failure to the content script, which asks the model for one automatic
+ * repair with the exact error. Also loads Mermaid if the model wrote a
+ * `.mermaid` block but forgot the script tag (it would otherwise show the
+ * raw source as text).
+ */
+function validateMermaid(sources: string[]) {
+	if (!sources.length) return
+	const started = Date.now()
+	let loadedOurselves = false
+	const check = () => {
+		const mermaid = (window as Window & { mermaid?: MermaidApi }).mermaid
+		if (!mermaid?.parse) {
+			if (document.readyState === 'complete' && !loadedOurselves) {
+				loadedOurselves = true
+				loadScript('/vendor/mermaid/mermaid.min.js')
+					.then(() => {
+						const m = (window as Window & { mermaid?: MermaidApi }).mermaid
+						m?.initialize({ startOnLoad: false })
+						return m?.run()
+					})
+					.catch((e) => window.parent.postMessage({ type: 'runtime-error', message: String(e) }, '*'))
+			}
+			if (Date.now() - started < 8000) setTimeout(check, 100)
+			return
+		}
+		void (async () => {
+			for (const source of sources) {
+				try {
+					await mermaid.parse(decodeHtmlText(source))
+				} catch (e) {
+					const message = e instanceof Error ? e.message : String(e)
+					window.parent.postMessage({ type: 'mermaid-error', message }, '*')
+					return
+				}
+			}
+		})()
+	}
+	check()
+}
+
 window.addEventListener('message', (event) => {
 	const raw = (event.data as { html?: string } | undefined)?.html
 	if (typeof raw !== 'string') return
@@ -184,7 +300,15 @@ window.addEventListener('message', (event) => {
 	// just the math). The model isn't reliably told to include one, so this
 	// strips whatever doctype (if any) it wrote and supplies a known-good one
 	// itself rather than depending on the model's compliance.
-	const html = raw.replace(/^\s*<!doctype[^>]*>/i, '').trimStart()
+	const mermaidSources: string[] = []
+	const html = raw
+		.replace(/^\s*<!doctype[^>]*>/i, '')
+		.trimStart()
+		.replace(MERMAID_BLOCK, (_match, open: string, _tag: string, body: string, close: string) => {
+			const fixed = fixMermaidSource(body)
+			mermaidSources.push(fixed)
+			return open + fixed + close
+		})
 
 	document.open()
 	document.write('<!DOCTYPE html>\n' + html)
@@ -201,4 +325,5 @@ window.addEventListener('message', (event) => {
 	attachKeyForwarding()
 	attachErrorForwarding()
 	attachMathSafetyNet()
+	validateMermaid(mermaidSources)
 })
