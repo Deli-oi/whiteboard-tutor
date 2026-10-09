@@ -1,4 +1,4 @@
-# Study Buddy — Visual Edit
+# Study Buddy: Circle to Visualize
 
 A Chrome extension. Circle anything on a webpage, speak what you want, and get a real, computed, interactive visualization — a chart, diagram, or step-through — floating right next to what you circled.
 

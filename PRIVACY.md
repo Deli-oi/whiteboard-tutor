@@ -1,4 +1,4 @@
-# Privacy Policy — Study Buddy: Visual Edit
+# Privacy Policy — Study Buddy: Circle to Visualize
 
 Last updated: 2026-10-09
 

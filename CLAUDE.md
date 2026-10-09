@@ -1,4 +1,4 @@
-# Study Buddy — Visual Edit
+# Study Buddy: Circle to Visualize
 
 ## What this is
 
