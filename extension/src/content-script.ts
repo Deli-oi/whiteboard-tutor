@@ -421,6 +421,7 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 		classes: best.el.classList.length ? Array.from(best.el.classList) : undefined,
 		preview: elementText(best.el).slice(0, MODEL_TEXT_LIMIT),
 	}
+	const failureReport = (error: string) => buildReportPayload({ selection, transcript, html: '', error })
 	showPanel(rect, `${matchSummary(matches)}\n\n✅ Heard: "${transcript}"\n\n⚙️ Generating…`)
 
 	try {
@@ -432,18 +433,93 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 		})) as GenerateRelayResponse
 		if (myRequest !== requestId) return
 		if (!relay.ok || !relay.action) {
-			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${relay.error ?? 'unknown error'}`)
+			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${relay.error ?? 'unknown error'}`, failureReport(relay.error ?? 'unknown error'))
 			return
 		}
 		if (relay.action._type !== 'createHtml') {
-			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${relay.action._type}`)
+			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${relay.action._type}`, failureReport('Unexpected action type: ' + relay.action._type))
 			return
 		}
 		showGeneratedVisualization(rect, relay.action, selection, transcript)
 	} catch (e) {
 		if (myRequest !== requestId) return
-		showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`)
+		showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`, failureReport(e instanceof Error ? e.message : 'Generation failed'))
 	}
+}
+
+interface ReportBugRelayResponse {
+	ok: boolean
+	error?: string
+}
+
+/**
+ * Beta-testing only: everything already in hand for a bug report, so the
+ * reporter types nothing. Used by both the popup's button (a result that
+ * looks wrong) and failure panels (generation failed, `error` set and `html`
+ * empty) - the failures are the most informative reports.
+ */
+function buildReportPayload(fields: {
+	selection: Selection
+	transcript: string
+	html: string
+	error?: string
+	runtimeErrors?: string
+}): Record<string, string> {
+	const { selection } = fields
+	return {
+		selectionTag: selection.tag,
+		selectionId: selection.id ?? '',
+		selectionClasses: selection.classes?.join(' ') ?? '',
+		selectionPreview: selection.preview ?? '',
+		transcript: fields.transcript,
+		html: fields.html.slice(0, 20000),
+		error: fields.error ?? '',
+		runtimeErrors: fields.runtimeErrors || '(none observed)',
+		pageUrl: location.href,
+		pageTitle: document.title,
+		timestamp: new Date().toISOString(),
+		extensionVersion: chrome.runtime.getManifest().version,
+		userAgent: navigator.userAgent,
+	}
+}
+
+/**
+ * Sends a report with no further input from the user. Falls back to a
+ * clipboard copy if email sending isn't configured (emailjsConfig.ts not
+ * filled in - see background.ts), so the button still does something useful
+ * rather than failing silently during setup. The button is disabled while a
+ * send is in flight (no double-send) and its label/title are restored after.
+ */
+async function sendBugReport(payload: Record<string, string>, btn: HTMLElement) {
+	if (btn.dataset.sending === '1') return
+	btn.dataset.sending = '1'
+	const idleText = btn.textContent
+	const idleTitle = btn.title
+	const label = (icon: string) => {
+		btn.textContent = idleText && idleText.length > 2 ? `${icon} ${idleText.slice(3)}` : icon
+	}
+	label('…')
+	try {
+		const relay = (await chrome.runtime.sendMessage({ type: 'report-bug', payload })) as ReportBugRelayResponse
+		if (relay.ok) {
+			label('✅')
+		} else if (relay.error === 'not-configured') {
+			await navigator.clipboard.writeText(JSON.stringify(payload, null, 2))
+			label('📋')
+			btn.title = 'Email reporting isn’t set up yet - copied the report to your clipboard instead'
+		} else {
+			console.error('[report-bug] send failed:', relay.error)
+			label('⚠️')
+		}
+	} catch (e) {
+		console.error('[report-bug] send failed:', e)
+		label('⚠️')
+	}
+	setTimeout(() => {
+		btn.textContent = idleText
+		btn.title = idleTitle
+		delete btn.dataset.sending
+	}, 2000)
 }
 
 /**
@@ -549,7 +625,19 @@ function showGeneratedVisualization(
 	reportBtn.addEventListener('mouseleave', () => {
 		reportBtn.style.background = 'transparent'
 	})
-	reportBtn.addEventListener('click', () => void sendBugReport())
+	reportBtn.addEventListener(
+		'click',
+		() =>
+			void sendBugReport(
+				buildReportPayload({
+					selection,
+					transcript: lastTranscript,
+					html: currentHtml,
+					runtimeErrors: runtimeErrors.join(String.fromCharCode(10)),
+				}),
+				reportBtn
+			)
+	)
 	header.appendChild(reportBtn)
 
 	const closeBtn = document.createElement('button')
@@ -611,58 +699,6 @@ function showGeneratedVisualization(
 	}
 	loadVisualization()
 
-	interface ReportBugRelayResponse {
-		ok: boolean
-		error?: string
-	}
-
-	/**
-	 * Bundles everything already in hand and sends it with no further input
-	 * from the user - see the button's own comment above for why. Falls back
-	 * to a clipboard copy if email sending isn't configured yet
-	 * (emailjsConfig.ts not filled in - see background.ts), so the button
-	 * still does something useful rather than failing silently during setup.
-	 */
-	async function sendBugReport() {
-		reportBtn.textContent = '…'
-		const payload = {
-			selectionTag: selection.tag,
-			selectionId: selection.id ?? '',
-			selectionClasses: selection.classes?.join(' ') ?? '',
-			selectionPreview: selection.preview ?? '',
-			transcript: lastTranscript,
-			html: currentHtml.slice(0, 20000),
-			runtimeErrors: runtimeErrors.join('\n') || '(none observed)',
-			pageUrl: location.href,
-			pageTitle: document.title,
-			timestamp: new Date().toISOString(),
-			extensionVersion: chrome.runtime.getManifest().version,
-			userAgent: navigator.userAgent,
-		}
-		try {
-			const relay = (await chrome.runtime.sendMessage({
-				type: 'report-bug',
-				payload,
-			})) as ReportBugRelayResponse
-			if (relay.ok) {
-				reportBtn.textContent = '✅'
-			} else if (relay.error === 'not-configured') {
-				await navigator.clipboard.writeText(JSON.stringify(payload, null, 2))
-				reportBtn.textContent = '📋'
-				reportBtn.title = 'Email reporting isn’t set up yet - copied the report to your clipboard instead'
-			} else {
-				console.error('[report-bug] send failed:', relay.error)
-				reportBtn.textContent = '⚠️'
-			}
-		} catch (e) {
-			console.error('[report-bug] send failed:', e)
-			reportBtn.textContent = '⚠️'
-		}
-		setTimeout(() => {
-			reportBtn.textContent = '🐛'
-		}, 2000)
-	}
-
 	// Bottom-left mic badge: grey while idle, red while hold-V capture is
 	// active. Lets you say "make the bars blue" or "actually, plot it as a
 	// line" without re-circling the element - the whole point being fast
@@ -714,6 +750,22 @@ function showGeneratedVisualization(
 	})
 
 	let iterateStt: SttEngineInstance | null = null
+	let labelTimer: ReturnType<typeof setTimeout> | undefined
+
+	/** Shows an error in the same pill as "Generating…" for a few seconds. */
+	function showIterateError(message: string) {
+		if (popupClosed) return
+		clearTimeout(labelTimer)
+		generatingLabel.textContent = message
+		generatingLabel.style.background = 'rgba(185,28,28,0.92)'
+		generatingLabel.style.display = 'block'
+		labelTimer = setTimeout(hideLabel, 4000)
+	}
+	function hideLabel() {
+		generatingLabel.style.display = 'none'
+		generatingLabel.textContent = 'Generating…'
+		generatingLabel.style.background = 'rgba(0,0,0,0.72)'
+	}
 	// Set when this popup is closed/replaced; an iteration response that
 	// arrives afterward (or after a newer iteration started) is dropped.
 	let popupClosed = false
@@ -722,8 +774,11 @@ function showGeneratedVisualization(
 	async function iterateVisualization(transcript: string) {
 		if (popupClosed) return
 		const myIteration = ++iterationId
+		clearTimeout(labelTimer)
+		hideLabel()
 		generatingLabel.style.display = 'block'
 		lastTranscript = transcript
+		let failed = false
 		try {
 			const relay = (await chrome.runtime.sendMessage({
 				type: 'generate',
@@ -732,6 +787,8 @@ function showGeneratedVisualization(
 			if (popupClosed || myIteration !== iterationId) return
 			if (!relay.ok || !relay.action || relay.action._type !== 'createHtml') {
 				console.error('[iterate] generation failed:', relay.error ?? relay.action?._type)
+				failed = true
+				showIterateError(relay.error ?? 'Generation failed')
 				return
 			}
 			currentHtml = relay.action.html
@@ -741,8 +798,10 @@ function showGeneratedVisualization(
 			// there's no status panel for this path, so this is logged rather
 			// than surfaced, but logged so a failure is at least diagnosable.
 			console.error('[iterate] request failed:', e)
+			failed = true
+			showIterateError(e instanceof Error ? e.message : 'Request failed')
 		} finally {
-			if (!popupClosed && myIteration === iterationId) generatingLabel.style.display = 'none'
+			if (!failed && !popupClosed && myIteration === iterationId) hideLabel()
 		}
 	}
 
@@ -761,6 +820,7 @@ function showGeneratedVisualization(
 			},
 			onError(message) {
 				console.error('[iterate]', message)
+				showIterateError(message)
 				micBadge.style.background = '#d97706'
 				setTimeout(() => {
 					micBadge.style.background = '#8a8a8a'
@@ -858,7 +918,7 @@ function showGeneratedVisualization(
  * fixed` element isn't affected by page scroll) or leaves it with no way
  * to scroll at all. Always keep the latest line in view.
  */
-function showPanel(selectionRect: DOMRect, text: string) {
+function showPanel(selectionRect: DOMRect, text: string, reportPayload?: Record<string, string>) {
 	panelDragCleanup?.()
 	panelVoiceCleanup?.()
 	panelVoiceCleanup = null
@@ -903,6 +963,27 @@ function showPanel(selectionRect: DOMRect, text: string) {
 	}
 
 	panel.textContent = text
+	if (reportPayload) {
+		// Failure panels get the same one-click report as a successful popup -
+		// failures are the most informative thing to learn about.
+		const btn = document.createElement('button')
+		btn.textContent = '🐛 Report this problem'
+		btn.title = REPORT_BTN_TITLE
+		Object.assign(btn.style, {
+			display: 'block',
+			marginTop: '8px',
+			padding: '3px 10px',
+			border: '1px solid rgba(255,255,255,0.3)',
+			borderRadius: '6px',
+			background: 'transparent',
+			color: '#e5e5e5',
+			fontFamily: 'inherit',
+			fontSize: '12px',
+			cursor: 'pointer',
+		})
+		btn.addEventListener('click', () => void sendBugReport(reportPayload, btn))
+		panel.appendChild(btn)
+	}
 	document.documentElement.appendChild(panel)
 	panelEl = panel
 	panel.scrollTop = panel.scrollHeight

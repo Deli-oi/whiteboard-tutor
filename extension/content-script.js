@@ -385,6 +385,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       classes: best.el.classList.length ? Array.from(best.el.classList) : void 0,
       preview: elementText(best.el).slice(0, MODEL_TEXT_LIMIT)
     };
+    const failureReport = (error) => buildReportPayload({ selection, transcript, html: "", error });
     showPanel(rect, `${matchSummary(matches)}
 
 \u2705 Heard: "${transcript}"
@@ -401,13 +402,13 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       if (!relay.ok || !relay.action) {
         showPanel(rect, `${matchSummary(matches)}
 
-\u26A0\uFE0F Generation failed: ${relay.error ?? "unknown error"}`);
+\u26A0\uFE0F Generation failed: ${relay.error ?? "unknown error"}`, failureReport(relay.error ?? "unknown error"));
         return;
       }
       if (relay.action._type !== "createHtml") {
         showPanel(rect, `${matchSummary(matches)}
 
-\u26A0\uFE0F Got an unexpected action type: ${relay.action._type}`);
+\u26A0\uFE0F Got an unexpected action type: ${relay.action._type}`, failureReport("Unexpected action type: " + relay.action._type));
         return;
       }
       showGeneratedVisualization(rect, relay.action, selection, transcript);
@@ -415,8 +416,57 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       if (myRequest !== requestId) return;
       showPanel(rect, `${matchSummary(matches)}
 
-\u26A0\uFE0F ${e instanceof Error ? e.message : "Generation failed"}`);
+\u26A0\uFE0F ${e instanceof Error ? e.message : "Generation failed"}`, failureReport(e instanceof Error ? e.message : "Generation failed"));
     }
+  }
+  function buildReportPayload(fields) {
+    const { selection } = fields;
+    return {
+      selectionTag: selection.tag,
+      selectionId: selection.id ?? "",
+      selectionClasses: selection.classes?.join(" ") ?? "",
+      selectionPreview: selection.preview ?? "",
+      transcript: fields.transcript,
+      html: fields.html.slice(0, 2e4),
+      error: fields.error ?? "",
+      runtimeErrors: fields.runtimeErrors || "(none observed)",
+      pageUrl: location.href,
+      pageTitle: document.title,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      extensionVersion: chrome.runtime.getManifest().version,
+      userAgent: navigator.userAgent
+    };
+  }
+  async function sendBugReport(payload, btn) {
+    if (btn.dataset.sending === "1") return;
+    btn.dataset.sending = "1";
+    const idleText = btn.textContent;
+    const idleTitle = btn.title;
+    const label = (icon) => {
+      btn.textContent = idleText && idleText.length > 2 ? `${icon} ${idleText.slice(3)}` : icon;
+    };
+    label("\u2026");
+    try {
+      const relay = await chrome.runtime.sendMessage({ type: "report-bug", payload });
+      if (relay.ok) {
+        label("\u2705");
+      } else if (relay.error === "not-configured") {
+        await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+        label("\u{1F4CB}");
+        btn.title = "Email reporting isn\u2019t set up yet - copied the report to your clipboard instead";
+      } else {
+        console.error("[report-bug] send failed:", relay.error);
+        label("\u26A0\uFE0F");
+      }
+    } catch (e) {
+      console.error("[report-bug] send failed:", e);
+      label("\u26A0\uFE0F");
+    }
+    setTimeout(() => {
+      btn.textContent = idleText;
+      btn.title = idleTitle;
+      delete btn.dataset.sending;
+    }, 2e3);
   }
   var DRAG_HANDLE_HEIGHT = 22;
   var PANEL_W = 440;
@@ -480,7 +530,18 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
     reportBtn.addEventListener("mouseleave", () => {
       reportBtn.style.background = "transparent";
     });
-    reportBtn.addEventListener("click", () => void sendBugReport());
+    reportBtn.addEventListener(
+      "click",
+      () => void sendBugReport(
+        buildReportPayload({
+          selection,
+          transcript: lastTranscript,
+          html: currentHtml,
+          runtimeErrors: runtimeErrors.join(String.fromCharCode(10))
+        }),
+        reportBtn
+      )
+    );
     header.appendChild(reportBtn);
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "\u2715";
@@ -523,45 +584,6 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       iframe.src = chrome.runtime.getURL("render.html") + "?t=" + Date.now();
     }
     loadVisualization();
-    async function sendBugReport() {
-      reportBtn.textContent = "\u2026";
-      const payload = {
-        selectionTag: selection.tag,
-        selectionId: selection.id ?? "",
-        selectionClasses: selection.classes?.join(" ") ?? "",
-        selectionPreview: selection.preview ?? "",
-        transcript: lastTranscript,
-        html: currentHtml.slice(0, 2e4),
-        runtimeErrors: runtimeErrors.join("\n") || "(none observed)",
-        pageUrl: location.href,
-        pageTitle: document.title,
-        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-        extensionVersion: chrome.runtime.getManifest().version,
-        userAgent: navigator.userAgent
-      };
-      try {
-        const relay = await chrome.runtime.sendMessage({
-          type: "report-bug",
-          payload
-        });
-        if (relay.ok) {
-          reportBtn.textContent = "\u2705";
-        } else if (relay.error === "not-configured") {
-          await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-          reportBtn.textContent = "\u{1F4CB}";
-          reportBtn.title = "Email reporting isn\u2019t set up yet - copied the report to your clipboard instead";
-        } else {
-          console.error("[report-bug] send failed:", relay.error);
-          reportBtn.textContent = "\u26A0\uFE0F";
-        }
-      } catch (e) {
-        console.error("[report-bug] send failed:", e);
-        reportBtn.textContent = "\u26A0\uFE0F";
-      }
-      setTimeout(() => {
-        reportBtn.textContent = "\u{1F41B}";
-      }, 2e3);
-    }
     const micBadge = document.createElement("div");
     micBadge.textContent = "\u{1F3A4}";
     Object.assign(micBadge.style, {
@@ -603,13 +625,30 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       display: "none"
     });
     let iterateStt = null;
+    let labelTimer;
+    function showIterateError(message) {
+      if (popupClosed) return;
+      clearTimeout(labelTimer);
+      generatingLabel.textContent = message;
+      generatingLabel.style.background = "rgba(185,28,28,0.92)";
+      generatingLabel.style.display = "block";
+      labelTimer = setTimeout(hideLabel, 4e3);
+    }
+    function hideLabel() {
+      generatingLabel.style.display = "none";
+      generatingLabel.textContent = "Generating\u2026";
+      generatingLabel.style.background = "rgba(0,0,0,0.72)";
+    }
     let popupClosed = false;
     let iterationId = 0;
     async function iterateVisualization(transcript2) {
       if (popupClosed) return;
       const myIteration = ++iterationId;
+      clearTimeout(labelTimer);
+      hideLabel();
       generatingLabel.style.display = "block";
       lastTranscript = transcript2;
+      let failed = false;
       try {
         const relay = await chrome.runtime.sendMessage({
           type: "generate",
@@ -618,14 +657,18 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
         if (popupClosed || myIteration !== iterationId) return;
         if (!relay.ok || !relay.action || relay.action._type !== "createHtml") {
           console.error("[iterate] generation failed:", relay.error ?? relay.action?._type);
+          failed = true;
+          showIterateError(relay.error ?? "Generation failed");
           return;
         }
         currentHtml = relay.action.html;
         loadVisualization();
       } catch (e) {
         console.error("[iterate] request failed:", e);
+        failed = true;
+        showIterateError(e instanceof Error ? e.message : "Request failed");
       } finally {
-        if (!popupClosed && myIteration === iterationId) generatingLabel.style.display = "none";
+        if (!failed && !popupClosed && myIteration === iterationId) hideLabel();
       }
     }
     function startIterateCapture() {
@@ -643,6 +686,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
         },
         onError(message) {
           console.error("[iterate]", message);
+          showIterateError(message);
           micBadge.style.background = "#d97706";
           setTimeout(() => {
             micBadge.style.background = "#8a8a8a";
@@ -700,7 +744,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
     panelEl = container;
     panelDragCleanup = makeDraggable(container, header);
   }
-  function showPanel(selectionRect, text) {
+  function showPanel(selectionRect, text, reportPayload) {
     panelDragCleanup?.();
     panelVoiceCleanup?.();
     panelVoiceCleanup = null;
@@ -740,6 +784,25 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       panel.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - 440) + "px";
     }
     panel.textContent = text;
+    if (reportPayload) {
+      const btn = document.createElement("button");
+      btn.textContent = "\u{1F41B} Report this problem";
+      btn.title = REPORT_BTN_TITLE;
+      Object.assign(btn.style, {
+        display: "block",
+        marginTop: "8px",
+        padding: "3px 10px",
+        border: "1px solid rgba(255,255,255,0.3)",
+        borderRadius: "6px",
+        background: "transparent",
+        color: "#e5e5e5",
+        fontFamily: "inherit",
+        fontSize: "12px",
+        cursor: "pointer"
+      });
+      btn.addEventListener("click", () => void sendBugReport(reportPayload, btn));
+      panel.appendChild(btn);
+    }
     document.documentElement.appendChild(panel);
     panelEl = panel;
     panel.scrollTop = panel.scrollHeight;
