@@ -24,8 +24,6 @@ let panelEl: HTMLDivElement | null = null
 let stt: SttEngineInstance | null = null
 let startX = 0
 let startY = 0
-let activeMatches: Match[] | null = null
-let activeRect: DOMRect | null = null
 /**
  * Resolves to a cropped screenshot of the circled region, or null when the
  * circled element has real DOM text (no vision needed). Kicked off in
@@ -166,28 +164,15 @@ function closeEverything() {
 	draggedPosition = null
 	panelEl?.remove()
 	panelEl = null
-	activeMatches = null
-	activeRect = null
 	activeImagePromise = null
 	typedInput = null
 	stopListeningKeys()
 	mode = 'idle'
 }
 
+/** Esc while drawing the box; while listening, startListening's handler owns Esc. */
 function onKeyDown(e: KeyboardEvent) {
-	if (e.key !== 'Escape') return
-	if (mode === 'listening') {
-		// Escape cancels capture but keeps the selection result on screen -
-		// rewrite the panel so it doesn't just say "Listening..." forever.
-		stt?.abort()
-		stt = null
-		mode = 'idle'
-		if (activeRect && activeMatches) {
-			showPanel(activeRect, `${matchSummary(activeMatches)}\n\n(listening cancelled)`)
-		}
-		return
-	}
-	closeEverything()
+	if (e.key === 'Escape') closeEverything()
 }
 
 function onMouseDown(e: MouseEvent) {
@@ -232,8 +217,6 @@ function onMouseUp() {
 		return
 	}
 	matches[0].text = visibleTextIn(matches[0].el, rect)
-	activeMatches = matches
-	activeRect = rect
 	activeImagePromise = needsVision(matches[0]) ? captureSelectionImage(rect) : Promise.resolve(null)
 	startListening(rect, matches)
 }
@@ -437,23 +420,6 @@ function visibleTextIn(root: Element, selectionRect: DOMRect): string {
 		.slice(0, MODEL_TEXT_LIMIT)
 }
 
-function describe(el: Element): string {
-	const tag = el.tagName.toLowerCase()
-	const id = el.id ? '#' + el.id : ''
-	const cls = el.classList.length ? '.' + Array.from(el.classList).join('.') : ''
-	return tag + id + cls
-}
-
-function matchSummary(matches: Match[]): string {
-	const best = matches[0]
-	const preview = selectionText(best).replace(/\s+/g, ' ').slice(0, 80)
-	return (
-		`Selected: ${describe(best.el)}\n` +
-		`content: "${preview}${preview.length === 80 ? '…' : ''}"` +
-		(matches.length > 1 ? `\n(${matches.length - 1} other candidate(s) also in the box)` : '')
-	)
-}
-
 /**
  * The typed alternative to speaking. Voice stays the default; the listening
  * panel shows a small "Type instead" button that stops voice capture and
@@ -512,7 +478,7 @@ function createTypedInput(rect: DOMRect, matches: Match[]): HTMLElement {
 	button.addEventListener('click', () => {
 		stt?.abort()
 		button.replaceWith(input)
-		showPanel(rect, `${matchSummary(matches)}\n\n⌨️ Type your request - Enter to send, Esc to cancel`)
+		showPanel(rect, `⌨️ Type your request - Enter to send, Esc to cancel`)
 		input.focus()
 	})
 
@@ -541,7 +507,7 @@ function startListening(rect: DOMRect, matches: Match[]) {
 	let interim = ''
 
 	typedInput = createTypedInput(rect, matches)
-	showPanel(rect, `${matchSummary(matches)}\n\n${LISTENING_LINE}`)
+	showPanel(rect, LISTENING_LINE)
 
 	stopListeningKeys()
 	listeningKeys = (e: KeyboardEvent) => {
@@ -563,13 +529,13 @@ function startListening(rect: DOMRect, matches: Match[]) {
 	stt = createStt({
 		onInterim(text) {
 			interim = text
-			showPanel(rect, `${matchSummary(matches)}\n\n🎤 Listening… "${interim}"`)
+			showPanel(rect, `🎤 Listening… "${interim}"`)
 		},
 		onFinal(text) {
 			void generateVisualization(rect, matches, text)
 		},
 		onError(message) {
-			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${message}`)
+			showPanel(rect, `⚠️ ${message}`)
 		},
 		onEnd() {
 			stt = null
@@ -607,8 +573,7 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 		preview: selectionText(best).slice(0, MODEL_TEXT_LIMIT),
 	}
 	const failureReport = (error: string) => buildReportPayload({ selection, transcript, html: '', error })
-	const requestLine = transcript.trim() ? `✅ Heard: "${transcript}"` : '⚡ Visualizing what you circled'
-	showPanel(rect, `${matchSummary(matches)}\n\n${requestLine}\n\n⚙️ Generating…`)
+	showPanel(rect, transcript.trim() ? `⚙️ Generating: "${transcript}"` : '⚙️ Generating…')
 
 	try {
 		const imageBase64 = (await activeImagePromise) ?? undefined
@@ -619,17 +584,17 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 		})) as GenerateRelayResponse
 		if (myRequest !== requestId) return
 		if (!relay.ok || !relay.action) {
-			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${relay.error ?? 'unknown error'}`, failureReport(relay.error ?? 'unknown error'))
+			showPanel(rect, `⚠️ Generation failed: ${relay.error ?? 'unknown error'}`, failureReport(relay.error ?? 'unknown error'))
 			return
 		}
 		if (relay.action._type !== 'createHtml') {
-			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${relay.action._type}`, failureReport('Unexpected action type: ' + relay.action._type))
+			showPanel(rect, '⚠️ Something went wrong - try again.', failureReport('Unexpected action type: ' + relay.action._type))
 			return
 		}
 		showGeneratedVisualization(rect, relay.action, selection, transcript, imageBase64)
 	} catch (e) {
 		if (myRequest !== requestId) return
-		showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`, failureReport(e instanceof Error ? e.message : 'Generation failed'))
+		showPanel(rect, `⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`, failureReport(e instanceof Error ? e.message : 'Generation failed'))
 	}
 }
 
@@ -657,7 +622,7 @@ function buildReportPayload(fields: {
 		selectionId: selection.id ?? '',
 		selectionClasses: selection.classes?.join(' ') ?? '',
 		selectionPreview: selection.preview ?? '',
-		transcript: fields.transcript,
+		transcript: fields.transcript.trim() || '(none - pressed Enter to just visualize the selection)',
 		html: fields.html.slice(0, 20000),
 		error: fields.error ?? '',
 		runtimeErrors: fields.runtimeErrors || '(none observed)',
