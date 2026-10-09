@@ -440,7 +440,7 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${relay.action._type}`, failureReport('Unexpected action type: ' + relay.action._type))
 			return
 		}
-		showGeneratedVisualization(rect, relay.action, selection, transcript)
+		showGeneratedVisualization(rect, relay.action, selection, transcript, imageBase64)
 	} catch (e) {
 		if (myRequest !== requestId) return
 		showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`, failureReport(e instanceof Error ? e.message : 'Generation failed'))
@@ -552,7 +552,9 @@ function showGeneratedVisualization(
 	selectionRect: DOMRect,
 	action: GeneratedAction,
 	selection: Selection,
-	transcript: string
+	transcript: string,
+	/** The original screenshot, if the selection needed vision - resent on every iteration. */
+	imageBase64?: string
 ) {
 	panelDragCleanup?.()
 	panelVoiceCleanup?.()
@@ -782,7 +784,7 @@ function showGeneratedVisualization(
 		try {
 			const relay = (await chrome.runtime.sendMessage({
 				type: 'generate',
-				payload: { transcript, selection, previousHtml: currentHtml },
+				payload: { transcript, selection, previousHtml: currentHtml, imageBase64 },
 			})) as GenerateRelayResponse
 			if (popupClosed || myIteration !== iterationId) return
 			if (!relay.ok || !relay.action || relay.action._type !== 'createHtml') {
