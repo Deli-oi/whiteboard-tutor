@@ -15,7 +15,7 @@ It does **not** work on `chrome://` pages, the Chrome Web Store, or Chrome's bui
 ## How it works
 
 - **On-demand injection**: there is no always-on content script. Pressing the shortcut makes the background script inject `content-script.js` into that one tab (`activeTab` + `scripting` permissions), so nothing runs on pages you merely visit.
-- **Circle-select**: drag a box; the content script samples points inside it, picks the common ancestor of what it hits (or the best-coverage element if that's much bigger than the box), and sends that element's text with line breaks preserved, up to 4000 characters (`extension/src/content-script.ts`).
+- **Circle-select**: drag a box; the content script samples points inside it, picks the common ancestor of what it hits (or the best-coverage element if that's much bigger than the box), and sends only the text actually visible inside the box, with line breaks preserved, up to 4000 characters (`extension/src/content-script.ts`).
 - **Voice**: Chrome's built-in Web Speech API (`shared/voice/stt.ts`) — push-to-talk by default, auto-sends after a pause.
 - **Vision**: if what you circled has no real DOM text to read (an `<img>`, or canvas-rendered content like Google Docs, which draws its whole document onto a `<canvas>`), the extension screenshots just that region and sends it to Gemini as a real image input instead of empty text.
 - **Generation**: the background script calls Gemini directly with your own key (`extension/src/generate.ts`) — no network hop through any server of ours. Gemini is primary; if it fails (quota or an outage) and you've also configured a Groq key, it automatically retries against Groq's `gpt-oss-120b` instead — text-only, so this fallback is skipped for anything that needed a screenshot.
@@ -44,7 +44,7 @@ PRIVACY.md                what is stored and what is sent where
 
 shared/
   extension/createHtmlAction.ts   the visualization schema + prompt (what the model is asked for)
-  ai/modelErrors.ts, closeAndParseJson.ts, normalizeModelText.ts   pure parsing/error helpers
+  ai/modelErrors.ts, parseModelJson.ts   model error classification + reply parsing
   voice/stt.ts            browser speech-to-text
 ```
 
@@ -56,14 +56,14 @@ Generation supports two providers (`ProviderKeys` in `generate.ts`) - whichever 
 npm install
 npm run build:extension   # bundles + minifies extension/src/*.ts -> extension/*.js
 npm run typecheck:extension
-npm run test               # shared/ and generate.ts's pure logic
+npm run test               # shared/ modules and generate.ts's pure logic
 ```
 
 `npm run watch:extension` rebuilds on save during development.
 
-## History
+## History and credits
 
-This started as a fork of a tldraw-canvas-based voice tutor, then pivoted to a browser extension so visualizations could appear directly on real webpages instead of a separate canvas. A local-file-editing mode (a companion app that spliced visualizations directly into your own HTML files) was also built and tested, then retired — it worked, but required running a local Node server and manual page refreshes for every edit, more friction than the benefit justified. The extension-only, bring-your-own-key approach above is the current and only supported path.
+The original idea was inspired by Harjoth Khara's [whiteboard-tutor](https://github.com/harjothkhara/whiteboard-tutor), a voice tutor built on the [tldraw](https://tldraw.dev) agent starter kit. This repository began as a fork of that project, then pivoted to a browser extension so visualizations could appear directly on real webpages instead of a separate canvas. The canvas app was removed and the remaining shared pieces have since been rewritten, so the current code contains none of theirs. A local-file-editing mode (a companion app that spliced visualizations directly into your own HTML files) was also built and tested, then retired — it worked, but required running a local Node server and manual page refreshes for every edit, more friction than the benefit justified. The extension-only, bring-your-own-key approach above is the current and only supported path.
 
 ## Contributing
 

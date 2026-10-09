@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for taking a look. This is a small project and easy to get into.
+Study Buddy is a small codebase, so it's quick to find your way around.
 
 ## Set up
 
@@ -32,7 +32,7 @@ The built `extension/*.js` files are committed directly (so `git clone` + `Load 
 
 ## Good first contributions
 
-- **More test coverage** — `shared/ai/`, `shared/extension/createHtmlAction.ts`, and `extension/src/generate.ts`'s pure/mockable logic have real Vitest coverage now (`npm run test`); `extension/src/content-script.ts` doesn't, since it's deeply DOM/`chrome.*`-API-dependent and would need a jsdom + mocked-`chrome` setup.
+- **More test coverage** — `shared/ai/`, `shared/voice/stt.ts`, `shared/extension/createHtmlAction.ts`, and `extension/src/generate.ts`'s pure/mockable logic have real Vitest coverage now (`npm run test`); `extension/src/content-script.ts` doesn't, since it's deeply DOM/`chrome.*`-API-dependent and would need a jsdom + mocked-`chrome` setup.
 - **A third provider option** — Groq was added as a fallback after confirming it genuinely works from a browser (free, CORS-capable, text-only). Mistral looked like a plausible second fallback in research but wasn't confirmed working from the browser the way Groq was - worth verifying directly before adding.
 - **The missing-backslash case** — `shared/extension/createHtmlAction.ts`'s prompt was strengthened after a confirmed bug where LaTeX commands lost their backslash in the model's JSON output (see `extension/src/generate.ts`'s `repairUnescapedLatexBackslashes` for the mechanically-fixable half of it). Commands dropped entirely rather than corrupted into a control character aren't mechanically detectable the same way - worth watching for.
 
