@@ -59,7 +59,15 @@ async function attemptWithModel(
 	model: LanguageModel,
 	systemPrompt: string,
 	content: UserContent,
-	providerOptions?: Parameters<typeof generateText>[0]['providerOptions']
+	providerOptions?: Parameters<typeof generateText>[0]['providerOptions'],
+	options: {
+		/**
+		 * Give up on a 429 immediately instead of retrying with backoff. Set when
+		 * another provider is available to take over: per-minute rate limits
+		 * rarely clear within a 0.5s/1s backoff, so the retries only add latency.
+		 */
+		failFastOnRateLimit?: boolean
+	} = {}
 ): Promise<ExtensionCreateHtmlAction> {
 	let lastError: unknown
 	for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -109,6 +117,7 @@ async function attemptWithModel(
 			}
 			lastError = error
 			if (isQuotaExceededError(error)) break
+			if (options.failFastOnRateLimit && (error as { statusCode?: unknown } | undefined)?.statusCode === 429) break
 			if (attempt < MAX_ATTEMPTS && isRetryableApiError(error)) {
 				await new Promise((resolve) => setTimeout(resolve, 500 * attempt))
 				continue
@@ -177,9 +186,16 @@ export async function generateVisualizationHtml(
 	if (keys.gemini) {
 		try {
 			const model = createGoogleGenerativeAI({ apiKey: keys.gemini })(GEMINI_MODEL_ID)
-			return await attemptWithModel(model, systemPrompt, content, {
-				google: { thinkingConfig: { thinkingLevel: 'low' } } satisfies GoogleGenerativeAIProviderOptions,
-			})
+			// With a Groq key set and no image (Groq can't take one), a Gemini 429
+			// goes straight to the fallback instead of burning retries first.
+			const groqCanTakeOver = !!keys.groq && !imageBase64
+			return await attemptWithModel(
+				model,
+				systemPrompt,
+				content,
+				{ google: { thinkingConfig: { thinkingLevel: 'low' } } satisfies GoogleGenerativeAIProviderOptions },
+				{ failFastOnRateLimit: groqCanTakeOver }
+			)
 		} catch (error) {
 			lastError = error
 		}

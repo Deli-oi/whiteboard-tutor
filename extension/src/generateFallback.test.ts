@@ -105,4 +105,41 @@ describe('generateVisualizationHtml provider fallback', () => {
 		expect(result._type).toBe('createHtml')
 		expect(generateTextMock).toHaveBeenCalledTimes(2)
 	})
+
+	it('skips Gemini 429 retries and goes straight to Groq when a Groq key is set', async () => {
+		generateTextMock.mockRejectedValueOnce(Object.assign(new Error('Too many requests'), { statusCode: 429 }))
+		generateTextMock.mockResolvedValueOnce({ text: goodResponseText })
+		const result = await generateVisualizationHtml(
+			{ gemini: 'fake-gemini-key', groq: 'fake-groq-key' },
+			'hi',
+			selection
+		)
+		expect(result._type).toBe('createHtml')
+		expect(generateTextMock).toHaveBeenCalledTimes(2)
+		expect(generateTextMock.mock.calls[1][0].model).toBe('groq-model-stub')
+	})
+
+	it('still retries a Gemini 429 when there is no Groq key to fall back to', async () => {
+		generateTextMock.mockRejectedValueOnce(Object.assign(new Error('Too many requests'), { statusCode: 429 }))
+		generateTextMock.mockResolvedValueOnce({ text: goodResponseText })
+		const result = await generateVisualizationHtml({ gemini: 'fake-gemini-key' }, 'hi', selection)
+		expect(result._type).toBe('createHtml')
+		expect(generateTextMock).toHaveBeenCalledTimes(2)
+		expect(generateTextMock.mock.calls[1][0].model).toBe('gemini-model-stub')
+	})
+
+	it('still retries a Gemini 429 on a vision request, since Groq cannot take over', async () => {
+		generateTextMock.mockRejectedValueOnce(Object.assign(new Error('Too many requests'), { statusCode: 429 }))
+		generateTextMock.mockResolvedValueOnce({ text: goodResponseText })
+		const result = await generateVisualizationHtml(
+			{ gemini: 'fake-gemini-key', groq: 'fake-groq-key' },
+			'hi',
+			selection,
+			undefined,
+			'base64-image-data'
+		)
+		expect(result._type).toBe('createHtml')
+		expect(generateTextMock).toHaveBeenCalledTimes(2)
+		expect(generateTextMock.mock.calls[1][0].model).toBe('gemini-model-stub')
+	})
 })
