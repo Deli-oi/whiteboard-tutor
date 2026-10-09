@@ -27,25 +27,18 @@ chrome.runtime.onInstalled.addListener((details) => {
 })
 
 /**
- * Keyboard shortcuts fire here (chrome.commands only reaches the background
- * service worker, never a content script directly), so this relays the toggle
- * to the active tab. The content script is not declared in the manifest: it
- * is injected on demand, only into the tab where the user pressed the
- * shortcut (the command gesture grants `activeTab`, which covers both the
- * injection and the later captureVisibleTab). That also means it works on tabs
- * that were already open before the extension was installed or reloaded.
+ * Toggles circle-select in a tab. Both entry points - the keyboard shortcut
+ * and clicking the toolbar icon - grant `activeTab` for that tab, which covers
+ * injecting the content script and the later captureVisibleTab. The content
+ * script is not declared in the manifest: it is injected on demand, only into
+ * that tab, which also makes it work on tabs that were open before the
+ * extension was installed or reloaded.
  *
  * Try the message first and inject only if nobody answers - covers a fresh
  * tab, a tab whose old content script was orphaned by an extension reload,
  * and avoids re-injecting on every press.
  */
-chrome.commands.onCommand.addListener(async (command) => {
-	if (command !== 'toggle-overlay') return
-
-	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-	if (!tab?.id) return
-	const tabId = tab.id
-
+async function toggleOverlay(tabId: number) {
 	try {
 		await chrome.tabs.sendMessage(tabId, { type: 'toggle-overlay' })
 		return
@@ -58,11 +51,29 @@ chrome.commands.onCommand.addListener(async (command) => {
 		await chrome.tabs.sendMessage(tabId, { type: 'toggle-overlay' })
 	} catch (e) {
 		// Chrome refuses injection on chrome:// pages, the Chrome Web Store, and
-		// Chrome's built-in PDF viewer. There is no action/badge or notifications
-		// permission to surface this with, so it is logged here and documented on
-		// the options page.
+		// Chrome's built-in PDF viewer - say so on the toolbar icon for a moment
+		// instead of failing silently.
 		console.warn('[study-buddy] cannot run on this page:', e)
+		void chrome.action.setBadgeBackgroundColor({ tabId, color: '#b91c1c' })
+		void chrome.action.setBadgeText({ tabId, text: '✕' })
+		void chrome.action.setTitle({ tabId, title: "Chrome doesn't allow extensions on this page" })
+		setTimeout(() => {
+			void chrome.action.setBadgeText({ tabId, text: '' })
+			void chrome.action.setTitle({ tabId, title: '' })
+		}, 4000)
 	}
+}
+
+/** Keyboard shortcut (chrome.commands only reaches the background service worker). */
+chrome.commands.onCommand.addListener(async (command) => {
+	if (command !== 'toggle-overlay') return
+	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+	if (tab?.id) await toggleOverlay(tab.id)
+})
+
+/** Clicking the toolbar icon - the discoverable way in, for anyone who doesn't know the shortcut. */
+chrome.action.onClicked.addListener((tab) => {
+	if (tab.id) void toggleOverlay(tab.id)
 })
 
 interface GenerateMessage {

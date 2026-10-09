@@ -19,7 +19,7 @@ dashboard. Update this file whenever the listing changes.
 Study Buddy turns whatever you're reading into an interactive visualization, right next to it.
 
 HOW IT WORKS
-1. Press Ctrl+Shift+E (Cmd+Shift+E on Mac) on any webpage.
+1. On any webpage, click the Study Buddy toolbar icon or press Ctrl+Shift+E (Cmd+Shift+E on Mac).
 2. Drag a box around a formula, an algorithm, a paragraph, a table, or an image.
 3. Say what you want: "plot this function", "step through this algorithm", "draw this as a diagram". No mic or somewhere quiet? Click "Type instead".
 4. A real, computed visualization appears in a small popup next to what you circled. Hover it and hold V to refine it by voice.
@@ -52,8 +52,8 @@ GOOD TO KNOW
 Turn content the user circles on a webpage into an interactive visualization, generated from a spoken (or typed) request.
 
 **Permission justifications:**
-- `activeTab`: Gives the extension access to the current tab only after the user presses the keyboard shortcut, so it can show the circle-select overlay and, when the circled area has no readable text (an image or canvas), capture a screenshot of just that area.
-- `scripting`: Injects the overlay script into the current tab when the user presses the shortcut. Nothing runs on pages the user only visits.
+- `activeTab`: Gives the extension access to the current tab only after the user clicks the toolbar icon or presses the keyboard shortcut, so it can show the circle-select overlay and, when the circled area has no readable text (an image or canvas), capture a screenshot of just that area.
+- `scripting`: Injects the overlay script into the current tab when the user clicks the icon or presses the shortcut. Nothing runs on pages the user only visits.
 - `storage`: Stores the user's own AI provider API key(s) locally in the browser.
 - Host permissions: none requested.
 
@@ -86,7 +86,7 @@ Paste a dedicated Gemini test key in the "Test instructions" credentials field, 
 ```
 1. After install, the options page opens automatically. Paste the Gemini API key from the credentials field and click Save.
 2. Open https://en.wikipedia.org/wiki/Quadratic_formula
-3. Press Ctrl+Shift+E (Cmd+Shift+E on Mac). A crosshair overlay appears.
+3. Click the Study Buddy icon in the toolbar (or press Ctrl+Shift+E / Cmd+Shift+E). A crosshair overlay appears.
 4. Drag a box around the quadratic formula.
 5. Say "plot this and explain the discriminant" (allow the microphone when Chrome asks). Without a microphone: click "Type instead" in the panel, type the same request, and press Enter.
 6. An interactive visualization appears next to the selection within a few seconds. Hover it and hold V to refine it by voice.

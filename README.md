@@ -8,7 +8,7 @@ Runs entirely in your browser with your own API key(s). No shared backend, no se
 
 1. Load the extension unpacked: `chrome://extensions` → enable Developer mode → **Load unpacked** → select the `extension/` folder. This opens the options page automatically on first install.
 2. Paste a Gemini API key (free at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)) and save — the options page explains exactly what happens to it and why each permission the extension requests exists. Optionally also add a [Groq](https://console.groq.com/keys) key, used automatically if Gemini is ever unavailable (a daily quota cap or an outage).
-3. On any webpage, press **Ctrl+Shift+E** (Cmd+Shift+E on Mac) to toggle the circle-select overlay, drag a box around something, and speak. This works on tabs that were already open before you installed the extension.
+3. On any webpage, click the Study Buddy toolbar icon or press **Ctrl+Shift+E** (Cmd+Shift+E on Mac) to toggle the circle-select overlay, drag a box around something, and speak. This works on tabs that were already open before you installed the extension.
 
 It does **not** work on `chrome://` pages, the Chrome Web Store, or Chrome's built-in PDF viewer - Chrome doesn't let any extension run scripts there.
 
