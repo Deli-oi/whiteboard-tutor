@@ -23,6 +23,8 @@ const options = {
 	outbase: 'extension/src',
 	entryNames: '[name]',
 	bundle: true,
+	// Minified: the background service worker (1.3MB of AI SDK) is re-parsed on every cold start.
+	minify: true,
 	format: 'iife',
 	target: 'es2022',
 	logLevel: 'info',
