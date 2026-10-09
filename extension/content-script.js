@@ -262,8 +262,9 @@
     startListening(rect, matches);
   }
   function needsVision(el) {
-    if (el.tagName === "IMG" || el.tagName === "CANVAS" || el.tagName === "SVG") return true;
-    return (el.textContent ?? "").trim().length === 0;
+    const tag = el.tagName.toUpperCase();
+    if (tag === "IMG" || tag === "CANVAS" || tag === "SVG") return true;
+    return elementText(el).length === 0;
   }
   async function captureSelectionImage(rect) {
     try {
@@ -308,7 +309,29 @@
       results.push({ el, coverage: count / total, area: Math.max(1, r.width * r.height) });
     }
     results.sort((a, b) => b.coverage - a.coverage || a.area - b.area);
-    return results;
+    return promoteCommonAncestor(results, selectionRect);
+  }
+  var MAX_ANCESTOR_AREA_RATIO = 4;
+  function promoteCommonAncestor(results, selectionRect) {
+    if (results.length < 2) return results;
+    let common = results[0].el;
+    for (const m of results) {
+      while (common && !common.contains(m.el)) common = common.parentElement;
+      if (!common) return results;
+    }
+    if (common === results[0].el) return results;
+    const r = common.getBoundingClientRect();
+    const area = Math.max(1, r.width * r.height);
+    const selectionArea = Math.max(1, selectionRect.width * selectionRect.height);
+    if (area > selectionArea * MAX_ANCESTOR_AREA_RATIO) return results;
+    const existing = results.find((m) => m.el === common);
+    const chosen = existing ?? { el: common, coverage: 1, area };
+    return [chosen, ...results.filter((m) => m !== chosen)];
+  }
+  var MODEL_TEXT_LIMIT = 4e3;
+  function elementText(el) {
+    const raw = el instanceof HTMLElement ? el.innerText : el.textContent;
+    return (raw ?? el.textContent ?? "").trim();
   }
   function describe(el) {
     const tag = el.tagName.toLowerCase();
@@ -318,7 +341,7 @@
   }
   function matchSummary(matches) {
     const best = matches[0];
-    const preview = (best.el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+    const preview = elementText(best.el).replace(/\s+/g, " ").slice(0, 80);
     return `Selected: ${describe(best.el)}
 content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length > 1 ? `
 (${matches.length - 1} other candidate(s) also in the box)` : "");
@@ -357,7 +380,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       tag: best.el.tagName.toLowerCase(),
       id: best.el.id || void 0,
       classes: best.el.classList.length ? Array.from(best.el.classList) : void 0,
-      preview: (best.el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 300)
+      preview: elementText(best.el).slice(0, MODEL_TEXT_LIMIT)
     };
     showPanel(rect, `${matchSummary(matches)}
 
