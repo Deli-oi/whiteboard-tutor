@@ -8,6 +8,5 @@ node_modules
 .claude/
 .wrangler/
 dist/
-extension/src/emailjsConfig.ts
 bug-reports/*
 !bug-reports/README.md

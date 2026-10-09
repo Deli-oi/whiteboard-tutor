@@ -3,14 +3,16 @@
  * through EmailJS (emailjs.com, free tier) straight to the developer's own
  * inbox - no backend of ours, matching how the rest of this extension works.
  *
- * Copy this file to emailjsConfig.ts (gitignored - these three values are
- * yours, not meant to ship in the public repo) and fill them in from your
- * EmailJS account: create a service (connect your own email), create a
+ * Setup: create an EmailJS service (connect your own email), create a
  * template with a "To" address pointed at yourself and a body that uses
  * {{selectionTag}}, {{selectionPreview}}, {{transcript}}, {{html}},
- * {{runtimeErrors}}, {{pageUrl}}, {{pageTitle}}, {{timestamp}},
- * {{extensionVersion}}, {{userAgent}} - then grab the three IDs below from
- * the dashboard.
+ * {{error}}, {{runtimeErrors}}, {{pageUrl}}, {{pageTitle}}, {{timestamp}},
+ * {{extensionVersion}}, {{userAgent}} - then paste the three IDs below.
+ *
+ * These values are NOT secret: EmailJS public keys are designed to be public,
+ * and they get bundled into the committed extension/background.js anyway.
+ * Abuse protection belongs in the EmailJS dashboard instead: restrict
+ * allowed origins and set a rate limit on the service/template.
  *
  * Left blank, the bug-report button no-ops (background.ts returns
  * not-configured) and content-script.ts falls back to copying the report to

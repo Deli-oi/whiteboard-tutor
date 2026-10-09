@@ -131,9 +131,9 @@ export interface ReportBugResponse {
  * the model wrote, any runtime errors it threw) straight to the developer's
  * own inbox via EmailJS - a client-side email relay, not a backend of ours.
  * No-ops with ok:false/'not-configured' until emailjsConfig.ts is filled in
- * (see emailjsConfig.example.ts); content-script.ts falls back to copying
+ * (see the doc comment there); content-script.ts falls back to copying
  * the report to the clipboard in that case. Remove this handler, the
- * content-script button, and emailjsConfig.* once the testing window closes.
+ * content-script button, and emailjsConfig.ts once the testing window closes.
  */
 chrome.runtime.onMessage.addListener((message: ReportBugMessage, _sender, sendResponse) => {
 	if (message?.type !== 'report-bug') return false

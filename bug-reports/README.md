@@ -4,7 +4,7 @@ Temporary - this folder, and the whole report-bug button in the extension,
 go away once the friends-testing window closes.
 
 Each report arrives as an email (via EmailJS, see
-`extension/src/emailjsConfig.example.ts`) with: what was circled, what was
+`extension/src/emailjsConfig.ts`) with: what was circled, what was
 asked for, the HTML the model generated, any runtime errors that HTML threw,
 the page URL/title, a timestamp, extension version, and user agent.
 
