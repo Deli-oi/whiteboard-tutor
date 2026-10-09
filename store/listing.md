@@ -21,7 +21,7 @@ Study Buddy turns whatever you're reading into an interactive visualization, rig
 HOW IT WORKS
 1. On any webpage, click the Study Buddy toolbar icon or press Ctrl+Shift+E (Cmd+Shift+E on Mac).
 2. Drag a box around a formula, an algorithm, a paragraph, a table, or an image.
-3. Say what you want: "plot this function", "step through this algorithm", "draw this as a diagram". No mic or somewhere quiet? Click "Type instead".
+3. Say what you want: "plot this function", "step through this algorithm", "draw this as a diagram". No mic or somewhere quiet? Click "Type instead" - or just press Enter for a quick visualization of whatever you circled.
 4. A real, computed visualization appears in a small popup next to what you circled. Hover it and hold V to refine it by voice.
 
 WHAT IT'S GOOD FOR

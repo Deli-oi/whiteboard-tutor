@@ -170,6 +170,7 @@ function closeEverything() {
 	activeRect = null
 	activeImagePromise = null
 	typedInput = null
+	stopListeningKeys()
 	mode = 'idle'
 }
 
@@ -519,12 +520,45 @@ function createTypedInput(rect: DOMRect, matches: Match[]): HTMLElement {
 	return wrapper
 }
 
+/**
+ * Keys while the listening panel is up: Enter skips speaking and just
+ * visualizes what was circled (the quick "circle -> visual" path), Esc
+ * cancels. Capture phase so the page's own shortcuts don't swallow them;
+ * ignored while typing in a text field (the Type-instead box handles its own
+ * Enter). Removed once generation starts or everything closes.
+ */
+let listeningKeys: ((e: KeyboardEvent) => void) | null = null
+
+function stopListeningKeys() {
+	if (listeningKeys) document.removeEventListener('keydown', listeningKeys, true)
+	listeningKeys = null
+}
+
+const LISTENING_LINE = '🎤 Listening… (or press Enter to just visualize it)'
+
 function startListening(rect: DOMRect, matches: Match[]) {
 	mode = 'listening'
 	let interim = ''
 
 	typedInput = createTypedInput(rect, matches)
-	showPanel(rect, `${matchSummary(matches)}\n\n🎤 Listening…`)
+	showPanel(rect, `${matchSummary(matches)}\n\n${LISTENING_LINE}`)
+
+	stopListeningKeys()
+	listeningKeys = (e: KeyboardEvent) => {
+		const target = e.target as HTMLElement | null
+		if (target?.closest('input, textarea, select') || target?.isContentEditable) return
+		if (e.key === 'Enter') {
+			e.preventDefault()
+			e.stopPropagation()
+			stt?.abort()
+			void generateVisualization(rect, matches, '')
+		} else if (e.key === 'Escape') {
+			e.preventDefault()
+			e.stopPropagation()
+			closeEverything()
+		}
+	}
+	document.addEventListener('keydown', listeningKeys, true)
 
 	stt = createStt({
 		onInterim(text) {
@@ -564,6 +598,7 @@ interface GenerateRelayResponse {
 async function generateVisualization(rect: DOMRect, matches: Match[], transcript: string) {
 	const myRequest = ++requestId
 	typedInput = null
+	stopListeningKeys()
 	const best = matches[0]
 	const selection: Selection = {
 		tag: best.el.tagName.toLowerCase(),
@@ -572,7 +607,8 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 		preview: selectionText(best).slice(0, MODEL_TEXT_LIMIT),
 	}
 	const failureReport = (error: string) => buildReportPayload({ selection, transcript, html: '', error })
-	showPanel(rect, `${matchSummary(matches)}\n\n✅ Heard: "${transcript}"\n\n⚙️ Generating…`)
+	const requestLine = transcript.trim() ? `✅ Heard: "${transcript}"` : '⚡ Visualizing what you circled'
+	showPanel(rect, `${matchSummary(matches)}\n\n${requestLine}\n\n⚙️ Generating…`)
 
 	try {
 		const imageBase64 = (await activeImagePromise) ?? undefined

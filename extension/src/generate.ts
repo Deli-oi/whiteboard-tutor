@@ -168,7 +168,11 @@ export async function generateVisualizationHtml(
 		previousHtml
 			? `This is a follow-up request refining a visualization you already created for this same circled element - the user wants it adjusted, not rebuilt from scratch, unless they clearly ask for something different. Its current HTML:\n---\n${previousHtml}\n---`
 			: null,
-		`What the user said they want: "${transcript}"`,
+		// An empty request is the "just visualize it" shortcut (Enter without
+		// speaking): the circled content is the only context.
+		transcript.trim()
+			? `What the user said they want: "${transcript}"`
+			: 'The user gave no request - they want a quick visualization of what they circled. Choose the single most useful visualization for understanding that content at a glance (plot it, diagram it, step through it, or lay it out - whichever fits it best).',
 	]
 		.filter(Boolean)
 		.join('\n')

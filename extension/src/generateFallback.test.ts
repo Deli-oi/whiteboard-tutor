@@ -128,6 +128,16 @@ describe('generateVisualizationHtml provider fallback', () => {
 		expect(generateTextMock.mock.calls[1][0].model).toBe('gemini-model-stub')
 	})
 
+	it('turns an empty request into a "pick the best visualization" instruction', async () => {
+		generateTextMock.mockResolvedValue({ text: goodResponseText })
+		const promptOf = (call: number) => JSON.stringify(generateTextMock.mock.calls[call][0].messages)
+		await generateVisualizationHtml({ gemini: 'fake-gemini-key' }, '   ', selection)
+		expect(promptOf(0)).toContain('The user gave no request')
+		expect(promptOf(0)).not.toContain('What the user said they want')
+		await generateVisualizationHtml({ gemini: 'fake-gemini-key' }, 'plot it', selection)
+		expect(promptOf(1)).toContain('What the user said they want: \\"plot it\\"')
+	})
+
 	it('still retries a Gemini 429 on a vision request, since Groq cannot take over', async () => {
 		generateTextMock.mockRejectedValueOnce(Object.assign(new Error('Too many requests'), { statusCode: 429 }))
 		generateTextMock.mockResolvedValueOnce({ text: goodResponseText })
