@@ -69,12 +69,12 @@ const NO_MATH_TAGS = /^(SCRIPT|STYLE|TEXTAREA|PRE|CODE|OPTION|NOSCRIPT)$/
 /**
  * Whether the inside of a $...$ pair is math rather than two prices in a
  * sentence ("costs $5 and $10" pairs up as "5 and "). Real inline TeX never
- * has whitespace just inside the dollars, and starts with a letter ($n$,
- * $O(n)$) or contains TeX syntax ($2^n$, $\log n$).
+ * has whitespace just inside the dollars, and contains a variable ($n$,
+ * $2(n - 1)$) or TeX syntax ($2^3$, $\log n$); bare amounts like "$5-$" don't.
  */
 function isInlineMath(inner: string): boolean {
 	if (/^\s|\s$/.test(inner)) return false
-	return /[\\^_{}=]/.test(inner) || /^[A-Za-z]/.test(inner)
+	return /[\\^_{}=A-Za-z]/.test(inner)
 }
 
 /**
@@ -247,6 +247,71 @@ function attachLayoutCheck() {
 	})
 }
 
+const CONTROL_TAGS = /^(BUTTON|LABEL|A|SELECT|OPTION|SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/
+
+/**
+ * Text that's actually on screen, ignoring buttons/labels/links (a page whose
+ * only visible text is its tab labels is still blank to the user), plus
+ * whether any sizable graphic (chart canvas, diagram SVG, image) is showing.
+ */
+function measureVisibleContent() {
+	let total = 0
+	let visible = 0
+	const range = document.createRange()
+	const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+	for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+		const parent = node.parentElement
+		if (!parent || parent.closest('button, label, a, select, script, style, noscript, template')) continue
+		if (CONTROL_TAGS.test(parent.tagName)) continue
+		const length = (node.textContent ?? '').trim().length
+		if (!length) continue
+		total += length
+		range.selectNodeContents(node)
+		const shown =
+			getComputedStyle(parent).visibility !== 'hidden' &&
+			Array.from(range.getClientRects()).some((r) => r.width > 0 && r.height > 0)
+		if (shown) visible += length
+	}
+	const graphicShown = Array.from(document.body.querySelectorAll('canvas, svg, img, video')).some((el) => {
+		if (el.parentElement?.closest('svg')) return false
+		const r = el.getBoundingClientRect()
+		return r.width * r.height > 2000 && getComputedStyle(el).visibility !== 'hidden'
+	})
+	return { total, visible, graphicShown }
+}
+
+/**
+ * Safety nets that run once the page has drawn: loads the tabs helper if the
+ * model used data-tabs without its script tag, then checks for a blank
+ * render. A beta report showed every tab white because the model's CSS hid
+ * the panels' parent; this catches that whole class (plenty of text, almost
+ * none visible, no chart or diagram showing) and reports it so the content
+ * script can ask the model for one repair.
+ */
+function attachRenderChecks() {
+	const run = () => {
+		if (document.querySelector('[data-tabs]') && !(window as Window & { Tabs?: unknown }).Tabs) {
+			loadScript('/vendor/tabs/tabs.js').catch((e) =>
+				window.parent.postMessage({ type: 'runtime-error', message: String(e) }, '*')
+			)
+		}
+		setTimeout(() => {
+			const { total, visible, graphicShown } = measureVisibleContent()
+			if (total >= 80 && visible < 20 && !graphicShown) {
+				window.parent.postMessage(
+					{
+						type: 'blank-render',
+						message: `Only ${visible} of ${total} characters of content text are visible and no chart, diagram, or image is showing.`,
+					},
+					'*'
+				)
+			}
+		}, 1500)
+	}
+	if (document.readyState === 'complete') run()
+	else window.addEventListener('load', run)
+}
+
 const MERMAID_BLOCK = /(<(div|pre)\b[^>]*\bclass\s*=\s*["'][^"']*\bmermaid\b[^"']*["'][^>]*>)([\s\S]*?)(<\/\2>)/gi
 
 /**
@@ -395,4 +460,5 @@ window.addEventListener('message', (event) => {
 	attachMathSafetyNet()
 	validateMermaid(mermaidSources)
 	attachLayoutCheck()
+	attachRenderChecks()
 })

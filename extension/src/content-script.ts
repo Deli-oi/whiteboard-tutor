@@ -854,18 +854,18 @@ function showGeneratedVisualization(
 	// One automatic retry when a Mermaid diagram fails to parse (render.ts
 	// reports it); reset whenever the user asks for something themselves, so a
 	// broken repair can't loop.
-	let mermaidRepairsLeft = 1
+	let autoRepairsLeft = 1
 
-	async function iterateVisualization(transcript: string, options: { autoRepair?: boolean } = {}) {
+	async function iterateVisualization(transcript: string, options: { repairLabel?: string } = {}) {
 		if (popupClosed) return
 		const myIteration = ++iterationId
 		clearTimeout(labelTimer)
 		hideLabel()
-		if (options.autoRepair) {
-			generatingLabel.textContent = 'Fixing diagram…'
+		if (options.repairLabel) {
+			generatingLabel.textContent = options.repairLabel
 		} else {
 			lastTranscript = transcript
-			mermaidRepairsLeft = 1
+			autoRepairsLeft = 1
 		}
 		generatingLabel.style.display = 'block'
 		let failed = false
@@ -983,19 +983,39 @@ function showGeneratedVisualization(
 			runtimeErrors.push(e.data.message)
 			if (runtimeErrors.length > 10) runtimeErrors.shift()
 		} else if (e.data?.type === 'mermaid-error' && typeof e.data.message === 'string') {
-			runtimeErrors.push(`Mermaid parse error: ${e.data.message}`)
-			if (runtimeErrors.length > 10) runtimeErrors.shift()
-			if (mermaidRepairsLeft > 0) {
-				mermaidRepairsLeft--
-				void iterateVisualization(
-					'The Mermaid diagram in your previous HTML failed to parse and rendered as an error. ' +
-						`Parser error: ${e.data.message.slice(0, 500)}\n` +
-						'Fix only the Mermaid syntax - wrap every node label in double quotes, and use plain text or ' +
-						'Unicode (x̄, x₁, ≤) instead of $ math inside the diagram - and keep everything else the same.',
-					{ autoRepair: true }
-				)
-			}
+			requestAutoRepair(
+				`Mermaid parse error: ${e.data.message}`,
+				'The Mermaid diagram in your previous HTML failed to parse and rendered as an error. ' +
+					`Parser error: ${e.data.message.slice(0, 500)}\n` +
+					'Fix only the Mermaid syntax - wrap every node label in double quotes, and use plain text or ' +
+					'Unicode (x̄, x₁, ≤) instead of $ math inside the diagram - and keep everything else the same.',
+				'Fixing diagram…'
+			)
+		} else if (e.data?.type === 'blank-render' && typeof e.data.message === 'string') {
+			requestAutoRepair(
+				`Blank render: ${e.data.message}`,
+				'Your previous HTML rendered as a blank page: ' +
+					`${e.data.message.slice(0, 300)} Something in the layout hides the content (for example a parent ` +
+					'with display:none, or hand-written tabs whose panels never show). Fix the layout so the content ' +
+					'is visible - use the vendored tabs helper (<div data-tabs> with <section data-tab="...">) for ' +
+					'tabs - and keep the content itself the same.',
+				'Fixing layout…'
+			)
 		}
+	}
+
+	/**
+	 * Problems render.ts detects after drawing (an unparseable diagram, a blank
+	 * page) get one automatic model repair per user request - the iframe runs
+	 * model-written code, so its messages are untrusted, and the budget keeps a
+	 * misbehaving page from triggering more than one extra call.
+	 */
+	function requestAutoRepair(errorForReport: string, instruction: string, label: string) {
+		runtimeErrors.push(errorForReport)
+		if (runtimeErrors.length > 10) runtimeErrors.shift()
+		if (autoRepairsLeft <= 0) return
+		autoRepairsLeft--
+		void iterateVisualization(instruction, { repairLabel: label })
 	}
 	document.addEventListener('keydown', onIterateKeyDown)
 	document.addEventListener('keyup', onIterateKeyUp)

@@ -35,6 +35,13 @@ export const ExtensionCreateHtmlAction = z
 				'  render: function (step, index, total) { /* update your own DOM elements to reflect `step` here */ },\n' +
 				'});\n' +
 				'`render` is called automatically for the current step whenever Previous/Next is clicked and once immediately on mount - `steps` must be complete and in order before calling `Stepper.mount`, including a final step describing the end result. This generalizes to any algorithm on any input (sorting, recursion, two-pointer, DP table fill, tree/string traversal, etc.) - the only thing that changes per topic is what real code you run and what `render` draws, never the stepping mechanism itself. `Stepper.mount` creates its own Previous/Next buttons and step counter directly below `container` (your `render` may freely redraw `container` itself) - do not also write your own `<button>`s or counter for stepping through the same steps; that renders two overlapping sets of navigation controls on top of each other.\n\n' +
+				'If the visualization has several views (the user asks for tabs, or separate parts like a diagram, a stepper, and notes), use the vendored tabs helper instead of writing tab logic yourself - never hand-roll tabs with radio inputs, :checked selectors, or display toggling, which reliably ends up with every tab blank:\n' +
+				'<div data-tabs>\n' +
+				'  <section data-tab="Diagram">...</section>\n' +
+				'  <section data-tab="Step through">...</section>\n' +
+				'</div>\n' +
+				'<script src="/vendor/tabs/tabs.js"></script>\n' +
+				'It creates the tab buttons and switching itself; Mermaid, Chart.js, KaTeX, and Stepper all work inside the sections.\n\n' +
 				'For a diagram (e.g. a flowchart, sequence diagram, state diagram, class diagram, Gantt chart, ER diagram, or any graph where drawing it yourself in SVG would be slow and error-prone), use Mermaid instead of hand-drawing it - it is vendored locally, not a CDN:\n' +
 				'<script src="/vendor/mermaid/mermaid.min.js"></script>\n' +
 				'<div class="mermaid">\n' +
