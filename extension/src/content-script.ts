@@ -560,7 +560,7 @@ function showGeneratedVisualization(
 	panelVoiceCleanup?.()
 	panelEl?.remove()
 
-	const w = PANEL_W
+	const w = Math.max(200, Math.min(PANEL_W, window.innerWidth - 16))
 	const h = PANEL_H + DRAG_HANDLE_HEIGHT
 	const container = document.createElement('div')
 	Object.assign(container.style, {
@@ -577,10 +577,10 @@ function showGeneratedVisualization(
 	})
 	if (draggedPosition) {
 		container.style.top = draggedPosition.top + 'px'
-		container.style.left = draggedPosition.left + 'px'
+		container.style.left = Math.max(8, Math.min(draggedPosition.left, window.innerWidth - w - 8)) + 'px'
 	} else {
 		container.style.top = Math.max(8, Math.min(selectionRect.bottom + 8, window.innerHeight - h - 8)) + 'px'
-		container.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - w - 8) + 'px'
+		container.style.left = Math.max(8, Math.min(selectionRect.left, window.innerWidth - w - 8)) + 'px'
 	}
 
 	// Drag handle - the iframe is its own browsing context, so a mousedown
@@ -930,11 +930,13 @@ function showPanel(selectionRect: DOMRect, text: string, reportPayload?: Record<
 	panelVoiceCleanup?.()
 	panelVoiceCleanup = null
 	panelEl?.remove()
+	// Never wider than the viewport minus an 8px gutter each side.
+	const panelMaxWidth = Math.max(160, Math.min(420, window.innerWidth - 16))
 	const panel = document.createElement('div')
 	Object.assign(panel.style, {
 		position: 'fixed',
 		zIndex: '2147483647',
-		maxWidth: '420px',
+		maxWidth: panelMaxWidth + 'px',
 		background: '#1c1c1f',
 		color: '#e5e5e5',
 		padding: '12px 14px',
@@ -950,7 +952,7 @@ function showPanel(selectionRect: DOMRect, text: string, reportPayload?: Record<
 
 	if (draggedPosition) {
 		panel.style.top = draggedPosition.top + 'px'
-		panel.style.left = draggedPosition.left + 'px'
+		panel.style.left = Math.max(8, Math.min(draggedPosition.left, window.innerWidth - panelMaxWidth - 8)) + 'px'
 		panel.style.maxHeight = Math.max(100, window.innerHeight - draggedPosition.top - 8) + 'px'
 	} else {
 		const margin = 8
@@ -966,7 +968,7 @@ function showPanel(selectionRect: DOMRect, text: string, reportPayload?: Record<
 		} else {
 			panel.style.top = selectionRect.bottom + margin + 'px'
 		}
-		panel.style.left = Math.min(Math.max(8, selectionRect.left), window.innerWidth - 440) + 'px'
+		panel.style.left = Math.max(8, Math.min(selectionRect.left, window.innerWidth - panelMaxWidth - 8)) + 'px'
 	}
 
 	panel.textContent = text
