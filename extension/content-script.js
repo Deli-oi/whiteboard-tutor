@@ -393,6 +393,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
   var PANEL_W = 440;
   var PANEL_H = 340;
   var MIC_SIZE = 20;
+  var REPORT_BTN_TITLE = "Report a problem (beta). Sends the developer: the page URL and title, what you circled, what you said, the generated HTML, any errors, and your browser version. Nothing is sent unless you click.";
   function showGeneratedVisualization(selectionRect, action, selection, transcript) {
     panelDragCleanup?.();
     panelVoiceCleanup?.();
@@ -432,7 +433,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
     });
     const reportBtn = document.createElement("button");
     reportBtn.textContent = "\u{1F41B}";
-    reportBtn.title = "Flag this result as broken (sends it for debugging)";
+    reportBtn.title = REPORT_BTN_TITLE;
     Object.assign(reportBtn.style, {
       border: "none",
       background: "transparent",

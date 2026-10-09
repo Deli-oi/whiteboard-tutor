@@ -1,12 +1,13 @@
 # Privacy Policy — Study Buddy: Visual Edit
 
-Last updated: 2026-10-06
+Last updated: 2026-10-09
 
 This extension has no server of its own. There is nothing operated by the
 developer that your data passes through, is logged to, or is stored on.
 Everything below is either (a) stored only in your own browser, or (b) sent
 directly from your browser to an AI provider you configured, using your own
-API key for that provider.
+API key for that provider. The one exception is the temporary beta bug-report
+button, described in "Beta bug reports" below.
 
 ## What the extension handles, and where it goes
 
@@ -37,12 +38,32 @@ so circle-select can work there, but it does not read, store, or transmit
 the page as a whole — only the specific region you circle, as described
 above.
 
+## Beta bug reports (temporary)
+
+During the beta testing period only, generated visualizations and failure
+messages have a small bug button. **Nothing is sent unless you click it.**
+When you do, the extension sends one email to the developer, via EmailJS
+(emailjs.com), containing:
+
+- the URL and title of the page you are on
+- the tag/id/classes and text preview of what you circled
+- what you said (the transcript)
+- the HTML the model generated (first 20,000 characters), or the error message
+  if generation failed
+- any errors that generated HTML threw while running
+- a timestamp, the extension version, and your browser's user-agent string
+
+It never includes your API keys. This feature and the data it sends will be
+removed when the beta ends.
+
 ## What this extension does not do
 
 - No analytics, telemetry, or usage tracking of any kind.
 - No account system — there's nothing to sign up for or log into.
 - Nothing is sold, shared, or transferred to any third party other than the
-  AI provider you explicitly configured with your own key.
+  AI provider you explicitly configured with your own key, and (beta only,
+  only when you click the bug button) EmailJS delivering a report to the
+  developer.
 - No data is retained by the extension anywhere outside your own browser's
   local storage.
 

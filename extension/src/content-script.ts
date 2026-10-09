@@ -418,6 +418,8 @@ const DRAG_HANDLE_HEIGHT = 22
 const PANEL_W = 440
 const PANEL_H = 340
 const MIC_SIZE = 20
+const REPORT_BTN_TITLE =
+	'Report a problem (beta). Sends the developer: the page URL and title, what you circled, what you said, the generated HTML, any errors, and your browser version. Nothing is sent unless you click.'
 
 function showGeneratedVisualization(
 	selectionRect: DOMRect,
@@ -478,7 +480,7 @@ function showGeneratedVisualization(
 	 */
 	const reportBtn = document.createElement('button')
 	reportBtn.textContent = '🐛'
-	reportBtn.title = 'Flag this result as broken (sends it for debugging)'
+	reportBtn.title = REPORT_BTN_TITLE
 	Object.assign(reportBtn.style, {
 		border: 'none',
 		background: 'transparent',
