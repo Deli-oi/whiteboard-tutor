@@ -179,6 +179,74 @@ function attachMathSafetyNet() {
 	}).observe(document.documentElement, { childList: true, subtree: true, characterData: true })
 }
 
+function hasVisibleBox(style: CSSStyleDeclaration): boolean {
+	const background = style.backgroundColor
+	return (
+		(background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)') ||
+		parseFloat(style.borderTopWidth) > 0 ||
+		parseFloat(style.borderRightWidth) > 0 ||
+		style.boxShadow !== 'none'
+	)
+}
+
+/**
+ * Keeps text inside the boxes it's drawn in. Generated layouts often put
+ * something unbreakable (a KaTeX fraction, a long label) in a narrow column,
+ * and it spills past the card's edge (confirmed from a beta screenshot).
+ * Any visible box (background, border, or shadow) whose content overflows it
+ * grows to cover that content - the page needing to scroll is fine, text
+ * outside its box isn't. Children are handled before parents, so a box that
+ * grows can in turn make its enclosing box grow. Unboxed overflow is left
+ * alone; the page itself scrolls.
+ */
+function containOverflowingContent() {
+	if (!document.body) return
+	const elements = Array.from(document.body.querySelectorAll('*')).slice(0, 3000).reverse()
+	for (const el of elements) {
+		if (!(el instanceof HTMLElement) || el.closest('.katex, .mermaid')) continue
+		const overflowsX = el.scrollWidth > el.clientWidth + 1
+		const overflowsY = el.scrollHeight > el.clientHeight + 1
+		if (!overflowsX && !overflowsY) continue
+		const style = getComputedStyle(el)
+		if (style.display === 'inline' || style.display === 'contents') continue
+		if (style.overflowX !== 'visible' || style.overflowY !== 'visible') continue
+		if (!hasVisibleBox(style)) continue
+		// scrollWidth/Height include padding but not borders.
+		const borderBox = style.boxSizing === 'border-box'
+		if (overflowsX) {
+			const extra = borderBox
+				? parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth)
+				: -(parseFloat(style.paddingLeft) + parseFloat(style.paddingRight))
+			el.style.minWidth = `${el.scrollWidth + extra}px`
+			el.style.flexShrink = '0'
+		}
+		if (overflowsY) {
+			const extra = borderBox
+				? parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth)
+				: -(parseFloat(style.paddingTop) + parseFloat(style.paddingBottom))
+			el.style.minHeight = `${el.scrollHeight + extra}px`
+		}
+	}
+}
+
+function attachLayoutCheck() {
+	let timer: ReturnType<typeof setTimeout> | null = null
+	const schedule = () => {
+		if (timer) clearTimeout(timer)
+		timer = setTimeout(containOverflowingContent, 150)
+	}
+	if (document.readyState === 'complete') schedule()
+	else window.addEventListener('load', schedule)
+	// KaTeX's fonts load lazily after its first render and widen the math.
+	void document.fonts?.ready.then(schedule)
+	document.fonts?.addEventListener('loadingdone', schedule)
+	new MutationObserver(schedule).observe(document.documentElement, {
+		childList: true,
+		subtree: true,
+		characterData: true,
+	})
+}
+
 const MERMAID_BLOCK = /(<(div|pre)\b[^>]*\bclass\s*=\s*["'][^"']*\bmermaid\b[^"']*["'][^>]*>)([\s\S]*?)(<\/\2>)/gi
 
 /**
@@ -326,4 +394,5 @@ window.addEventListener('message', (event) => {
 	attachErrorForwarding()
 	attachMathSafetyNet()
 	validateMermaid(mermaidSources)
+	attachLayoutCheck()
 })
