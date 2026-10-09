@@ -901,6 +901,102 @@ function showGeneratedVisualization(
 		display: 'none',
 	})
 
+	// Faint "Hold V to speak" next to the mic, in the same spot as the status
+	// pill - shown only when nothing else is (not generating, not recording,
+	// text reply box closed), so it never stacks on top of real status.
+	const voiceHint = document.createElement('div')
+	voiceHint.textContent = 'Hold V to speak'
+	Object.assign(voiceHint.style, {
+		position: 'absolute',
+		left: 6 + MIC_SIZE + 6 + 'px',
+		bottom: '6px',
+		height: MIC_SIZE + 'px',
+		lineHeight: MIC_SIZE + 'px',
+		color: 'rgba(30,30,30,0.5)',
+		textShadow: '0 0 3px rgba(255,255,255,0.9)',
+		fontFamily: 'system-ui, sans-serif',
+		fontSize: '11px',
+		whiteSpace: 'nowrap',
+		pointerEvents: 'none',
+		zIndex: '1',
+	})
+
+	// Bottom-right: the typed alternative to hold-V for follow-up requests.
+	const respondBtn = document.createElement('button')
+	respondBtn.type = 'button'
+	respondBtn.textContent = '⌨️ Respond'
+	Object.assign(respondBtn.style, {
+		position: 'absolute',
+		right: '6px',
+		bottom: '6px',
+		height: MIC_SIZE + 'px',
+		padding: '0 9px',
+		border: 'none',
+		borderRadius: MIC_SIZE / 2 + 'px',
+		background: 'rgba(0,0,0,0.72)',
+		color: 'white',
+		fontFamily: 'system-ui, sans-serif',
+		fontSize: '11px',
+		cursor: 'pointer',
+		boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+		zIndex: '1',
+	})
+
+	const replyBox = document.createElement('input')
+	replyBox.type = 'text'
+	replyBox.placeholder = 'Ask for a change and press Enter (Esc to close)'
+	Object.assign(replyBox.style, {
+		position: 'absolute',
+		left: 6 + MIC_SIZE + 6 + 'px',
+		right: '6px',
+		bottom: '6px',
+		height: MIC_SIZE + 4 + 'px',
+		boxSizing: 'border-box',
+		padding: '0 9px',
+		border: '1px solid rgba(0,0,0,0.25)',
+		borderRadius: (MIC_SIZE + 4) / 2 + 'px',
+		background: 'rgba(255,255,255,0.97)',
+		color: '#111',
+		fontFamily: 'system-ui, sans-serif',
+		fontSize: '12px',
+		outline: 'none',
+		boxShadow: '0 1px 6px rgba(0,0,0,0.3)',
+		zIndex: '2',
+		display: 'none',
+	})
+	// Keep the page's own shortcuts (and hold-V) from firing while typing here.
+	for (const type of ['keydown', 'keyup', 'keypress']) {
+		replyBox.addEventListener(type, (e) => e.stopPropagation())
+	}
+
+	function refreshHint() {
+		const busy = generatingLabel.style.display !== 'none' || iterateStt !== null || replyBox.style.display !== 'none'
+		voiceHint.style.display = busy ? 'none' : 'block'
+		respondBtn.style.display = replyBox.style.display !== 'none' ? 'none' : 'block'
+	}
+	function closeReplyBox() {
+		replyBox.value = ''
+		replyBox.style.display = 'none'
+		refreshHint()
+	}
+	respondBtn.addEventListener('click', () => {
+		replyBox.style.display = 'block'
+		refreshHint()
+		replyBox.focus()
+	})
+	replyBox.addEventListener('keydown', (e) => {
+		if (e.key === 'Escape') {
+			closeReplyBox()
+		} else if (e.key === 'Enter' && replyBox.value.trim()) {
+			const text = replyBox.value.trim()
+			closeReplyBox()
+			void iterateVisualization(text)
+		}
+	})
+	replyBox.addEventListener('blur', () => {
+		if (!replyBox.value.trim()) closeReplyBox()
+	})
+
 	let iterateStt: SttEngineInstance | null = null
 	let labelTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -911,12 +1007,14 @@ function showGeneratedVisualization(
 		generatingLabel.textContent = message
 		generatingLabel.style.background = 'rgba(185,28,28,0.92)'
 		generatingLabel.style.display = 'block'
+		refreshHint()
 		labelTimer = setTimeout(hideLabel, 4000)
 	}
 	function hideLabel() {
 		generatingLabel.style.display = 'none'
 		generatingLabel.textContent = 'Generating…'
 		generatingLabel.style.background = 'rgba(0,0,0,0.72)'
+		refreshHint()
 	}
 	// Set when this popup is closed/replaced; an iteration response that
 	// arrives afterward (or after a newer iteration started) is dropped.
@@ -939,6 +1037,7 @@ function showGeneratedVisualization(
 			autoRepairsLeft = 1
 		}
 		generatingLabel.style.display = 'block'
+		refreshHint()
 		let failed = false
 		try {
 			const relay = (await chrome.runtime.sendMessage({
@@ -990,6 +1089,7 @@ function showGeneratedVisualization(
 			onEnd() {
 				iterateStt = null
 				micBadge.style.background = '#8a8a8a'
+				refreshHint()
 				// Releasing V calls stop() immediately, which can race the Web
 				// Speech API's own finalization - if nothing was ever marked
 				// final, fall back to whatever interim text it had so far rather
@@ -998,6 +1098,7 @@ function showGeneratedVisualization(
 				if (!gotFinal && interimText.trim()) void iterateVisualization(interimText.trim())
 			},
 		})
+		refreshHint()
 		void iterateStt.start()
 	}
 	function stopIterateCapture() {
@@ -1104,6 +1205,10 @@ function showGeneratedVisualization(
 	container.appendChild(iframe)
 	container.appendChild(micBadge)
 	container.appendChild(generatingLabel)
+	container.appendChild(voiceHint)
+	container.appendChild(respondBtn)
+	container.appendChild(replyBox)
+	refreshHint()
 	document.documentElement.appendChild(container)
 	panelEl = container
 	panelDragCleanup = makeDraggable(container, header)
