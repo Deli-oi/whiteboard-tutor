@@ -48,6 +48,30 @@ export function isBrowserSttSupported() {
 /** After the last final phrase, wait this long for more speech before sending. */
 const AUTO_SEND_AFTER_MS = 1500
 
+/**
+ * Mic permission is granted per-origin, so the very first time you use voice
+ * on a site you haven't before, Chrome either prompts for it or - if the
+ * prompt can't be shown for some reason, or it was previously denied -
+ * fails with 'not-allowed' and no further explanation. Surfacing the raw
+ * code (confirmed live: a user saw literally "Speech recognition error:
+ * not-allowed" with no idea what to do about it) isn't actionable; this
+ * turns the handful of error codes actually worth explaining into something
+ * a user can act on without knowing what the Web Speech API is.
+ */
+function describeSttError(code: string | undefined): string {
+	switch (code) {
+		case 'not-allowed':
+		case 'service-not-allowed':
+			return "Microphone access is blocked for this page. Click the lock/camera icon in the address bar, allow the microphone, then try again - permission is granted per-site, so a page you haven't used this on before needs it granted once."
+		case 'audio-capture':
+			return 'No microphone found, or it’s in use by another app. Check your mic and try again.'
+		case 'network':
+			return "Speech recognition needs a network connection (Chrome's speech-to-text runs server-side) - check your connection and try again."
+		default:
+			return `Speech recognition error: ${code ?? 'unknown'}`
+	}
+}
+
 export class BrowserStt implements SttEngineInstance {
 	private recognition: SpeechRecognitionLike | null = null
 	private finalText = ''
@@ -93,7 +117,7 @@ export class BrowserStt implements SttEngineInstance {
 		rec.onerror = (e: any) => {
 			// 'no-speech' and 'aborted' are normal when the user just clicks stop
 			if (e?.error === 'no-speech' || e?.error === 'aborted') return
-			this.callbacks.onError(`Speech recognition error: ${e?.error ?? 'unknown'}`)
+			this.callbacks.onError(describeSttError(e?.error))
 		}
 		rec.onend = () => {
 			if (this.autoSendTimer) clearTimeout(this.autoSendTimer)
