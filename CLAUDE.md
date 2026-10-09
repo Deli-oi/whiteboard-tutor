@@ -17,7 +17,7 @@ A second direction - a companion app that could splice visualizations directly i
 - **Input**: circle-select (drag a box) + voice (Web Speech API, push-to-talk) produce one request: a selection (tag/id/classes/preview text, or a screenshot when there's no real DOM text to read) + a transcript.
 - **Output = interactive HTML**, not native UI. Rendered in a sandboxed, manifest-declared page inside the extension itself (`extension/render.html`), with Chart.js/Mermaid/KaTeX/Stepper vendored locally - no CDN waits, no CDN dependency at all.
 - **One fallback tool, not a library of them.** Unlike the old tldraw app's 7+ template tools, the extension asks the model to write the whole HTML document directly every time (`shared/extension/createHtmlAction.ts`) - no tool-selection step, no registry, no promote-to-tool loop. Simpler, and the latency/cost tradeoff has been fine so far; revisit only if a real pattern of repeated, slow, or low-quality requests shows up.
-- **Generation runs client-side**, in the extension's background script, using the user's own Gemini API key - never a shared backend.
+- **Generation runs client-side**, in the extension's background script, using the user's own Gemini API key (Groq as an automatic text-only fallback if Gemini fails) - never a shared backend. The content script is injected on demand when the shortcut is pressed (no always-on content script), the sandboxed render page has a locked-down CSP (no network for generated code), and a temporary beta bug-report button sends reports to the developer via EmailJS only when clicked (see `PRIVACY.md`). It does not run on chrome:// pages, the Web Store, or Chrome's PDF viewer.
 
 ## Speed rules
 
