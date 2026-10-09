@@ -62,6 +62,116 @@ function attachErrorForwarding() {
 	})
 }
 
+const DELIMITED_MATH = /\$\$[\s\S]+?\$\$|\\\(|\\\[/
+const INLINE_DOLLAR = /(?<!\$)\$(?!\$)([^$\n]+?)(?<!\$)\$(?!\$)/g
+const NO_MATH_TAGS = /^(SCRIPT|STYLE|TEXTAREA|PRE|CODE|OPTION|NOSCRIPT)$/
+
+/**
+ * Whether the inside of a $...$ pair is math rather than two prices in a
+ * sentence ("costs $5 and $10" pairs up as "5 and "). Real inline TeX never
+ * has whitespace just inside the dollars, and starts with a letter ($n$,
+ * $O(n)$) or contains TeX syntax ($2^n$, $\log n$).
+ */
+function isInlineMath(inner: string): boolean {
+	if (/^\s|\s$/.test(inner)) return false
+	return /[\\^_{}=]/.test(inner) || /^[A-Za-z]/.test(inner)
+}
+
+/**
+ * Rewrites inline $...$ math to \(...\) in place, so KaTeX's own `$`
+ * delimiter (which pairs ANY two dollar signs) is never used. Returns whether
+ * anything was rewritten.
+ */
+function convertInlineDollarMath(root: Element): boolean {
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+		acceptNode(node) {
+			for (let el = node.parentElement; el && el !== root; el = el.parentElement) {
+				if (NO_MATH_TAGS.test(el.tagName) || el.classList.contains('katex')) return NodeFilter.FILTER_REJECT
+			}
+			return (node as Text).data.includes('$') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+		},
+	})
+	let changed = false
+	for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
+		const next = node.data.replace(INLINE_DOLLAR, (match, inner: string) =>
+			isInlineMath(inner) ? '\\(' + inner + '\\)' : match
+		)
+		if (next !== node.data) {
+			node.data = next
+			changed = true
+		}
+	}
+	return changed
+}
+
+type MathWindow = Window & { katex?: unknown; renderMathInElement?: (el: Element, options: object) => void }
+const mathWindow = window as MathWindow
+
+let katexLoading: Promise<void> | null = null
+
+function loadScript(src: string): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const script = document.createElement('script')
+		script.src = src
+		script.onload = () => resolve()
+		script.onerror = () => reject(new Error(`Failed to load ${src}`))
+		document.head.appendChild(script)
+	})
+}
+
+function loadKatex(): Promise<void> {
+	if (mathWindow.renderMathInElement) return Promise.resolve()
+	katexLoading ??= (async () => {
+		const link = document.createElement('link')
+		link.rel = 'stylesheet'
+		link.href = '/vendor/katex/katex.min.css'
+		document.head.appendChild(link)
+		if (!mathWindow.katex) await loadScript('/vendor/katex/katex.min.js')
+		await loadScript('/vendor/katex/auto-render.min.js')
+	})()
+	return katexLoading
+}
+
+function renderMathIfPresent() {
+	if (!document.body) return
+	const converted = convertInlineDollarMath(document.body)
+	if (!converted && !DELIMITED_MATH.test(document.body.innerText)) return
+	loadKatex()
+		.then(() =>
+			mathWindow.renderMathInElement?.(document.body, {
+				delimiters: [
+					{ left: '$$', right: '$$', display: true },
+					{ left: '\\[', right: '\\]', display: true },
+					{ left: '\\(', right: '\\)', display: false },
+				],
+				throwOnError: false,
+			})
+		)
+		.catch((e) => {
+			window.parent.postMessage({ type: 'runtime-error', message: String(e) }, '*')
+		})
+}
+
+/**
+ * Safety net for math the model wrote but never rendered: the prompt says to
+ * include KaTeX, but a beta report showed "$O(n^2)$" with no KaTeX loaded,
+ * which displays as raw dollar signs. Loads the vendored KaTeX on demand and
+ * renders - once the page has loaded, and again whenever the DOM changes
+ * (stepper steps and other render functions add math after load). Rendering
+ * consumes the delimiters, so a re-check after its own mutations finds
+ * nothing and stops.
+ */
+function attachMathSafetyNet() {
+	if (document.readyState === 'complete') renderMathIfPresent()
+	else window.addEventListener('load', renderMathIfPresent)
+
+	let timer: ReturnType<typeof setTimeout> | null = null
+	new MutationObserver(() => {
+		if (timer) clearTimeout(timer)
+		timer = setTimeout(renderMathIfPresent, 50)
+	}).observe(document.documentElement, { childList: true, subtree: true, characterData: true })
+}
+
 window.addEventListener('message', (event) => {
 	const raw = (event.data as { html?: string } | undefined)?.html
 	if (typeof raw !== 'string') return
@@ -90,4 +200,5 @@ window.addEventListener('message', (event) => {
 	// depend on that.
 	attachKeyForwarding()
 	attachErrorForwarding()
+	attachMathSafetyNet()
 })
