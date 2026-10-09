@@ -1,52 +1,51 @@
 /**
- * Speech-to-text. Browser-only (Web Speech API - Chrome, Edge, Safari;
- * not Firefox) by design: the extension is Chrome-only and has no shared
- * backend to fall back to. A Groq/OpenAI recorded-clip fallback existed
- * here before the pivot to a bring-your-own-key extension, but it posted to
- * a worker that Tier 1 no longer has - confirmed dead/broken code, removed
- * rather than carried forward.
+ * Speech-to-text through Chrome's built-in Web Speech API. Push-to-talk:
+ * start() begins listening, results stream in as interim text, and the
+ * request sends on its own after a short silence (or when stop() is called).
+ * No server fallback by design - the extension has no backend.
  */
 export interface SttCallbacks {
-	/** Partial text while the user is still talking. */
+	/** Everything heard so far, while the user is still talking. */
 	onInterim?(text: string): void
-	/** Final text once the user stops talking. */
+	/** The full transcript, once listening ends with something heard. */
 	onFinal(text: string): void
 	onError(message: string): void
-	/** Fired when the engine actually stops listening, for any reason. */
+	/** Listening has stopped, for any reason (fires after onFinal). */
 	onEnd(): void
 }
 
 export interface SttEngineInstance {
 	start(): Promise<void>
+	/** Stop listening and deliver what was heard. */
 	stop(): void
+	/** Stop listening and discard what was heard. */
 	abort(): void
 }
 
-// The Web Speech API is not in lib.dom for all TS targets; declare the bits we use.
-type SpeechRecognitionLike = {
+// Only the parts of the Web Speech API this file touches; it isn't in every lib.dom target.
+interface RecognitionResult {
+	isFinal: boolean
+	0?: { transcript: string }
+}
+interface Recognition {
 	lang: string
 	continuous: boolean
 	interimResults: boolean
 	maxAlternatives: number
-	onresult: ((e: any) => void) | null
-	onerror: ((e: any) => void) | null
+	onresult: ((event: { resultIndex: number; results: ArrayLike<RecognitionResult> }) => void) | null
+	onerror: ((event: { error?: string }) => void) | null
 	onend: (() => void) | null
 	start(): void
 	stop(): void
 	abort(): void
 }
+type RecognitionConstructor = new () => Recognition
 
-function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
-	const w = window as any
-	return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
-}
+/** How long to wait after the last finished phrase before sending. */
+const SILENCE_BEFORE_SEND_MS = 1500
 
-export function isBrowserSttSupported() {
-	return typeof window !== 'undefined' && getSpeechRecognitionCtor() !== null
-}
-
-/** After the last final phrase, wait this long for more speech before sending. */
-const AUTO_SEND_AFTER_MS = 1500
+/** Errors that just mean "nothing was said" or "we stopped it ourselves". */
+const QUIET_ERRORS = new Set(['no-speech', 'aborted'])
 
 /**
  * Mic permission is granted per-origin, so the very first time you use voice
@@ -72,81 +71,78 @@ function describeSttError(code: string | undefined): string {
 	}
 }
 
-export class BrowserStt implements SttEngineInstance {
-	private recognition: SpeechRecognitionLike | null = null
-	private finalText = ''
-	private autoSendTimer: ReturnType<typeof setTimeout> | null = null
+export function createStt(callbacks: SttCallbacks): SttEngineInstance {
+	let active: Recognition | null = null
+	let heard = ''
+	let silenceTimer: ReturnType<typeof setTimeout> | undefined
 
-	constructor(private callbacks: SttCallbacks) {}
+	return {
+		async start() {
+			const scope = window as unknown as {
+				SpeechRecognition?: RecognitionConstructor
+				webkitSpeechRecognition?: RecognitionConstructor
+			}
+			const SpeechRecognition = scope.SpeechRecognition ?? scope.webkitSpeechRecognition
+			if (!SpeechRecognition) {
+				callbacks.onError('This browser has no built-in speech recognition.')
+				callbacks.onEnd()
+				return
+			}
 
-	async start() {
-		const Ctor = getSpeechRecognitionCtor()
-		if (!Ctor) {
-			this.callbacks.onError('This browser has no built-in speech recognition.')
-			this.callbacks.onEnd()
-			return
-		}
-		const rec = new Ctor()
-		rec.lang = navigator.language || 'en-US'
-		rec.continuous = true
-		rec.interimResults = true
-		rec.maxAlternatives = 1
-		this.finalText = ''
+			const recognition = new SpeechRecognition()
+			recognition.lang = navigator.language || 'en-US'
+			recognition.continuous = true
+			recognition.interimResults = true
+			recognition.maxAlternatives = 1
+			heard = ''
 
-		rec.onresult = (e: any) => {
-			let interim = ''
-			let gotFinal = false
-			for (let i = e.resultIndex; i < e.results.length; i++) {
-				const result = e.results[i]
-				const transcript: string = result[0]?.transcript ?? ''
-				if (result.isFinal) {
-					this.finalText += transcript + ' '
-					gotFinal = true
-				} else {
-					interim += transcript
+			recognition.onresult = ({ resultIndex, results }) => {
+				let stillSpeaking = ''
+				let finishedPhrase = false
+				for (let i = resultIndex; i < results.length; i++) {
+					const words = results[i][0]?.transcript ?? ''
+					if (results[i].isFinal) {
+						heard += words + ' '
+						finishedPhrase = true
+					} else {
+						stillSpeaking += words
+					}
+				}
+				callbacks.onInterim?.((heard + stillSpeaking).trim())
+
+				clearTimeout(silenceTimer)
+				if (finishedPhrase && !stillSpeaking) {
+					silenceTimer = setTimeout(() => recognition.stop(), SILENCE_BEFORE_SEND_MS)
 				}
 			}
-			this.callbacks.onInterim?.((this.finalText + interim).trim())
-
-			// Send on your own once you stop talking, so a second click isn't needed.
-			if (this.autoSendTimer) clearTimeout(this.autoSendTimer)
-			if (gotFinal && !interim) {
-				this.autoSendTimer = setTimeout(() => this.stop(), AUTO_SEND_AFTER_MS)
+			recognition.onerror = ({ error }) => {
+				if (error && QUIET_ERRORS.has(error)) return
+				callbacks.onError(describeSttError(error))
 			}
-		}
-		rec.onerror = (e: any) => {
-			// 'no-speech' and 'aborted' are normal when the user just clicks stop
-			if (e?.error === 'no-speech' || e?.error === 'aborted') return
-			this.callbacks.onError(describeSttError(e?.error))
-		}
-		rec.onend = () => {
-			if (this.autoSendTimer) clearTimeout(this.autoSendTimer)
-			this.autoSendTimer = null
-			const text = this.finalText.trim()
-			this.recognition = null
-			if (text) this.callbacks.onFinal(text)
-			this.callbacks.onEnd()
-		}
+			recognition.onend = () => {
+				clearTimeout(silenceTimer)
+				active = null
+				const transcript = heard.trim()
+				if (transcript) callbacks.onFinal(transcript)
+				callbacks.onEnd()
+			}
 
-		this.recognition = rec
-		rec.start()
+			active = recognition
+			recognition.start()
+		},
+
+		stop() {
+			active?.stop()
+		},
+
+		abort() {
+			const recognition = active
+			if (!recognition) return
+			active = null
+			clearTimeout(silenceTimer)
+			recognition.onend = null
+			recognition.abort()
+			callbacks.onEnd()
+		},
 	}
-
-	stop() {
-		this.recognition?.stop()
-	}
-
-	abort() {
-		const rec = this.recognition
-		this.recognition = null
-		if (rec) {
-			rec.onend = null
-			rec.abort()
-			this.callbacks.onEnd()
-		}
-	}
-}
-
-export function createStt(callbacks: SttCallbacks): SttEngineInstance {
-	return new BrowserStt(callbacks)
 }

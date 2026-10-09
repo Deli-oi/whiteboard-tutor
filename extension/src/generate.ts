@@ -3,8 +3,7 @@ import { createGroq } from '@ai-sdk/groq'
 import { generateText, LanguageModel, UserContent } from 'ai'
 import { isQuotaExceededError, isRetryableApiError, toErrorWithMessage } from '../../shared/ai/modelErrors'
 import { buildExtensionSystemPrompt, ExtensionCreateHtmlAction } from '../../shared/extension/createHtmlAction'
-import { closeAndParseJson } from '../../shared/ai/closeAndParseJson'
-import { normalizeModelText } from '../../shared/ai/normalizeModelText'
+import { parseModelJson } from '../../shared/ai/parseModelJson'
 
 const GEMINI_MODEL_ID = 'gemini-3.1-flash-lite'
 // Groq's free tier moves fast (Llama 3.x/4 were free, now aren't) - gpt-oss-120b
@@ -81,8 +80,7 @@ async function attemptWithModel(
 				...(providerOptions ? { providerOptions } : {}),
 			})
 
-			const partialObject = closeAndParseJson(normalizeModelText(result.text))
-			const actions = partialObject?.actions
+			const actions = parseModelJson(result.text)?.actions
 			if (!Array.isArray(actions) || actions.length === 0) {
 				lastError = new Error("The model's response couldn't be understood. Try again.")
 				if (attempt < MAX_ATTEMPTS) continue
