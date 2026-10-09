@@ -718,8 +718,9 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
     }
     function onIframeMessage(e) {
       if (e.source !== iframe.contentWindow) return;
-      if (e.data?.type === "iterate-key-down") startIterateCapture();
-      else if (e.data?.type === "iterate-key-up") stopIterateCapture();
+      if (e.data?.type === "iterate-key-down") {
+        if (!iterateStt && container.matches(":hover")) startIterateCapture();
+      } else if (e.data?.type === "iterate-key-up") stopIterateCapture();
       else if (e.data?.type === "runtime-error" && typeof e.data.message === "string") {
         runtimeErrors.push(e.data.message);
         if (runtimeErrors.length > 10) runtimeErrors.shift();

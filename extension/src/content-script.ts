@@ -879,8 +879,13 @@ function showGeneratedVisualization(
 	}
 	function onIframeMessage(e: MessageEvent) {
 		if (e.source !== iframe.contentWindow) return
-		if (e.data?.type === 'iterate-key-down') startIterateCapture()
-		else if (e.data?.type === 'iterate-key-up') stopIterateCapture()
+		// The iframe runs model-written code, so its message is untrusted: only
+		// honor it while the cursor is actually over this popup (hovering the
+		// iframe counts as hovering the container), same as the top-page path -
+		// otherwise generated code could open the mic on its own.
+		if (e.data?.type === 'iterate-key-down') {
+			if (!iterateStt && container.matches(':hover')) startIterateCapture()
+		} else if (e.data?.type === 'iterate-key-up') stopIterateCapture()
 		else if (e.data?.type === 'runtime-error' && typeof e.data.message === 'string') {
 			// Capped so one chatty visualization (e.g. an error in a loop) can't
 			// grow this without bound - a bug report only needs a sample, not
