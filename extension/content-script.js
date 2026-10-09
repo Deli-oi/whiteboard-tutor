@@ -107,6 +107,7 @@
   var draggedPosition = null;
   var panelDragCleanup = null;
   var panelVoiceCleanup = null;
+  var requestId = 0;
   function makeDraggable(el, handle = el) {
     let dragging = false;
     let offsetX = 0;
@@ -187,6 +188,7 @@
     overlayEl = badgeEl = boxEl = null;
   }
   function closeEverything() {
+    requestId++;
     stt?.abort();
     stt = null;
     exitSelectMode();
@@ -375,6 +377,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
     void stt.start();
   }
   async function generateVisualization(rect, matches, transcript) {
+    const myRequest = ++requestId;
     const best = matches[0];
     const selection = {
       tag: best.el.tagName.toLowerCase(),
@@ -389,10 +392,12 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
 \u2699\uFE0F Generating\u2026`);
     try {
       const imageBase64 = await activeImagePromise ?? void 0;
+      if (myRequest !== requestId) return;
       const relay = await chrome.runtime.sendMessage({
         type: "generate",
         payload: { transcript, selection, imageBase64 }
       });
+      if (myRequest !== requestId) return;
       if (!relay.ok || !relay.action) {
         showPanel(rect, `${matchSummary(matches)}
 
@@ -407,6 +412,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       }
       showGeneratedVisualization(rect, relay.action, selection, transcript);
     } catch (e) {
+      if (myRequest !== requestId) return;
       showPanel(rect, `${matchSummary(matches)}
 
 \u26A0\uFE0F ${e instanceof Error ? e.message : "Generation failed"}`);
@@ -597,7 +603,11 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       display: "none"
     });
     let iterateStt = null;
+    let popupClosed = false;
+    let iterationId = 0;
     async function iterateVisualization(transcript2) {
+      if (popupClosed) return;
+      const myIteration = ++iterationId;
       generatingLabel.style.display = "block";
       lastTranscript = transcript2;
       try {
@@ -605,6 +615,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
           type: "generate",
           payload: { transcript: transcript2, selection, previousHtml: currentHtml }
         });
+        if (popupClosed || myIteration !== iterationId) return;
         if (!relay.ok || !relay.action || relay.action._type !== "createHtml") {
           console.error("[iterate] generation failed:", relay.error ?? relay.action?._type);
           return;
@@ -614,7 +625,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       } catch (e) {
         console.error("[iterate] request failed:", e);
       } finally {
-        generatingLabel.style.display = "none";
+        if (!popupClosed && myIteration === iterationId) generatingLabel.style.display = "none";
       }
     }
     function startIterateCapture() {
@@ -674,6 +685,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
     document.addEventListener("keyup", onIterateKeyUp);
     window.addEventListener("message", onIframeMessage);
     panelVoiceCleanup = () => {
+      popupClosed = true;
       document.removeEventListener("keydown", onIterateKeyDown);
       document.removeEventListener("keyup", onIterateKeyUp);
       window.removeEventListener("message", onIframeMessage);
@@ -690,6 +702,8 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
   }
   function showPanel(selectionRect, text) {
     panelDragCleanup?.();
+    panelVoiceCleanup?.();
+    panelVoiceCleanup = null;
     panelEl?.remove();
     const panel = document.createElement("div");
     Object.assign(panel.style, {

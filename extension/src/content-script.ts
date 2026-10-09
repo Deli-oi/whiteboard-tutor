@@ -54,6 +54,14 @@ let panelDragCleanup: (() => void) | null = null
  */
 let panelVoiceCleanup: (() => void) | null = null
 
+/**
+ * Bumped for every new generation and by closeEverything. A response only
+ * acts if its id is still current - otherwise the user pressed Esc, closed
+ * the popup, or started a new circle while it was in flight, and showing it
+ * would pop a stale popup back up.
+ */
+let requestId = 0
+
 /** Makes `el` draggable by mousedown-drag on `handle` (defaults to `el` itself). */
 function makeDraggable(el: HTMLElement, handle: HTMLElement = el): () => void {
 	let dragging = false
@@ -145,6 +153,7 @@ function exitSelectMode() {
 }
 
 function closeEverything() {
+	requestId++
 	stt?.abort()
 	stt = null
 	exitSelectMode()
@@ -404,6 +413,7 @@ interface GenerateRelayResponse {
  * (where this content script runs) has no business touching them.
  */
 async function generateVisualization(rect: DOMRect, matches: Match[], transcript: string) {
+	const myRequest = ++requestId
 	const best = matches[0]
 	const selection: Selection = {
 		tag: best.el.tagName.toLowerCase(),
@@ -415,10 +425,12 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 
 	try {
 		const imageBase64 = (await activeImagePromise) ?? undefined
+		if (myRequest !== requestId) return
 		const relay = (await chrome.runtime.sendMessage({
 			type: 'generate',
 			payload: { transcript, selection, imageBase64 },
 		})) as GenerateRelayResponse
+		if (myRequest !== requestId) return
 		if (!relay.ok || !relay.action) {
 			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Generation failed: ${relay.error ?? 'unknown error'}`)
 			return
@@ -429,6 +441,7 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 		}
 		showGeneratedVisualization(rect, relay.action, selection, transcript)
 	} catch (e) {
+		if (myRequest !== requestId) return
 		showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`)
 	}
 }
@@ -701,8 +714,14 @@ function showGeneratedVisualization(
 	})
 
 	let iterateStt: SttEngineInstance | null = null
+	// Set when this popup is closed/replaced; an iteration response that
+	// arrives afterward (or after a newer iteration started) is dropped.
+	let popupClosed = false
+	let iterationId = 0
 
 	async function iterateVisualization(transcript: string) {
+		if (popupClosed) return
+		const myIteration = ++iterationId
 		generatingLabel.style.display = 'block'
 		lastTranscript = transcript
 		try {
@@ -710,6 +729,7 @@ function showGeneratedVisualization(
 				type: 'generate',
 				payload: { transcript, selection, previousHtml: currentHtml },
 			})) as GenerateRelayResponse
+			if (popupClosed || myIteration !== iterationId) return
 			if (!relay.ok || !relay.action || relay.action._type !== 'createHtml') {
 				console.error('[iterate] generation failed:', relay.error ?? relay.action?._type)
 				return
@@ -722,7 +742,7 @@ function showGeneratedVisualization(
 			// than surfaced, but logged so a failure is at least diagnosable.
 			console.error('[iterate] request failed:', e)
 		} finally {
-			generatingLabel.style.display = 'none'
+			if (!popupClosed && myIteration === iterationId) generatingLabel.style.display = 'none'
 		}
 	}
 
@@ -813,6 +833,7 @@ function showGeneratedVisualization(
 	document.addEventListener('keyup', onIterateKeyUp)
 	window.addEventListener('message', onIframeMessage)
 	panelVoiceCleanup = () => {
+		popupClosed = true
 		document.removeEventListener('keydown', onIterateKeyDown)
 		document.removeEventListener('keyup', onIterateKeyUp)
 		window.removeEventListener('message', onIframeMessage)
@@ -839,6 +860,8 @@ function showGeneratedVisualization(
  */
 function showPanel(selectionRect: DOMRect, text: string) {
 	panelDragCleanup?.()
+	panelVoiceCleanup?.()
+	panelVoiceCleanup = null
 	panelEl?.remove()
 	const panel = document.createElement('div')
 	Object.assign(panel.style, {
