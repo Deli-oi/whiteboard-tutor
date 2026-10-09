@@ -23,6 +23,14 @@ Two earlier directions were built and then retired: a canvas-based whiteboard ap
 - Rendering is instant once generation returns - no separate "building the view" step.
 - Everything happens in one request/response round trip - no streaming, no multi-turn back-and-forth, since this is a one-shot "circle, speak, get a result" interaction with no way for the user to reply mid-generation.
 
+## Beta bug triage
+
+A daily cloud routine emails a numbered triage of new bug reports ("Study Buddy bug triage - YYYY-MM-DD") from the bug-report Gmail inbox and pushes proposed fixes to `bug-proposals/YYYY-MM-DD`, one commit per fix. When the user talks about triage ("accept 1 3, reject 2", "check the bug reports"):
+
+1. If `bug-reports/<date>/` doesn't exist yet for that triage, archive it first: the triage email as `triage.txt` and each numbered report's raw email as `report-<n>.txt`, using the Gmail connector. This folder is gitignored - never commit report contents.
+2. Resolve the numbers against that day's `triage.txt`, not memory.
+3. Cherry-pick accepted commits from the proposals branch onto `main`, re-run typecheck/tests/build, live-test in Chrome, and push only after the user confirms. Record accept/reject decisions at the top of `triage.txt`.
+
 ## Working style
 
 Casual and direct. Recommend one option instead of listing five. Tell me when something is a bad idea.
