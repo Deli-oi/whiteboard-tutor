@@ -1,9 +1,7 @@
 /**
- * Injected on demand (see background.ts) into the tab where the shortcut is pressed: circle something, speak, get a real computed
- * visualization in a floating, dismissable popup. Tier 1 ("Anywhere") only
- * - the companion app and direct file-editing (Tier 2) were built, tested,
- * and then retired (too much setup friction for the benefit delivered); see
- * project memory for the full history if that ever gets revisited.
+ * Injected on demand (see background.ts) into the tab where the shortcut is
+ * pressed: circle something, speak, get a real computed visualization in a
+ * floating, dismissable popup.
  */
 import { createStt, SttEngineInstance } from '../../shared/voice/stt'
 import type { Selection } from './generate'

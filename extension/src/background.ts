@@ -114,7 +114,7 @@ export interface GenerateResponse {
 
 /**
  * Generation happens right here in the background script, using the user's
- * own API key(s) - no worker, no localhost dependency. Still a message
+ * own API key(s), with no server in between. It's a message
  * relay (not a direct call from the content script) because the content
  * script has no business holding API keys in a visited page's JS context.
  * Gemini is primary (vision-capable); Groq is a real fallback if Gemini is
