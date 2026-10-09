@@ -12,6 +12,8 @@ interface Match {
 	el: Element
 	coverage: number
 	area: number
+	/** Text visibly inside the selection box (see visibleTextIn), set on the chosen match. */
+	text?: string
 }
 
 type Mode = 'idle' | 'selecting' | 'listening'
@@ -227,9 +229,10 @@ function onMouseUp() {
 		mode = 'idle'
 		return
 	}
+	matches[0].text = visibleTextIn(matches[0].el, rect)
 	activeMatches = matches
 	activeRect = rect
-	activeImagePromise = needsVision(matches[0].el) ? captureSelectionImage(rect) : Promise.resolve(null)
+	activeImagePromise = needsVision(matches[0]) ? captureSelectionImage(rect) : Promise.resolve(null)
 	startListening(rect, matches)
 }
 
@@ -242,10 +245,10 @@ function onMouseUp() {
  * `<canvas>` for rendering fidelity, so there's no real DOM text to read
  * there either) - without needing to special-case either one.
  */
-function needsVision(el: Element): boolean {
-	const tag = el.tagName.toUpperCase()
+function needsVision(m: Match): boolean {
+	const tag = m.el.tagName.toUpperCase()
 	if (tag === 'IMG' || tag === 'CANVAS' || tag === 'SVG') return true
-	return elementText(el).length === 0
+	return selectionText(m).length === 0
 }
 
 /**
@@ -354,6 +357,84 @@ function elementText(el: Element): string {
 	return (raw ?? el.textContent ?? '').trim()
 }
 
+/** The text the model gets: what's visibly inside the box, falling back to the whole element. */
+function selectionText(m: Match): string {
+	return m.text ?? elementText(m.el)
+}
+
+function intersects(a: DOMRect, b: DOMRect): boolean {
+	return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+}
+
+/**
+ * Only the text actually rendered inside the selection box. The chosen
+ * element is often a scroll container or panel (confirmed on LeetCode: the
+ * whole problem pane, so innerText dragged in "Similar Questions" and the
+ * entire discussion thread, scrolled out of view). Walks text nodes and keeps
+ * those whose rendered boxes overlap the selection, adding a line break
+ * whenever the enclosing block changes so paragraphs and code lines stay
+ * separate. Whitespace is kept as-is inside `white-space: pre*` (code).
+ */
+function visibleTextIn(root: Element, selectionRect: DOMRect): string {
+	const blockCache = new Map<Element, Element>()
+	const nearestBlock = (node: Node): Element | null => {
+		let el = node.parentElement
+		const start = el
+		while (el) {
+			const cached = blockCache.get(el)
+			if (cached) return cached
+			const display = getComputedStyle(el).display
+			if (!display.startsWith('inline') && display !== 'contents') break
+			el = el.parentElement
+		}
+		if (start && el) blockCache.set(start, el)
+		return el
+	}
+
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
+		acceptNode(node) {
+			if (node.nodeType === Node.TEXT_NODE) return NodeFilter.FILTER_ACCEPT
+			const el = node as Element
+			if (/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(el.tagName)) return NodeFilter.FILTER_REJECT
+			if (el.tagName === 'BR') return NodeFilter.FILTER_ACCEPT
+			const r = el.getBoundingClientRect()
+			// Zero-size wrappers (display: contents, collapsed inline) can still
+			// hold visible children, so only prune subtrees with a real box.
+			if (r.width > 0 && r.height > 0 && !intersects(r, selectionRect)) return NodeFilter.FILTER_REJECT
+			return NodeFilter.FILTER_SKIP
+		},
+	})
+
+	const range = document.createRange()
+	let out = ''
+	let lastBlock: Element | null = null
+	for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+		if (node.nodeType === Node.ELEMENT_NODE) {
+			if (out && !out.endsWith('\n')) out += '\n'
+			continue
+		}
+		const data = (node as Text).data
+		if (!data.trim() && !out) continue
+		range.selectNodeContents(node)
+		if (!Array.from(range.getClientRects()).some((r) => intersects(r, selectionRect))) continue
+		const parent = node.parentElement
+		const ws = parent ? getComputedStyle(parent).whiteSpace : 'normal'
+		const text = ws.startsWith('pre') || ws === 'break-spaces' ? data : data.replace(/\s+/g, ' ')
+		const block = nearestBlock(node)
+		if (lastBlock && block !== lastBlock && out && !out.endsWith('\n')) out += '\n'
+		lastBlock = block
+		out += text
+		if (out.length > MODEL_TEXT_LIMIT) break
+	}
+	return out
+		.split('\n')
+		.map((line) => line.trimEnd())
+		.join('\n')
+		.replace(/\n{3,}/g, '\n\n')
+		.trim()
+		.slice(0, MODEL_TEXT_LIMIT)
+}
+
 function describe(el: Element): string {
 	const tag = el.tagName.toLowerCase()
 	const id = el.id ? '#' + el.id : ''
@@ -363,7 +444,7 @@ function describe(el: Element): string {
 
 function matchSummary(matches: Match[]): string {
 	const best = matches[0]
-	const preview = elementText(best.el).replace(/\s+/g, ' ').slice(0, 80)
+	const preview = selectionText(best).replace(/\s+/g, ' ').slice(0, 80)
 	return (
 		`Selected: ${describe(best.el)}\n` +
 		`content: "${preview}${preview.length === 80 ? '…' : ''}"` +
@@ -419,7 +500,7 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 		tag: best.el.tagName.toLowerCase(),
 		id: best.el.id || undefined,
 		classes: best.el.classList.length ? Array.from(best.el.classList) : undefined,
-		preview: elementText(best.el).slice(0, MODEL_TEXT_LIMIT),
+		preview: selectionText(best).slice(0, MODEL_TEXT_LIMIT),
 	}
 	const failureReport = (error: string) => buildReportPayload({ selection, transcript, html: '', error })
 	showPanel(rect, `${matchSummary(matches)}\n\n✅ Heard: "${transcript}"\n\n⚙️ Generating…`)
