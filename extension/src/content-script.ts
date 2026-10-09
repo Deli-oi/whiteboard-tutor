@@ -361,11 +361,9 @@ interface GenerateRelayResponse {
 }
 
 /**
- * Phase 5: relayed through background.js rather than called directly - the
- * API key lives in chrome.storage.local, and a visited page's own JS context
- * (where this content script runs) has no business touching it. The
- * background script does the actual model call now, with no worker/
- * localhost dependency at all.
+ * Relayed through background.js rather than called directly - the API
+ * key(s) live in chrome.storage.local, and a visited page's own JS context
+ * (where this content script runs) has no business touching them.
  */
 async function generateVisualization(rect: DOMRect, matches: Match[], transcript: string) {
 	const best = matches[0]
@@ -391,7 +389,7 @@ async function generateVisualization(rect: DOMRect, matches: Match[], transcript
 			showPanel(rect, `${matchSummary(matches)}\n\n⚠️ Got an unexpected action type: ${relay.action._type}`)
 			return
 		}
-		showGeneratedVisualization(rect, relay.action, selection)
+		showGeneratedVisualization(rect, relay.action, selection, transcript)
 	} catch (e) {
 		showPanel(rect, `${matchSummary(matches)}\n\n⚠️ ${e instanceof Error ? e.message : 'Generation failed'}`)
 	}
@@ -421,7 +419,12 @@ const PANEL_W = 440
 const PANEL_H = 340
 const MIC_SIZE = 20
 
-function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAction, selection: Selection) {
+function showGeneratedVisualization(
+	selectionRect: DOMRect,
+	action: GeneratedAction,
+	selection: Selection,
+	transcript: string
+) {
 	panelDragCleanup?.()
 	panelVoiceCleanup?.()
 	panelEl?.remove()
@@ -460,10 +463,41 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
 		background: '#1a1a1a',
 		display: 'flex',
 		alignItems: 'center',
-		justifyContent: 'flex-end',
+		justifyContent: 'space-between',
 		padding: '0 4px',
 		boxSizing: 'border-box',
 	})
+
+	/**
+	 * Beta-testing only: one click flags this result as broken and sends
+	 * everything already in hand - no typing, since the whole point is
+	 * catching what actually went wrong, which is already captured (see
+	 * sendBugReport below). Remove this button, sendBugReport, and the
+	 * emailjsConfig/report-bug plumbing in background.ts once the
+	 * friends-testing window closes.
+	 */
+	const reportBtn = document.createElement('button')
+	reportBtn.textContent = '🐛'
+	reportBtn.title = 'Flag this result as broken (sends it for debugging)'
+	Object.assign(reportBtn.style, {
+		border: 'none',
+		background: 'transparent',
+		borderRadius: '4px',
+		width: '18px',
+		height: '18px',
+		cursor: 'pointer',
+		fontSize: '11px',
+		lineHeight: '1',
+		transition: 'background-color 0.1s',
+	})
+	reportBtn.addEventListener('mouseenter', () => {
+		reportBtn.style.background = 'rgba(255,255,255,0.15)'
+	})
+	reportBtn.addEventListener('mouseleave', () => {
+		reportBtn.style.background = 'transparent'
+	})
+	reportBtn.addEventListener('click', () => void sendBugReport())
+	header.appendChild(reportBtn)
 
 	const closeBtn = document.createElement('button')
 	closeBtn.textContent = '✕'
@@ -497,6 +531,12 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
 	const iframe = document.createElement('iframe')
 	Object.assign(iframe.style, { width: '100%', flex: '1 1 auto', border: '0', display: 'block' })
 	let currentHtml = action.html
+	let lastTranscript = transcript
+	// Reset on every fresh render (see loadVisualization) - render.ts forwards
+	// any error the generated script throws, caught here so a bug report can
+	// include what actually went wrong inside the sandboxed iframe, not just
+	// what was asked for.
+	let runtimeErrors: string[] = []
 	iframe.addEventListener('load', () => {
 		iframe.contentWindow?.postMessage({ html: currentHtml }, '*')
 	})
@@ -513,9 +553,62 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
 	 * every time, exactly like the first render that's already proven to work.
 	 */
 	function loadVisualization() {
+		runtimeErrors = []
 		iframe.src = chrome.runtime.getURL('render.html') + '?t=' + Date.now()
 	}
 	loadVisualization()
+
+	interface ReportBugRelayResponse {
+		ok: boolean
+		error?: string
+	}
+
+	/**
+	 * Bundles everything already in hand and sends it with no further input
+	 * from the user - see the button's own comment above for why. Falls back
+	 * to a clipboard copy if email sending isn't configured yet
+	 * (emailjsConfig.ts not filled in - see background.ts), so the button
+	 * still does something useful rather than failing silently during setup.
+	 */
+	async function sendBugReport() {
+		reportBtn.textContent = '…'
+		const payload = {
+			selectionTag: selection.tag,
+			selectionId: selection.id ?? '',
+			selectionClasses: selection.classes?.join(' ') ?? '',
+			selectionPreview: selection.preview ?? '',
+			transcript: lastTranscript,
+			html: currentHtml.slice(0, 20000),
+			runtimeErrors: runtimeErrors.join('\n') || '(none observed)',
+			pageUrl: location.href,
+			pageTitle: document.title,
+			timestamp: new Date().toISOString(),
+			extensionVersion: chrome.runtime.getManifest().version,
+			userAgent: navigator.userAgent,
+		}
+		try {
+			const relay = (await chrome.runtime.sendMessage({
+				type: 'report-bug',
+				payload,
+			})) as ReportBugRelayResponse
+			if (relay.ok) {
+				reportBtn.textContent = '✅'
+			} else if (relay.error === 'not-configured') {
+				await navigator.clipboard.writeText(JSON.stringify(payload, null, 2))
+				reportBtn.textContent = '📋'
+				reportBtn.title = 'Email reporting isn’t set up yet - copied the report to your clipboard instead'
+			} else {
+				console.error('[report-bug] send failed:', relay.error)
+				reportBtn.textContent = '⚠️'
+			}
+		} catch (e) {
+			console.error('[report-bug] send failed:', e)
+			reportBtn.textContent = '⚠️'
+		}
+		setTimeout(() => {
+			reportBtn.textContent = '🐛'
+		}, 2000)
+	}
 
 	// Bottom-left mic badge: grey while idle, red while hold-V capture is
 	// active. Lets you say "make the bars blue" or "actually, plot it as a
@@ -571,6 +664,7 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
 
 	async function iterateVisualization(transcript: string) {
 		generatingLabel.style.display = 'block'
+		lastTranscript = transcript
 		try {
 			const relay = (await chrome.runtime.sendMessage({
 				type: 'generate',
@@ -663,18 +757,25 @@ function showGeneratedVisualization(selectionRect: DOMRect, action: GeneratedAct
 		if (e.key.toLowerCase() !== 'v') return
 		stopIterateCapture()
 	}
-	function onIframeKeyMessage(e: MessageEvent) {
+	function onIframeMessage(e: MessageEvent) {
 		if (e.source !== iframe.contentWindow) return
 		if (e.data?.type === 'iterate-key-down') startIterateCapture()
 		else if (e.data?.type === 'iterate-key-up') stopIterateCapture()
+		else if (e.data?.type === 'runtime-error' && typeof e.data.message === 'string') {
+			// Capped so one chatty visualization (e.g. an error in a loop) can't
+			// grow this without bound - a bug report only needs a sample, not
+			// every repetition.
+			runtimeErrors.push(e.data.message)
+			if (runtimeErrors.length > 10) runtimeErrors.shift()
+		}
 	}
 	document.addEventListener('keydown', onIterateKeyDown)
 	document.addEventListener('keyup', onIterateKeyUp)
-	window.addEventListener('message', onIframeKeyMessage)
+	window.addEventListener('message', onIframeMessage)
 	panelVoiceCleanup = () => {
 		document.removeEventListener('keydown', onIterateKeyDown)
 		document.removeEventListener('keyup', onIterateKeyUp)
-		window.removeEventListener('message', onIframeKeyMessage)
+		window.removeEventListener('message', onIframeMessage)
 		iterateStt?.abort()
 		iterateStt = null
 	}

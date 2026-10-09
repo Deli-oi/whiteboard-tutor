@@ -7,6 +7,19 @@
     return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
   }
   var AUTO_SEND_AFTER_MS = 1500;
+  function describeSttError(code) {
+    switch (code) {
+      case "not-allowed":
+      case "service-not-allowed":
+        return "Microphone access is blocked for this page. Click the lock/camera icon in the address bar, allow the microphone, then try again - permission is granted per-site, so a page you haven't used this on before needs it granted once.";
+      case "audio-capture":
+        return "No microphone found, or it\u2019s in use by another app. Check your mic and try again.";
+      case "network":
+        return "Speech recognition needs a network connection (Chrome's speech-to-text runs server-side) - check your connection and try again.";
+      default:
+        return `Speech recognition error: ${code ?? "unknown"}`;
+    }
+  }
   var BrowserStt = class {
     constructor(callbacks) {
       this.callbacks = callbacks;
@@ -49,7 +62,7 @@
       };
       rec.onerror = (e) => {
         if (e?.error === "no-speech" || e?.error === "aborted") return;
-        this.callbacks.onError(`Speech recognition error: ${e?.error ?? "unknown"}`);
+        this.callbacks.onError(describeSttError(e?.error));
       };
       rec.onend = () => {
         if (this.autoSendTimer) clearTimeout(this.autoSendTimer);
@@ -369,7 +382,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
 \u26A0\uFE0F Got an unexpected action type: ${relay.action._type}`);
         return;
       }
-      showGeneratedVisualization(rect, relay.action, selection);
+      showGeneratedVisualization(rect, relay.action, selection, transcript);
     } catch (e) {
       showPanel(rect, `${matchSummary(matches)}
 
@@ -380,7 +393,7 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
   var PANEL_W = 440;
   var PANEL_H = 340;
   var MIC_SIZE = 20;
-  function showGeneratedVisualization(selectionRect, action, selection) {
+  function showGeneratedVisualization(selectionRect, action, selection, transcript) {
     panelDragCleanup?.();
     panelVoiceCleanup?.();
     panelEl?.remove();
@@ -413,10 +426,32 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       background: "#1a1a1a",
       display: "flex",
       alignItems: "center",
-      justifyContent: "flex-end",
+      justifyContent: "space-between",
       padding: "0 4px",
       boxSizing: "border-box"
     });
+    const reportBtn = document.createElement("button");
+    reportBtn.textContent = "\u{1F41B}";
+    reportBtn.title = "Flag this result as broken (sends it for debugging)";
+    Object.assign(reportBtn.style, {
+      border: "none",
+      background: "transparent",
+      borderRadius: "4px",
+      width: "18px",
+      height: "18px",
+      cursor: "pointer",
+      fontSize: "11px",
+      lineHeight: "1",
+      transition: "background-color 0.1s"
+    });
+    reportBtn.addEventListener("mouseenter", () => {
+      reportBtn.style.background = "rgba(255,255,255,0.15)";
+    });
+    reportBtn.addEventListener("mouseleave", () => {
+      reportBtn.style.background = "transparent";
+    });
+    reportBtn.addEventListener("click", () => void sendBugReport());
+    header.appendChild(reportBtn);
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "\u2715";
     Object.assign(closeBtn.style, {
@@ -448,13 +483,55 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
     const iframe = document.createElement("iframe");
     Object.assign(iframe.style, { width: "100%", flex: "1 1 auto", border: "0", display: "block" });
     let currentHtml = action.html;
+    let lastTranscript = transcript;
+    let runtimeErrors = [];
     iframe.addEventListener("load", () => {
       iframe.contentWindow?.postMessage({ html: currentHtml }, "*");
     });
     function loadVisualization() {
+      runtimeErrors = [];
       iframe.src = chrome.runtime.getURL("render.html") + "?t=" + Date.now();
     }
     loadVisualization();
+    async function sendBugReport() {
+      reportBtn.textContent = "\u2026";
+      const payload = {
+        selectionTag: selection.tag,
+        selectionId: selection.id ?? "",
+        selectionClasses: selection.classes?.join(" ") ?? "",
+        selectionPreview: selection.preview ?? "",
+        transcript: lastTranscript,
+        html: currentHtml.slice(0, 2e4),
+        runtimeErrors: runtimeErrors.join("\n") || "(none observed)",
+        pageUrl: location.href,
+        pageTitle: document.title,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        extensionVersion: chrome.runtime.getManifest().version,
+        userAgent: navigator.userAgent
+      };
+      try {
+        const relay = await chrome.runtime.sendMessage({
+          type: "report-bug",
+          payload
+        });
+        if (relay.ok) {
+          reportBtn.textContent = "\u2705";
+        } else if (relay.error === "not-configured") {
+          await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+          reportBtn.textContent = "\u{1F4CB}";
+          reportBtn.title = "Email reporting isn\u2019t set up yet - copied the report to your clipboard instead";
+        } else {
+          console.error("[report-bug] send failed:", relay.error);
+          reportBtn.textContent = "\u26A0\uFE0F";
+        }
+      } catch (e) {
+        console.error("[report-bug] send failed:", e);
+        reportBtn.textContent = "\u26A0\uFE0F";
+      }
+      setTimeout(() => {
+        reportBtn.textContent = "\u{1F41B}";
+      }, 2e3);
+    }
     const micBadge = document.createElement("div");
     micBadge.textContent = "\u{1F3A4}";
     Object.assign(micBadge.style, {
@@ -496,12 +573,13 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       display: "none"
     });
     let iterateStt = null;
-    async function iterateVisualization(transcript) {
+    async function iterateVisualization(transcript2) {
       generatingLabel.style.display = "block";
+      lastTranscript = transcript2;
       try {
         const relay = await chrome.runtime.sendMessage({
           type: "generate",
-          payload: { transcript, selection, previousHtml: currentHtml }
+          payload: { transcript: transcript2, selection, previousHtml: currentHtml }
         });
         if (!relay.ok || !relay.action || relay.action._type !== "createHtml") {
           console.error("[iterate] generation failed:", relay.error ?? relay.action?._type);
@@ -559,18 +637,22 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
       if (e.key.toLowerCase() !== "v") return;
       stopIterateCapture();
     }
-    function onIframeKeyMessage(e) {
+    function onIframeMessage(e) {
       if (e.source !== iframe.contentWindow) return;
       if (e.data?.type === "iterate-key-down") startIterateCapture();
       else if (e.data?.type === "iterate-key-up") stopIterateCapture();
+      else if (e.data?.type === "runtime-error" && typeof e.data.message === "string") {
+        runtimeErrors.push(e.data.message);
+        if (runtimeErrors.length > 10) runtimeErrors.shift();
+      }
     }
     document.addEventListener("keydown", onIterateKeyDown);
     document.addEventListener("keyup", onIterateKeyUp);
-    window.addEventListener("message", onIframeKeyMessage);
+    window.addEventListener("message", onIframeMessage);
     panelVoiceCleanup = () => {
       document.removeEventListener("keydown", onIterateKeyDown);
       document.removeEventListener("keyup", onIterateKeyUp);
-      window.removeEventListener("message", onIframeKeyMessage);
+      window.removeEventListener("message", onIframeMessage);
       iterateStt?.abort();
       iterateStt = null;
     };

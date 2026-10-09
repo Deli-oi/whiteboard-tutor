@@ -1,4 +1,5 @@
 import { generateVisualizationHtml, Selection } from './generate'
+import { EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID } from './emailjsConfig'
 
 /**
  * Onboarding: a fresh install has no in-product hint that an API key is
@@ -28,9 +29,8 @@ chrome.commands.onCommand.addListener(async (command) => {
 		await chrome.tabs.sendMessage(tab.id, { type: 'toggle-overlay' })
 	} catch {
 		// No content script listening - most likely the page was open before the
-		// extension was loaded/reloaded. A manual refresh of the page fixes this
-		// (documented in extension/README.md); not worth auto-injecting for a
-		// Phase 2 dev tool.
+		// extension was loaded/reloaded. A manual refresh of the page fixes this;
+		// not worth auto-injecting a content script just to cover that case.
 	}
 })
 
@@ -113,4 +113,58 @@ chrome.runtime.onMessage.addListener((message: GenerateMessage, _sender, sendRes
 	})()
 
 	return true // keep the message channel open for the async sendResponse above
+})
+
+interface ReportBugMessage {
+	type: 'report-bug'
+	payload: Record<string, string>
+}
+
+export interface ReportBugResponse {
+	ok: boolean
+	error?: string
+}
+
+/**
+ * Beta-only, temporary: one click on the generated-visualization popup's bug
+ * button sends everything already in hand (selection, transcript, the HTML
+ * the model wrote, any runtime errors it threw) straight to the developer's
+ * own inbox via EmailJS - a client-side email relay, not a backend of ours.
+ * No-ops with ok:false/'not-configured' until emailjsConfig.ts is filled in
+ * (see emailjsConfig.example.ts); content-script.ts falls back to copying
+ * the report to the clipboard in that case. Remove this handler, the
+ * content-script button, and emailjsConfig.* once the testing window closes.
+ */
+chrome.runtime.onMessage.addListener((message: ReportBugMessage, _sender, sendResponse) => {
+	if (message?.type !== 'report-bug') return false
+
+	;(async () => {
+		if (!EMAILJS_SERVICE_ID || !EMAILJS_PUBLIC_KEY) {
+			sendResponse({ ok: false, error: 'not-configured' } satisfies ReportBugResponse)
+			return
+		}
+		try {
+			const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					service_id: EMAILJS_SERVICE_ID,
+					template_id: EMAILJS_TEMPLATE_ID,
+					user_id: EMAILJS_PUBLIC_KEY,
+					template_params: message.payload,
+				}),
+			})
+			sendResponse({
+				ok: res.ok,
+				error: res.ok ? undefined : await res.text(),
+			} satisfies ReportBugResponse)
+		} catch (e) {
+			sendResponse({
+				ok: false,
+				error: e instanceof Error ? e.message : 'Failed to send',
+			} satisfies ReportBugResponse)
+		}
+	})()
+
+	return true
 })

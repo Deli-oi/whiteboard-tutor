@@ -15,6 +15,14 @@
       window.parent.postMessage({ type: "iterate-key-up" }, "*");
     });
   }
+  function attachErrorForwarding() {
+    window.addEventListener("error", (e) => {
+      window.parent.postMessage({ type: "runtime-error", message: e.message }, "*");
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      window.parent.postMessage({ type: "runtime-error", message: `Unhandled rejection: ${e.reason}` }, "*");
+    });
+  }
   window.addEventListener("message", (event) => {
     const raw = event.data?.html;
     if (typeof raw !== "string") return;
@@ -23,5 +31,6 @@
     document.write("<!DOCTYPE html>\n" + html);
     document.close();
     attachKeyForwarding();
+    attachErrorForwarding();
   });
 })();

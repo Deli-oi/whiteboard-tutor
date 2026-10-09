@@ -1,17 +1,19 @@
 /**
- * Phase 6 of the extension pivot: this page is declared under manifest.json's
- * `sandbox.pages`, which gives it a unique opaque origin and (unlike every
- * other extension page) a default CSP that allows inline scripts/eval - the
- * documented Chrome pattern for running untrusted/dynamic HTML inside an
- * extension. That's required here: the model's generated HTML is full of
- * inline <script> blocks (Chart.js setup, computed values, Stepper calls),
- * which the extension's normal `script-src 'self'` page CSP would silently
- * block entirely - confirmed from Chrome's own MV3 CSP docs, not guessed.
+ * This page is declared under manifest.json's `sandbox.pages`, which gives
+ * it a unique opaque origin and (unlike every other extension page) a
+ * default CSP that allows inline scripts/eval - the documented Chrome
+ * pattern for running untrusted/dynamic HTML inside an extension. That's
+ * required here: the model's generated HTML is full of inline <script>
+ * blocks (Chart.js setup, computed values, Stepper calls), which the
+ * extension's normal `script-src 'self'` page CSP would silently block
+ * entirely - confirmed from Chrome's own MV3 CSP docs, not guessed.
  *
  * Being a sandboxed page also means it's loaded from `chrome-extension://`,
- * not `srcdoc`/`data:`, so it does NOT inherit the embedding (visited) page's
- * CSP the way the old worker-hosted iframe's srcdoc attempt did - that's the
- * CSP-inheritance bug this whole redesign exists to fix, this time for good.
+ * not `srcdoc`/`data:`, so it does NOT inherit the embedding (visited)
+ * page's CSP the way a plain srcdoc iframe would - confirmed live that a
+ * strict-CSP site (GitHub) silently blocks all script execution, inline or
+ * external, inside a srcdoc iframe, with the HTML still rendering but
+ * nothing ever running.
  *
  * Sandboxed pages have no access to chrome.* APIs (by design - this is the
  * security boundary around untrusted generated code), so the HTML payload
@@ -44,6 +46,22 @@ function attachKeyForwarding() {
 	})
 }
 
+/**
+ * Forwards any error the model's generated script throws - uncaught
+ * exceptions and rejected promises alike - to the parent content script,
+ * which attaches the latest few to a bug report if the user flags this
+ * result. Without this, a crashing visualization just fails silently in a
+ * sandboxed iframe no one's watching the console of.
+ */
+function attachErrorForwarding() {
+	window.addEventListener('error', (e) => {
+		window.parent.postMessage({ type: 'runtime-error', message: e.message }, '*')
+	})
+	window.addEventListener('unhandledrejection', (e) => {
+		window.parent.postMessage({ type: 'runtime-error', message: `Unhandled rejection: ${e.reason}` }, '*')
+	})
+}
+
 window.addEventListener('message', (event) => {
 	const raw = (event.data as { html?: string } | undefined)?.html
 	if (typeof raw !== 'string') return
@@ -62,10 +80,14 @@ window.addEventListener('message', (event) => {
 	document.write('<!DOCTYPE html>\n' + html)
 	document.close()
 
-	// Re-attached after every write (not just once at module load): open()
-	// tears down and rebuilds the document, including whatever was listening
-	// on it, so this has to run again each time new content lands here (every
-	// iteration, not just the first render) or forwarding silently dies after
-	// the first hold-V refinement.
+	// document.open() tears down and rebuilds the document, including
+	// whatever was listening on it - both forwarders have to run again after
+	// the write, not just once at module load, or they never actually attach
+	// to anything. The content script navigates this iframe fresh for every
+	// render (initial and every hold-V iteration alike - see
+	// content-script.ts's loadVisualization()), so this handler only ever
+	// runs once per page instance in practice, but it's written to not
+	// depend on that.
 	attachKeyForwarding()
+	attachErrorForwarding()
 })
