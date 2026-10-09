@@ -52,8 +52,23 @@
 				'padding:6px 14px;font-size:13px;border-radius:6px;border:1px solid #cbd5e1;background:#f8fafc;cursor:pointer;'
 		})
 
+		// Controls live right after `container`, not inside it: generated render
+		// functions routinely do `container.innerHTML = ...` on the same element
+		// they passed as `container`, which silently deleted buttons placed
+		// inside it (confirmed from a beta bug report). Re-attached after each
+		// render in case a render rewrites an ancestor too.
+		function attachControls() {
+			if (controls.isConnected) return
+			if (container && container.isConnected && container !== document.body) {
+				container.insertAdjacentElement('afterend', controls)
+			} else {
+				document.body.appendChild(controls)
+			}
+		}
+
 		function update() {
 			render(steps[current], current, steps.length)
+			attachControls()
 			counter.textContent = 'Step ' + (current + 1) + ' / ' + steps.length
 			prevBtn.disabled = current === 0
 			nextBtn.disabled = current === steps.length - 1
@@ -79,7 +94,7 @@
 		controls.appendChild(prevBtn)
 		controls.appendChild(counter)
 		controls.appendChild(nextBtn)
-		container.appendChild(controls)
+		attachControls()
 
 		update()
 
