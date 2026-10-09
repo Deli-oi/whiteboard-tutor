@@ -25,6 +25,9 @@
 	"sandbox": {
 		"pages": ["render.html"]
 	},
+	"content_security_policy": {
+		"sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; child-src 'self'"
+	},
 	"web_accessible_resources": [
 		{
 			"resources": ["render.html", "render.js", "vendor/*"],

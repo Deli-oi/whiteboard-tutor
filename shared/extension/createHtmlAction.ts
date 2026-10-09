@@ -81,6 +81,8 @@ export function buildExtensionSystemPrompt(): string {
 		'',
 		"You'll be given: the HTML tag/id/classes of the element the user circled, a text preview of its content (empty if it had none - that just means the content wasn't real DOM text, not that the element was empty), and a transcript of what they said they want (speech-to-text, so expect occasional minor transcription errors - use your best judgment about intent). Sometimes a screenshot of exactly the circled region is attached too - when it is, that's your real source for what's actually there (an image, a diagram, text rendered in a way with no extractable DOM text), not the empty/sparse preview.",
 		'',
+		'The page your HTML runs in is locked down: all external network access is blocked. Never load CDN scripts or stylesheets, remote images, web fonts, or call fetch/XMLHttpRequest/WebSocket - they will fail. Use only the vendored libraries described above (loaded from /vendor/...), inline CSS/JS, inline SVG, and data: URIs.',
+		'',
 		'Generate the visualization directly. Never ask a clarifying question and never describe what you would do instead of doing it - this is a one-shot request with no way for the user to reply.',
 		'',
 		'Respond with ONLY a JSON object of the exact shape {"actions": [<one action>]}, conforming to this schema. Output ONLY the JSON - no markdown code fences, no commentary before or after:',
