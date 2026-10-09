@@ -15,6 +15,8 @@ Load `extension/` unpacked at `chrome://extensions` (Developer mode → Load unp
 
 `npm run typecheck:extension` and `npm run test` should both pass before you open a pull request. `npm run watch:extension` rebuilds on save.
 
+The built `extension/*.js` files are committed directly (so `git clone` + `Load unpacked` works with no build step for someone just trying the extension) - CI fails if they're out of sync with `extension/src/*.ts`, so run `npm run build:extension` and include the updated `.js` files in your commit before opening a PR.
+
 ## Where things live
 
 - Circle-select, voice capture, popups, hold-V iteration: `extension/src/content-script.ts`
@@ -24,7 +26,7 @@ Load `extension/` unpacked at `chrome://extensions` (Developer mode → Load unp
 - Options page (API key entry): `extension/src/options.ts`
 - The sandboxed rendering page (runs the model's generated HTML safely): `extension/src/render.ts` + `extension/render.html`
 - Voice: `shared/voice/stt.ts` (Web Speech API only — no backend fallback, by design)
-- Vendored Chart.js/Mermaid/KaTeX/Stepper: `public/vendor/*`, copied into `extension/vendor/` at build time (`extension/build.mjs`)
+- Vendored Chart.js/Mermaid/KaTeX/Stepper: `extension/vendor/*`, committed directly (not generated - edit in place to update a library)
 
 ## Good first contributions
 

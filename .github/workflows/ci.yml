@@ -16,3 +16,5 @@ jobs:
       - run: npm run typecheck:extension
       - run: npm run test
       - run: npm run build:extension
+      - run: git diff --exit-code extension/*.js
+        name: Verify committed build output matches source (run `npm run build:extension` and commit the result if this fails)

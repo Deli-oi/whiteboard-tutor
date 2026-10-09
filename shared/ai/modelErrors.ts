@@ -1,8 +1,6 @@
 /**
- * Pure, dependency-free model-error classification. Lives under shared/ (not
- * worker/do/) specifically so the extension's background script can import
- * it too, without dragging in anything Workers-specific - these three
- * functions only ever look at an Error's message/statusCode.
+ * Pure, dependency-free model-error classification - these three functions
+ * only ever look at an Error's message/statusCode.
  */
 
 /**
