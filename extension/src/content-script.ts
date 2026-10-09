@@ -69,6 +69,8 @@ function makeDraggable(el: HTMLElement, handle: HTMLElement = el): () => void {
 	let offsetY = 0
 
 	const onMouseDown = (e: MouseEvent) => {
+		// Let clicks reach form controls inside the panel (the typed-request box).
+		if ((e.target as HTMLElement | null)?.closest('input, textarea')) return
 		dragging = true
 		const rect = el.getBoundingClientRect()
 		offsetX = e.clientX - rect.left
@@ -167,6 +169,7 @@ function closeEverything() {
 	activeMatches = null
 	activeRect = null
 	activeImagePromise = null
+	typedInput = null
 	mode = 'idle'
 }
 
@@ -450,10 +453,77 @@ function matchSummary(matches: Match[]): string {
 	)
 }
 
+/**
+ * The typed alternative to speaking. Voice stays the default; the listening
+ * panel shows a small "Type instead" button that stops voice capture and
+ * swaps in a text box (Enter sends). For people without a mic, in a quiet
+ * library, or whose mic permission is blocked. Kept in a module variable
+ * because showPanel rebuilds the panel on every interim transcript and
+ * re-attaches this same element each time.
+ */
+let typedInput: HTMLElement | null = null
+
+function createTypedInput(rect: DOMRect, matches: Match[]): HTMLElement {
+	const wrapper = document.createElement('div')
+	wrapper.style.marginTop = '8px'
+
+	const button = document.createElement('button')
+	button.type = 'button'
+	button.textContent = '⌨️ Type instead'
+	Object.assign(button.style, {
+		padding: '3px 10px',
+		border: '1px solid rgba(255,255,255,0.3)',
+		borderRadius: '6px',
+		background: 'transparent',
+		color: '#e5e5e5',
+		font: 'inherit',
+		fontSize: '12px',
+		cursor: 'pointer',
+	})
+
+	const input = document.createElement('input')
+	input.type = 'text'
+	input.placeholder = 'Type your request and press Enter'
+	Object.assign(input.style, {
+		display: 'block',
+		width: '100%',
+		boxSizing: 'border-box',
+		padding: '6px 8px',
+		border: '1px solid #3f3f46',
+		borderRadius: '6px',
+		background: '#27272a',
+		color: '#e5e5e5',
+		font: 'inherit',
+		outline: 'none',
+	})
+	// Keep the page's own keyboard shortcuts from firing while typing here.
+	for (const type of ['keydown', 'keyup', 'keypress']) {
+		input.addEventListener(type, (e) => e.stopPropagation())
+	}
+	input.addEventListener('keydown', (e) => {
+		if (e.key === 'Escape') {
+			closeEverything()
+		} else if (e.key === 'Enter' && input.value.trim()) {
+			void generateVisualization(rect, matches, input.value.trim())
+		}
+	})
+
+	button.addEventListener('click', () => {
+		stt?.abort()
+		button.replaceWith(input)
+		showPanel(rect, `${matchSummary(matches)}\n\n⌨️ Type your request - Enter to send, Esc to cancel`)
+		input.focus()
+	})
+
+	wrapper.appendChild(button)
+	return wrapper
+}
+
 function startListening(rect: DOMRect, matches: Match[]) {
 	mode = 'listening'
 	let interim = ''
 
+	typedInput = createTypedInput(rect, matches)
 	showPanel(rect, `${matchSummary(matches)}\n\n🎤 Listening…`)
 
 	stt = createStt({
@@ -493,6 +563,7 @@ interface GenerateRelayResponse {
  */
 async function generateVisualization(rect: DOMRect, matches: Match[], transcript: string) {
 	const myRequest = ++requestId
+	typedInput = null
 	const best = matches[0]
 	const selection: Selection = {
 		tag: best.el.tagName.toLowerCase(),
@@ -1093,6 +1164,8 @@ function showPanel(selectionRect: DOMRect, text: string, reportPayload?: Record<
 	}
 
 	panel.textContent = text
+	const keepFocus = typedInput?.contains(document.activeElement) ? document.activeElement : null
+	if (typedInput) panel.appendChild(typedInput)
 	if (reportPayload) {
 		// Failure panels get the same one-click report as a successful popup -
 		// failures are the most informative thing to learn about.
@@ -1117,6 +1190,7 @@ function showPanel(selectionRect: DOMRect, text: string, reportPayload?: Record<
 	document.documentElement.appendChild(panel)
 	panelEl = panel
 	panel.scrollTop = panel.scrollHeight
+	if (keepFocus instanceof HTMLElement) keepFocus.focus()
 	panelDragCleanup = makeDraggable(panel)
 }
 
