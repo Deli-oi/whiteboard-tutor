@@ -36601,6 +36601,11 @@ ${previousHtml}
   var EMAILJS_PUBLIC_KEY = "";
 
   // extension/src/background.ts
+  try {
+    void chrome.storage.local.setAccessLevel?.({ accessLevel: "TRUSTED_CONTEXTS" });
+  } catch (e) {
+    console.warn("[study-buddy] could not restrict storage access level:", e);
+  }
   chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason !== "install") return;
     chrome.runtime.openOptionsPage();

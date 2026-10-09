@@ -2,6 +2,18 @@ import { generateVisualizationHtml, Selection } from './generate'
 import { EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID } from './emailjsConfig'
 
 /**
+ * By default chrome.storage.local is readable from content scripts too, i.e.
+ * from inside every page the extension runs on. The API keys live there, so
+ * restrict it to trusted contexts (background, options page) only. Wrapped
+ * defensively: older Chrome versions lack the method.
+ */
+try {
+	void chrome.storage.local.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' })
+} catch (e) {
+	console.warn('[study-buddy] could not restrict storage access level:', e)
+}
+
+/**
  * Onboarding: a fresh install has no in-product hint that an API key is
  * required before anything works, or that the keyboard shortcut even
  * exists - `reason === 'install'` (not 'update', so reloading the
