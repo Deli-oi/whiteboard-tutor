@@ -95,3 +95,28 @@ setupKeyField({
 	validate: (key) => /^gsk_[A-Za-z0-9]{40,60}$/.test(key),
 	invalidMessage: 'That doesn\'t look like a Groq API key (should start with "gsk_"). Double-check what you pasted.',
 })
+
+/**
+ * Shows the shortcut Chrome actually has assigned (the manifest only
+ * *suggests* one; it can be unset or remapped by the user, or skipped if it
+ * conflicts with another extension). chrome:// URLs can't be opened with a
+ * plain link from an extension page, so the button goes through tabs.create.
+ */
+async function setupShortcutInfo() {
+	const keysEl = document.getElementById('shortcutKeys') as HTMLElement
+	const warningEl = document.getElementById('shortcutWarning') as HTMLElement
+	const openButton = document.getElementById('shortcutOpen') as HTMLButtonElement
+	openButton.addEventListener('click', () => {
+		void chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })
+	})
+	const commands = await chrome.commands.getAll()
+	const toggle = commands.find((c) => c.name === 'toggle-overlay')
+	if (toggle?.shortcut) {
+		keysEl.textContent = toggle.shortcut
+		warningEl.style.display = 'none'
+	} else {
+		keysEl.textContent = 'not set'
+		warningEl.style.display = 'block'
+	}
+}
+void setupShortcutInfo()

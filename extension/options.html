@@ -162,8 +162,14 @@
 					<strong>Minimal permissions, and here's why each one exists:</strong>
 					<ul>
 						<li>
-							<code>activeTab</code> + running on the page you're looking at - needed so circle-select
-							can see and grab what you drag a box around, on whatever site you're actually using it on.
+							<code>activeTab</code> - when you press the shortcut, Chrome lets the extension work on
+							that one tab, only for that moment: to see what you drag a box around and to screenshot
+							it when there's no text to read.
+						</li>
+						<li>
+							<code>scripting</code> - used to put the circle-select script into the tab where you press
+							the shortcut. It is not loaded on every page you visit; it only runs on a tab after you
+							ask for it there.
 						</li>
 						<li><code>storage</code> - to remember your API key(s) locally between sessions. That's all it's used for.</li>
 					</ul>
@@ -242,13 +248,25 @@
 
 		<h2>2. How to use it</h2>
 		<ol>
-			<li>On any webpage, press <kbd>Ctrl+Shift+E</kbd> (<kbd>Cmd+Shift+E</kbd> on Mac) to turn on circle-select.</li>
+			<li>
+				On any webpage, press <kbd id="shortcutKeys">Ctrl+Shift+E</kbd> to turn on circle-select. Works on
+				tabs that were already open, too.
+				<div id="shortcutWarning" class="hint" style="display: none; color: #b45309">
+					No shortcut is currently assigned (another extension may be using it).
+				</div>
+				<button id="shortcutOpen" class="linklike" type="button">Change keyboard shortcut</button>
+			</li>
 			<li>Drag a box around whatever you want explained or visualized.</li>
 			<li>Speak what you want - it starts listening automatically and sends once you pause.</li>
 			<li>
 				Once a visualization shows up, hover it and hold <kbd>V</kbd> to refine it by voice without re-circling.
 			</li>
 		</ol>
+
+		<p class="hint">
+			Limitation: Chrome doesn't let any extension run on <code>chrome://</code> pages, the Chrome Web Store, or
+			Chrome's built-in PDF viewer, so the shortcut does nothing there.
+		</p>
 
 		<script src="options.js"></script>
 	</body>

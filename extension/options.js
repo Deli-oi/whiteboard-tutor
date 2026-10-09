@@ -70,4 +70,22 @@
     validate: (key) => /^gsk_[A-Za-z0-9]{40,60}$/.test(key),
     invalidMessage: `That doesn't look like a Groq API key (should start with "gsk_"). Double-check what you pasted.`
   });
+  async function setupShortcutInfo() {
+    const keysEl = document.getElementById("shortcutKeys");
+    const warningEl = document.getElementById("shortcutWarning");
+    const openButton = document.getElementById("shortcutOpen");
+    openButton.addEventListener("click", () => {
+      void chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+    });
+    const commands = await chrome.commands.getAll();
+    const toggle = commands.find((c) => c.name === "toggle-overlay");
+    if (toggle?.shortcut) {
+      keysEl.textContent = toggle.shortcut;
+      warningEl.style.display = "none";
+    } else {
+      keysEl.textContent = "not set";
+      warningEl.style.display = "block";
+    }
+  }
+  void setupShortcutInfo();
 })();

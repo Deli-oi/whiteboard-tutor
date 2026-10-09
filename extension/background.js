@@ -36596,9 +36596,17 @@ ${previousHtml}
     if (command !== "toggle-overlay") return;
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) return;
+    const tabId = tab.id;
     try {
-      await chrome.tabs.sendMessage(tab.id, { type: "toggle-overlay" });
+      await chrome.tabs.sendMessage(tabId, { type: "toggle-overlay" });
+      return;
     } catch {
+    }
+    try {
+      await chrome.scripting.executeScript({ target: { tabId }, files: ["content-script.js"] });
+      await chrome.tabs.sendMessage(tabId, { type: "toggle-overlay" });
+    } catch (e) {
+      console.warn("[study-buddy] cannot run on this page:", e);
     }
   });
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

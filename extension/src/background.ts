@@ -16,21 +16,40 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 /**
  * Keyboard shortcuts fire here (chrome.commands only reaches the background
- * service worker, never a content script directly), so this just relays the
- * toggle to whichever tab is active.
+ * service worker, never a content script directly), so this relays the toggle
+ * to the active tab. The content script is not declared in the manifest: it
+ * is injected on demand, only into the tab where the user pressed the
+ * shortcut (the command gesture grants `activeTab`, which covers both the
+ * injection and the later captureVisibleTab). That also means it works on tabs
+ * that were already open before the extension was installed or reloaded.
+ *
+ * Try the message first and inject only if nobody answers - covers a fresh
+ * tab, a tab whose old content script was orphaned by an extension reload,
+ * and avoids re-injecting on every press.
  */
 chrome.commands.onCommand.addListener(async (command) => {
 	if (command !== 'toggle-overlay') return
 
 	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
 	if (!tab?.id) return
+	const tabId = tab.id
 
 	try {
-		await chrome.tabs.sendMessage(tab.id, { type: 'toggle-overlay' })
+		await chrome.tabs.sendMessage(tabId, { type: 'toggle-overlay' })
+		return
 	} catch {
-		// No content script listening - most likely the page was open before the
-		// extension was loaded/reloaded. A manual refresh of the page fixes this;
-		// not worth auto-injecting a content script just to cover that case.
+		// No content script listening yet - inject it below.
+	}
+
+	try {
+		await chrome.scripting.executeScript({ target: { tabId }, files: ['content-script.js'] })
+		await chrome.tabs.sendMessage(tabId, { type: 'toggle-overlay' })
+	} catch (e) {
+		// Chrome refuses injection on chrome:// pages, the Chrome Web Store, and
+		// Chrome's built-in PDF viewer. There is no action/badge or notifications
+		// permission to surface this with, so it is logged here and documented on
+		// the options page.
+		console.warn('[study-buddy] cannot run on this page:', e)
 	}
 })
 

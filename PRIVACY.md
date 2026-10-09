@@ -33,10 +33,10 @@ separately or has any visibility into. The resulting text transcript is then
 sent to your configured AI provider the same way the selection is, to
 generate the visualization.
 
-**The page you're on.** The extension runs on whatever page you're viewing
-so circle-select can work there, but it does not read, store, or transmit
-the page as a whole — only the specific region you circle, as described
-above.
+**The page you're on.** The extension's script is only put into a page when
+you press the keyboard shortcut on that tab; it is not loaded on pages you
+merely visit. Once running, it does not read, store, or transmit the page as
+a whole — only the specific region you circle, as described above.
 
 ## Beta bug reports (temporary)
 

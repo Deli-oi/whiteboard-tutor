@@ -708,9 +708,18 @@ content: "${preview}${preview.length === 80 ? "\u2026" : ""}"` + (matches.length
     panel.scrollTop = panel.scrollHeight;
     panelDragCleanup = makeDraggable(panel);
   }
-  chrome.runtime.onMessage.addListener((message) => {
+  var toggleHolder = window;
+  var onToggleMessage = (message) => {
     if (message?.type !== "toggle-overlay") return;
     if (mode !== "idle") closeEverything();
     else enterSelectMode();
-  });
+  };
+  if (toggleHolder.__studyBuddyToggle) {
+    try {
+      chrome.runtime.onMessage.removeListener(toggleHolder.__studyBuddyToggle);
+    } catch {
+    }
+  }
+  toggleHolder.__studyBuddyToggle = onToggleMessage;
+  chrome.runtime.onMessage.addListener(onToggleMessage);
 })();

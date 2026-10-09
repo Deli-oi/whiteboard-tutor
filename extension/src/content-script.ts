@@ -1,5 +1,5 @@
 /**
- * Runs on any webpage: circle something, speak, get a real computed
+ * Injected on demand (see background.ts) into the tab where the shortcut is pressed: circle something, speak, get a real computed
  * visualization in a floating, dismissable popup. Tier 1 ("Anywhere") only
  * - the companion app and direct file-editing (Tier 2) were built, tested,
  * and then retired (too much setup friction for the benefit delivered); see
@@ -848,8 +848,28 @@ function showPanel(selectionRect: DOMRect, text: string) {
 	panelDragCleanup = makeDraggable(panel)
 }
 
-chrome.runtime.onMessage.addListener((message) => {
+/**
+ * This file is injected on demand (background.ts), possibly more than once
+ * into the same tab, and each injection gets a fresh copy of this module's
+ * state. Only the most recent copy's listener may stay registered, or one
+ * shortcut press would toggle several overlays at once - so each injection
+ * removes the previous copy's listener (best effort: a copy orphaned by an
+ * extension reload may throw, which is fine) before adding its own.
+ */
+type ToggleListener = (message: { type?: string }) => void
+const toggleHolder = window as unknown as { __studyBuddyToggle?: ToggleListener }
+
+const onToggleMessage: ToggleListener = (message) => {
 	if (message?.type !== 'toggle-overlay') return
 	if (mode !== 'idle') closeEverything()
 	else enterSelectMode()
-})
+}
+if (toggleHolder.__studyBuddyToggle) {
+	try {
+		chrome.runtime.onMessage.removeListener(toggleHolder.__studyBuddyToggle)
+	} catch {
+		// previous copy's extension context is gone
+	}
+}
+toggleHolder.__studyBuddyToggle = onToggleMessage
+chrome.runtime.onMessage.addListener(onToggleMessage)
