@@ -85,8 +85,10 @@ function setupKeyField(config: KeyFieldConfig) {
 setupKeyField({
 	storageKey: 'geminiApiKey',
 	idPrefix: 'gemini',
-	validate: (key) => /^AIza[\w-]{30,40}$/.test(key),
-	invalidMessage: 'That doesn\'t look like a Gemini API key (should start with "AIza"). Double-check what you pasted.',
+	// Google has issued more than one key format ("AIza..." and newer "AQ...."),
+	// so only reject what clearly isn't a key: whitespace, a URL, or too short.
+	validate: (key) => /^[A-Za-z0-9._~+/=-]{20,}$/.test(key),
+	invalidMessage: "That doesn't look like a Gemini API key. Copy the whole key from aistudio.google.com/app/apikey, with no spaces.",
 })
 
 setupKeyField({
