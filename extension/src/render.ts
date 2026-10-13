@@ -1,3 +1,5 @@
+import { escapeLatexInScripts } from './escapeLatexInScripts'
+
 /**
  * This page is declared under manifest.json's `sandbox.pages`, which gives
  * it a unique opaque origin and (unlike every other extension page) a
@@ -437,6 +439,7 @@ window.addEventListener('message', (event) => {
 	const html = raw
 		.replace(/^\s*<!doctype[^>]*>/i, '')
 		.trimStart()
+		.replace(/^[\s\S]*$/, escapeLatexInScripts)
 		.replace(MERMAID_BLOCK, (_match, open: string, _tag: string, body: string, close: string) => {
 			const fixed = fixMermaidSource(body)
 			mermaidSources.push(fixed)
